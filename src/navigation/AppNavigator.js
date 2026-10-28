@@ -12,6 +12,8 @@ import HomeScreen from '../screens/HomeScreen';
 import KnowledgeScreen from '../screens/KnowledgeScreen';
 import MyCorsoScreen from '../screens/MyCorsoScreen';
 import ServicesScreen from '../screens/ServicesScreen';
+import { useLanguage } from '../i18n/LanguageContext';
+import USGBackButton from '../components/USGBackButton';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -90,6 +92,8 @@ function ScrollableTabBar({ state, descriptors, navigation }) {
 }
 
 function MainTabs() {
+  const { t } = useLanguage();
+
   return (
     <Tab.Navigator
       tabBar={(props) => <ScrollableTabBar {...props} />}
@@ -97,22 +101,41 @@ function MainTabs() {
         headerShown: false,
       }}
     >
-      <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarLabel: 'Home' }} />
-      <Tab.Screen name="My Corso" component={MyCorsoScreen} options={{ tabBarLabel: 'My Corso' }} />
-      <Tab.Screen name="Corso Friendly" component={CorsoFriendlyScreen} options={{ tabBarLabel: 'Corso Friendly' }} />
-      <Tab.Screen name="Knowledge" component={KnowledgeScreen} options={{ tabBarLabel: 'Knowledge' }} />
-      <Tab.Screen name="Community" component={CommunityScreen} options={{ tabBarLabel: 'Community' }} />
-      <Tab.Screen name="Services" component={ServicesScreen} options={{ tabBarLabel: 'Services' }} />
-      <Tab.Screen name="Events" component={EventsScreen} options={{ tabBarLabel: 'Events' }} />
-      <Tab.Screen name="Corso Match" component={CorsoMatchScreen} options={{ tabBarLabel: 'Corso Match' }} />
-      <Tab.Screen name="About" component={AboutScreen} options={{ tabBarLabel: 'About USG' }} />
+      <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarLabel: t('nav.home') }} />
+      <Tab.Screen name="My Corso" component={MyCorsoScreen} options={{ tabBarLabel: t('nav.myCorso') }} />
+      <Tab.Screen name="Corso Friendly" component={CorsoFriendlyScreen} options={{ tabBarLabel: t('nav.corsoFriendly') }} />
+      <Tab.Screen name="Knowledge" component={KnowledgeScreen} options={{ tabBarLabel: t('nav.knowledge') }} />
+      <Tab.Screen name="Community" component={CommunityScreen} options={{ tabBarLabel: t('nav.community') }} />
+      <Tab.Screen name="Services" component={ServicesScreen} options={{ tabBarLabel: t('nav.services') }} />
+      <Tab.Screen name="Events" component={EventsScreen} options={{ tabBarLabel: t('nav.events') }} />
+      <Tab.Screen name="Corso Match" component={CorsoMatchScreen} options={{ tabBarLabel: t('nav.corsoMatch') }} />
+      <Tab.Screen name="About" component={AboutScreen} options={{ tabBarLabel: t('nav.about') }} />
     </Tab.Navigator>
   );
 }
 
 export default function AppNavigator() {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator
+      screenOptions={({ navigation }) => ({
+        headerStyle: {
+          backgroundColor: '#0b0b0c',
+        },
+        headerTintColor: '#d4af37',
+        headerTitleStyle: {
+          fontWeight: '700',
+        },
+        headerShadowVisible: false,
+        contentStyle: {
+          backgroundColor: '#0b0b0c',
+        },
+        headerLeft: () => (
+          <USGBackButton
+            onPress={() => navigation.goBack()}
+          />
+        ),
+      })}
+    >
       <Stack.Screen
         name="Main"
         component={MainTabs}
@@ -123,16 +146,6 @@ export default function AppNavigator() {
         component={DetailsScreen}
         options={{
           title: 'USG Corso',
-          headerStyle: {
-            backgroundColor: '#0b0b0c',
-          },
-          headerTintColor: '#d4af37',
-          headerTitleStyle: {
-            fontWeight: 'bold',
-          },
-          contentStyle: {
-            backgroundColor: '#0b0b0c',
-          },
         }}
       />
     </Stack.Navigator>

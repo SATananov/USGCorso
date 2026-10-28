@@ -10,67 +10,45 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const sections = [
+import { useLanguage } from '../i18n/LanguageContext';
+
+const sectionConfig = [
   {
     id: 'myCorso',
-    title: 'MY CORSO',
     icon: require('../../assets/icons/my-corso.png'),
-    items: ['Growth & Care', 'Behavior', 'Challenges', 'Journal'],
   },
   {
     id: 'corsoFriendly',
-    title: 'CORSO FRIENDLY',
     icon: require('../../assets/icons/corso-friendly.png'),
-    items: ['Map', 'Near Me', 'Places', 'Add a Place', 'Favorites', 'Reviews'],
   },
   {
     id: 'knowledge',
-    title: 'KNOWLEDGE',
     icon: require('../../assets/icons/knowledge.png'),
-    items: [
-      'Cane Corso Basics',
-      'History & Heritage',
-      'Function & Type',
-      'Growth & Development',
-      'Nutrition',
-      'Training',
-      'Behavior',
-      'Health & Care',
-    ],
   },
   {
     id: 'community',
-    title: 'COMMUNITY',
     icon: require('../../assets/icons/community.png'),
-    items: ['Lost & Found', 'New Home', 'Breeding Match', 'Community'],
   },
   {
     id: 'services',
-    title: 'PROFESSIONALS & SERVICES',
     icon: require('../../assets/icons/services.png'),
-    items: ['Breeders', 'Trainers', 'Veterinary', 'Handlers', 'Transport', 'Pet Shops'],
   },
   {
     id: 'events',
-    title: 'EVENTS',
     icon: require('../../assets/icons/events.png'),
-    items: ['Upcoming', 'Dog Shows', 'Seminars', 'Lectures', 'Training Events', 'Breed Meetings'],
   },
   {
     id: 'corsoMatch',
-    title: 'CORSO MATCH',
     icon: require('../../assets/icons/corso-match.png'),
-    items: ['Is Cane Corso right for me?'],
   },
   {
     id: 'about',
-    title: 'ABOUT USG',
     icon: require('../../assets/icons/about-usg.png'),
-    items: [],
   },
 ];
 
 export default function HomeScreen({ navigation }) {
+  const { t } = useLanguage();
   const [openSection, setOpenSection] = useState(null);
   const [showHero, setShowHero] = useState(false);
 
@@ -94,11 +72,16 @@ export default function HomeScreen({ navigation }) {
         </Pressable>
 
         <Text style={styles.title}>USG Corso</Text>
-        <Text style={styles.subtitle}>The Cane Corso Mobile Ecosystem</Text>
+        <Text style={styles.subtitle}>{t('home.subtitle')}</Text>
 
         <View style={styles.menu}>
-          {sections.map((section) => {
+          {sectionConfig.map((section) => {
             const isOpen = openSection === section.id;
+            const title = t(`home.sections.${section.id}.title`);
+            const items =
+              t(`home.sections.${section.id}.items`) instanceof Array
+                ? t(`home.sections.${section.id}.items`)
+                : [];
 
             return (
               <View
@@ -120,7 +103,7 @@ export default function HomeScreen({ navigation }) {
                         section.id === 'services' && styles.longSectionTitle,
                       ]}
                     >
-                      {section.title}
+                      {title}
                     </Text>
                   </View>
 
@@ -134,17 +117,16 @@ export default function HomeScreen({ navigation }) {
                     {section.id === 'about' ? (
                       <>
                         <Text style={styles.aboutText}>
-                          USG promotes knowledge, responsibility and community around Cane Corso.
-                          It does not exist to sell dogs or to compete with canine organizations.
+                          {t('home.aboutText')}
                         </Text>
 
                         <Text style={styles.philosophy}>FUNZIONE CREA IL TIPO</Text>
                         <Text style={styles.philosophySmall}>
-                          ФУНКЦИЯТА СЪЗДАВА ТИПА
+                          {t('home.philosophyTranslation')}
                         </Text>
                       </>
                     ) : (
-                      section.items.map((item) => (
+                      items.map((item) => (
                         <Pressable
                           key={item}
                           style={styles.menuItem}
@@ -164,7 +146,7 @@ export default function HomeScreen({ navigation }) {
 
         <View style={styles.footer}>
           <Text style={styles.footerBrand}>USG — Unico Suo Genere™</Text>
-          <Text style={styles.footerRights}>All rights reserved.</Text>
+          <Text style={styles.footerRights}>{t('home.rights')}</Text>
         </View>
       </ScrollView>
 
@@ -183,7 +165,7 @@ export default function HomeScreen({ navigation }) {
             resizeMode="contain"
           />
 
-          <Text style={styles.modalHint}>USG Corso Ecosystem</Text>
+          <Text style={styles.modalHint}>{t('home.ecosystemHint')}</Text>
         </View>
       </Modal>
     </SafeAreaView>

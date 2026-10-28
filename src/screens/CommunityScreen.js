@@ -3,6 +3,7 @@ import USGSectionScreen from '../components/USGSectionScreen';
 export default function CommunityScreen() {
   return (
     <USGSectionScreen
+      heroImage={require('../../assets/community-hero.png')}
       kicker="PEOPLE & DOGS"
       title="Community"
       subtitle="Responsible connections inside the Cane Corso community."

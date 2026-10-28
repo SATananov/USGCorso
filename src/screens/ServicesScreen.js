@@ -3,6 +3,7 @@ import USGSectionScreen from '../components/USGSectionScreen';
 export default function ServicesScreen() {
   return (
     <USGSectionScreen
+      heroImage={require('../../assets/services-hero.png')}
       kicker="TRUSTED NETWORK"
       title="Professionals & Services"
       subtitle="Useful people and services around the Cane Corso world."

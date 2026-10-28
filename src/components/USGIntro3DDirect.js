@@ -11,6 +11,7 @@ import {
 import { Asset } from 'expo-asset';
 import { GLView } from 'expo-gl';
 import * as THREE from 'three';
+import { useLanguage } from '../i18n/LanguageContext';
 
 function createRenderer(gl) {
   const fakeCanvas = {
@@ -225,6 +226,7 @@ async function buildCrestMedallion() {
 }
 
 export default function USGIntro3DDirect({ onExplore }) {
+  const { language, setLanguage, t } = useLanguage();
   const animationFrame = useRef(null);
   const mounted = useRef(true);
 
@@ -429,6 +431,32 @@ export default function USGIntro3DDirect({ onExplore }) {
         style={styles.backgroundDarkener}
       />
 
+      <View style={styles.languageSwitcher}>
+        {['en', 'bg', 'it'].map((code) => {
+          const active = language === code;
+
+          return (
+            <Pressable
+              key={code}
+              onPress={() => setLanguage(code)}
+              style={[
+                styles.languageButton,
+                active && styles.languageButtonActive,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.languageText,
+                  active && styles.languageTextActive,
+                ]}
+              >
+                {code.toUpperCase()}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
       <View style={styles.scene}>
         <GLView
           style={styles.glView}
@@ -457,7 +485,7 @@ export default function USGIntro3DDirect({ onExplore }) {
         </Text>
 
         <Text style={styles.tagline}>
-          The Global Cane Corso Mobile Ecosystem
+          {t('intro.tagline')}
         </Text>
       </Animated.View>
 
@@ -479,7 +507,7 @@ export default function USGIntro3DDirect({ onExplore }) {
           onPress={onExplore}
         >
           <Text style={styles.exploreText}>
-            EXPLORE
+            {t('intro.explore')}
           </Text>
 
           <Text style={styles.exploreArrow}>
@@ -507,6 +535,41 @@ const styles = StyleSheet.create({
   backgroundDarkener: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0, 0, 0, 0.28)',
+  },
+  languageSwitcher: {
+    position: 'absolute',
+    top: 46,
+    right: 20,
+    zIndex: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 4,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(212, 175, 55, 0.26)',
+    backgroundColor: 'rgba(3, 4, 6, 0.68)',
+  },
+  languageButton: {
+    minWidth: 38,
+    height: 30,
+    paddingHorizontal: 8,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  languageButtonActive: {
+    backgroundColor: 'rgba(212, 175, 55, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(224, 179, 59, 0.68)',
+  },
+  languageText: {
+    color: 'rgba(241, 241, 241, 0.58)',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1.1,
+  },
+  languageTextActive: {
+    color: '#e0b33b',
   },
   scene: {
     position: 'absolute',

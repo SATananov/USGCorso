@@ -3,6 +3,7 @@ import USGSectionScreen from '../components/USGSectionScreen';
 export default function AboutScreen() {
   return (
     <USGSectionScreen
+      heroImage={require('../../assets/about-usg-hero.png')}
       kicker="UNICO SUO GENERE"
       title="About USG"
       subtitle="Knowledge, history, responsibility and respect for the Cane Corso."

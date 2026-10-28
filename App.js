@@ -4,15 +4,18 @@ import { NavigationContainer } from '@react-navigation/native';
 
 import AppNavigator from './src/navigation/AppNavigator';
 import USGIntro3DDirect from './src/components/USGIntro3DDirect';
+import { LanguageProvider } from './src/i18n/LanguageContext';
 
-export default function App() {
+function AppContent() {
   const [showIntro, setShowIntro] = useState(true);
 
   if (showIntro) {
     return (
       <>
         <StatusBar style="light" />
-        <USGIntro3DDirect onExplore={() => setShowIntro(false)} />
+        <USGIntro3DDirect
+          onExplore={() => setShowIntro(false)}
+        />
       </>
     );
   }
@@ -22,5 +25,13 @@ export default function App() {
       <StatusBar style="light" />
       <AppNavigator />
     </NavigationContainer>
+  );
+}
+
+export default function App() {
+  return (
+    <LanguageProvider>
+      <AppContent />
+    </LanguageProvider>
   );
 }
