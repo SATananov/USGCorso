@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -12,8 +13,15 @@ import HomeScreen from '../screens/HomeScreen';
 import KnowledgeScreen from '../screens/KnowledgeScreen';
 import MyCorsoScreen from '../screens/MyCorsoScreen';
 import ServicesScreen from '../screens/ServicesScreen';
+import SettingsScreen from '../screens/SettingsScreen';
+import NotificationSettingsScreen from '../screens/NotificationSettingsScreen';
+import PrivacySettingsScreen from '../screens/PrivacySettingsScreen';
+import AccountSettingsScreen from '../screens/AccountSettingsScreen';
+import LegalScreen from '../screens/LegalScreen';
+import HelpSupportScreen from '../screens/HelpSupportScreen';
 import { useLanguage } from '../i18n/LanguageContext';
 import USGBackButton from '../components/USGBackButton';
+import { useTheme } from '../theme/ThemeContext';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -31,6 +39,9 @@ const tabIcons = {
 };
 
 function ScrollableTabBar({ state, descriptors, navigation }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <View style={styles.tabBarContainer}>
       <ScrollView
@@ -115,24 +126,26 @@ function MainTabs() {
 }
 
 export default function AppNavigator() {
+  const { t } = useLanguage();
+  const { colors } = useTheme();
+
   return (
     <Stack.Navigator
       screenOptions={({ navigation }) => ({
         headerStyle: {
-          backgroundColor: '#0b0b0c',
+          backgroundColor: colors.background,
         },
-        headerTintColor: '#d4af37',
+        headerTintColor: colors.gold,
         headerTitleStyle: {
+          color: colors.text,
           fontWeight: '700',
         },
         headerShadowVisible: false,
         contentStyle: {
-          backgroundColor: '#0b0b0c',
+          backgroundColor: colors.background,
         },
         headerLeft: () => (
-          <USGBackButton
-            onPress={() => navigation.goBack()}
-          />
+          <USGBackButton onPress={() => navigation.goBack()} />
         ),
       })}
     >
@@ -144,58 +157,88 @@ export default function AppNavigator() {
       <Stack.Screen
         name="Details"
         component={DetailsScreen}
-        options={{
-          title: 'USG Corso',
-        }}
+        options={{ title: 'USG Corso' }}
+      />
+      <Stack.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{ title: t('settings.title') }}
+      />
+      <Stack.Screen
+        name="NotificationSettings"
+        component={NotificationSettingsScreen}
+        options={{ title: t('settings.notifications') }}
+      />
+      <Stack.Screen
+        name="PrivacySettings"
+        component={PrivacySettingsScreen}
+        options={{ title: t('settings.privacy') }}
+      />
+      <Stack.Screen
+        name="AccountSettings"
+        component={AccountSettingsScreen}
+        options={{ title: t('settings.account') }}
+      />
+      <Stack.Screen
+        name="Legal"
+        component={LegalScreen}
+        options={{ title: t('settings.legal') }}
+      />
+      <Stack.Screen
+        name="HelpSupport"
+        component={HelpSupportScreen}
+        options={{ title: t('settings.help') }}
       />
     </Stack.Navigator>
   );
 }
 
-const styles = StyleSheet.create({
-  tabBarContainer: {
-    backgroundColor: '#101011',
-    borderTopWidth: 1,
-    borderTopColor: '#332a18',
-  },
-  tabBarContent: {
-    alignItems: 'center',
-    paddingHorizontal: 6,
-    paddingTop: 4,
-    paddingBottom: 6,
-  },
-  tabItem: {
-    minWidth: 74,
-    minHeight: 46,
-    paddingHorizontal: 8,
-    paddingTop: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 10,
-  },
-  tabItemActive: {
-    backgroundColor: '#18150e',
-  },
-  activeLine: {
-    position: 'absolute',
-    top: 0,
-    width: 28,
-    height: 2,
-    borderRadius: 1,
-    backgroundColor: '#d4af37',
-  },
-  tabIcon: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    marginBottom: 3,
-  },
-  tabLabel: {
-    color: '#777777',
-    fontSize: 9,
-    fontWeight: '600',
-  },
-  tabLabelActive: {
-    color: '#d4af37',
-  },
-});
+function createStyles(colors) {
+  return StyleSheet.create({
+    tabBarContainer: {
+      backgroundColor: colors.tabBackground,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+    tabBarContent: {
+      alignItems: 'center',
+      paddingHorizontal: 6,
+      paddingTop: 4,
+      paddingBottom: 6,
+    },
+    tabItem: {
+      minWidth: 74,
+      minHeight: 46,
+      paddingHorizontal: 8,
+      paddingTop: 4,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: 10,
+    },
+    tabItemActive: {
+      backgroundColor: colors.activeSurface,
+    },
+    activeLine: {
+      position: 'absolute',
+      top: 0,
+      width: 28,
+      height: 2,
+      borderRadius: 1,
+      backgroundColor: colors.gold,
+    },
+    tabIcon: {
+      width: 22,
+      height: 22,
+      borderRadius: 11,
+      marginBottom: 3,
+    },
+    tabLabel: {
+      color: colors.textMuted,
+      fontSize: 9,
+      fontWeight: '600',
+    },
+    tabLabelActive: {
+      color: colors.gold,
+    },
+  });
+}

@@ -1,13 +1,16 @@
 import USGSectionScreen from '../components/USGSectionScreen';
+import { useLanguage } from '../i18n/LanguageContext';
 
 export default function CommunityScreen() {
+  const { t } = useLanguage();
+
   return (
     <USGSectionScreen
       heroImage={require('../../assets/community-hero.png')}
-      kicker="PEOPLE & DOGS"
-      title="Community"
-      subtitle="Responsible connections inside the Cane Corso community."
-      body="This section will support Lost & Found, responsible New Home posts, Breeding Match and community interaction."
+      kicker={t('sections.community.kicker')}
+      title={t('sections.community.title')}
+      subtitle={t('sections.community.subtitle')}
+      body={t('sections.community.body')}
     />
   );
 }

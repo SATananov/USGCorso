@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Image,
   Modal,
@@ -11,44 +11,23 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useLanguage } from '../i18n/LanguageContext';
+import { useTheme } from '../theme/ThemeContext';
 
 const sectionConfig = [
-  {
-    id: 'myCorso',
-    icon: require('../../assets/icons/my-corso.png'),
-  },
-  {
-    id: 'corsoFriendly',
-    icon: require('../../assets/icons/corso-friendly.png'),
-  },
-  {
-    id: 'knowledge',
-    icon: require('../../assets/icons/knowledge.png'),
-  },
-  {
-    id: 'community',
-    icon: require('../../assets/icons/community.png'),
-  },
-  {
-    id: 'services',
-    icon: require('../../assets/icons/services.png'),
-  },
-  {
-    id: 'events',
-    icon: require('../../assets/icons/events.png'),
-  },
-  {
-    id: 'corsoMatch',
-    icon: require('../../assets/icons/corso-match.png'),
-  },
-  {
-    id: 'about',
-    icon: require('../../assets/icons/about-usg.png'),
-  },
+  { id: 'myCorso', icon: require('../../assets/icons/my-corso.png') },
+  { id: 'corsoFriendly', icon: require('../../assets/icons/corso-friendly.png') },
+  { id: 'knowledge', icon: require('../../assets/icons/knowledge.png') },
+  { id: 'community', icon: require('../../assets/icons/community.png') },
+  { id: 'services', icon: require('../../assets/icons/services.png') },
+  { id: 'events', icon: require('../../assets/icons/events.png') },
+  { id: 'corsoMatch', icon: require('../../assets/icons/corso-match.png') },
+  { id: 'about', icon: require('../../assets/icons/about-usg.png') },
 ];
 
 export default function HomeScreen({ navigation }) {
   const { t } = useLanguage();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [openSection, setOpenSection] = useState(null);
   const [showHero, setShowHero] = useState(false);
 
@@ -63,6 +42,21 @@ export default function HomeScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.topRow}>
+          <View style={styles.topRowSpacer} />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('settings.title')}
+            onPress={() => navigation.navigate('Settings')}
+            style={({ pressed }) => [
+              styles.settingsButton,
+              pressed && styles.settingsButtonPressed,
+            ]}
+          >
+            <Text style={styles.settingsIcon}>⚙</Text>
+          </Pressable>
+        </View>
+
         <Pressable style={styles.heroBox} onPress={() => setShowHero(true)}>
           <Image
             source={require('../../assets/ecosystem-hero.png')}
@@ -116,10 +110,7 @@ export default function HomeScreen({ navigation }) {
                   <View style={styles.sectionContent}>
                     {section.id === 'about' ? (
                       <>
-                        <Text style={styles.aboutText}>
-                          {t('home.aboutText')}
-                        </Text>
-
+                        <Text style={styles.aboutText}>{t('home.aboutText')}</Text>
                         <Text style={styles.philosophy}>FUNZIONE CREA IL TIPO</Text>
                         <Text style={styles.philosophySmall}>
                           {t('home.philosophyTranslation')}
@@ -172,184 +163,214 @@ export default function HomeScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0d0d0d',
-  },
-  content: {
-    paddingHorizontal: 18,
-    paddingTop: 12,
-    paddingBottom: 28,
-  },
-  heroBox: {
-    width: '100%',
-    height: 210,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  hero: {
-    width: '100%',
-    height: '100%',
-  },
-  title: {
-    color: '#ffffff',
-    fontSize: 27,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  subtitle: {
-    color: '#b8b8b8',
-    fontSize: 13,
-    textAlign: 'center',
-    marginTop: 3,
-    marginBottom: 13,
-  },
-  menu: {
-    width: '100%',
-  },
-  section: {
-    backgroundColor: '#141414',
-    borderWidth: 1,
-    borderColor: '#8f6418',
-    borderRadius: 12,
-    marginBottom: 7,
-    overflow: 'hidden',
-    shadowColor: '#d4af37',
-    shadowOpacity: 0.08,
-    shadowRadius: 5,
-    elevation: 1,
-  },
-  sectionOpen: {
-    borderColor: '#d4af37',
-    shadowOpacity: 0.18,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  sectionHeader: {
-    minHeight: 56,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 12,
-  },
-  sectionTitleRow: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    minWidth: 0,
-  },
-  sectionIconImage: {
-    width: 42,
-    height: 42,
-    marginRight: 11,
-    borderRadius: 21,
-  },
-  sectionHeaderText: {
-    flexShrink: 1,
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: 'bold',
-    letterSpacing: 0.8,
-  },
-  longSectionTitle: {
-    fontSize: 12,
-    letterSpacing: 0.5,
-  },
-  sectionToggle: {
-    color: '#d4af37',
-    fontSize: 22,
-    marginLeft: 8,
-  },
-  sectionContent: {
-    borderTopWidth: 1,
-    borderTopColor: '#5d4318',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-  },
-  menuItem: {
-    minHeight: 40,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderBottomWidth: 1,
-    borderBottomColor: '#242424',
-  },
-  menuItemText: {
-    color: '#d4af37',
-    fontSize: 14,
-  },
-  menuItemArrow: {
-    color: '#8e793c',
-    fontSize: 22,
-  },
-  aboutText: {
-    color: '#c7c7c7',
-    fontSize: 12,
-    lineHeight: 18,
-    paddingTop: 8,
-  },
-  philosophy: {
-    color: '#d4af37',
-    fontSize: 14,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginTop: 14,
-  },
-  philosophySmall: {
-    color: '#ffffff',
-    fontSize: 12,
-    textAlign: 'center',
-    marginTop: 4,
-    marginBottom: 8,
-  },
-  footer: {
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  footerBrand: {
-    color: '#777777',
-    fontSize: 11,
-  },
-  footerRights: {
-    color: '#5f5f5f',
-    fontSize: 10,
-    marginTop: 2,
-  },
-  modalBackground: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.96)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
-  },
-  modalImage: {
-    width: '100%',
-    height: '78%',
-  },
-  closeButton: {
-    position: 'absolute',
-    top: 46,
-    right: 22,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#171717',
-    borderWidth: 1,
-    borderColor: '#4a3b17',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 2,
-  },
-  closeButtonText: {
-    color: '#d4af37',
-    fontSize: 30,
-    lineHeight: 32,
-  },
-  modalHint: {
-    color: '#a8a8a8',
-    fontSize: 12,
-    marginTop: 10,
-  },
-});
+function createStyles(colors) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    content: {
+      paddingHorizontal: 18,
+      paddingTop: 10,
+      paddingBottom: 28,
+    },
+    topRow: {
+      minHeight: 42,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    topRowSpacer: {
+      width: 42,
+    },
+    settingsButton: {
+      width: 42,
+      height: 42,
+      borderRadius: 21,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    settingsButtonPressed: {
+      borderColor: colors.gold,
+      backgroundColor: colors.activeSurface,
+    },
+    settingsIcon: {
+      color: colors.gold,
+      fontSize: 22,
+      lineHeight: 24,
+    },
+    heroBox: {
+      width: '100%',
+      height: 210,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 10,
+    },
+    hero: {
+      width: '100%',
+      height: '100%',
+    },
+    title: {
+      color: colors.text,
+      fontSize: 27,
+      fontWeight: 'bold',
+      textAlign: 'center',
+    },
+    subtitle: {
+      color: colors.textSoft,
+      fontSize: 13,
+      textAlign: 'center',
+      marginTop: 3,
+      marginBottom: 13,
+    },
+    menu: {
+      width: '100%',
+    },
+    section: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      marginBottom: 7,
+      overflow: 'hidden',
+      shadowColor: colors.gold,
+      shadowOpacity: 0.08,
+      shadowRadius: 5,
+      elevation: 1,
+    },
+    sectionOpen: {
+      borderColor: colors.gold,
+      shadowOpacity: 0.18,
+      shadowRadius: 8,
+      elevation: 3,
+    },
+    sectionHeader: {
+      minHeight: 56,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 12,
+    },
+    sectionTitleRow: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      minWidth: 0,
+    },
+    sectionIconImage: {
+      width: 42,
+      height: 42,
+      marginRight: 11,
+      borderRadius: 21,
+    },
+    sectionHeaderText: {
+      flexShrink: 1,
+      color: colors.text,
+      fontSize: 14,
+      fontWeight: 'bold',
+      letterSpacing: 0.8,
+    },
+    longSectionTitle: {
+      fontSize: 12,
+      letterSpacing: 0.5,
+    },
+    sectionToggle: {
+      color: colors.gold,
+      fontSize: 22,
+      marginLeft: 8,
+    },
+    sectionContent: {
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      paddingHorizontal: 12,
+      paddingVertical: 4,
+    },
+    menuItem: {
+      minHeight: 40,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    menuItemText: {
+      color: colors.gold,
+      fontSize: 14,
+    },
+    menuItemArrow: {
+      color: colors.goldSoft,
+      fontSize: 22,
+    },
+    aboutText: {
+      color: colors.textSoft,
+      fontSize: 12,
+      lineHeight: 18,
+      paddingTop: 8,
+    },
+    philosophy: {
+      color: colors.gold,
+      fontSize: 14,
+      fontWeight: 'bold',
+      textAlign: 'center',
+      marginTop: 14,
+    },
+    philosophySmall: {
+      color: colors.text,
+      fontSize: 12,
+      textAlign: 'center',
+      marginTop: 4,
+      marginBottom: 8,
+    },
+    footer: {
+      alignItems: 'center',
+      marginTop: 10,
+    },
+    footerBrand: {
+      color: colors.textMuted,
+      fontSize: 11,
+    },
+    footerRights: {
+      color: colors.textMuted,
+      fontSize: 10,
+      marginTop: 2,
+    },
+    modalBackground: {
+      flex: 1,
+      backgroundColor: colors.overlay,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 16,
+    },
+    modalImage: {
+      width: '100%',
+      height: '78%',
+    },
+    closeButton: {
+      position: 'absolute',
+      top: 46,
+      right: 22,
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 2,
+    },
+    closeButtonText: {
+      color: colors.gold,
+      fontSize: 30,
+      lineHeight: 32,
+    },
+    modalHint: {
+      color: '#b8b8b8',
+      fontSize: 12,
+      marginTop: 10,
+    },
+  });
+}

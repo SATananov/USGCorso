@@ -1,13 +1,16 @@
 import USGSectionScreen from '../components/USGSectionScreen';
+import { useLanguage } from '../i18n/LanguageContext';
 
 export default function EventsScreen() {
+  const { t } = useLanguage();
+
   return (
     <USGSectionScreen
       heroImage={require('../../assets/events-hero.png')}
-      kicker="CALENDAR"
-      title="Events"
-      subtitle="Shows, seminars, meetings and breed-related activities."
-      body="This section will bring together upcoming dog shows, lectures, training events and Cane Corso community meetings."
+      kicker={t('sections.events.kicker')}
+      title={t('sections.events.title')}
+      subtitle={t('sections.events.subtitle')}
+      body={t('sections.events.body')}
     />
   );
 }

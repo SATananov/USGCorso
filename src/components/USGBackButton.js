@@ -1,6 +1,9 @@
 import { Pressable, StyleSheet, Text } from 'react-native';
+import { useTheme } from '../theme/ThemeContext';
 
 export default function USGBackButton({ onPress }) {
+  const { colors } = useTheme();
+
   return (
     <Pressable
       accessibilityRole="button"
@@ -9,10 +12,10 @@ export default function USGBackButton({ onPress }) {
       hitSlop={12}
       style={({ pressed }) => [
         styles.button,
-        pressed && styles.buttonPressed,
+        pressed && { backgroundColor: colors.activeSurface },
       ]}
     >
-      <Text style={styles.arrow}>‹</Text>
+      <Text style={[styles.arrow, { color: colors.gold }]}>‹</Text>
     </Pressable>
   );
 }
@@ -26,11 +29,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 21,
   },
-  buttonPressed: {
-    backgroundColor: 'rgba(212, 175, 55, 0.10)',
-  },
   arrow: {
-    color: '#d4af37',
     fontSize: 38,
     lineHeight: 40,
     fontWeight: '300',

@@ -1,13 +1,16 @@
 import USGSectionScreen from '../components/USGSectionScreen';
+import { useLanguage } from '../i18n/LanguageContext';
 
 export default function ServicesScreen() {
+  const { t } = useLanguage();
+
   return (
     <USGSectionScreen
       heroImage={require('../../assets/services-hero.png')}
-      kicker="TRUSTED NETWORK"
-      title="Professionals & Services"
-      subtitle="Useful people and services around the Cane Corso world."
-      body="This section will connect users with breeders, trainers, veterinary professionals, handlers, transport and pet shops."
+      kicker={t('sections.services.kicker')}
+      title={t('sections.services.title')}
+      subtitle={t('sections.services.subtitle')}
+      body={t('sections.services.body')}
     />
   );
 }

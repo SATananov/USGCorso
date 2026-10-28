@@ -1,13 +1,16 @@
 import USGSectionScreen from '../components/USGSectionScreen';
+import { useLanguage } from '../i18n/LanguageContext';
 
 export default function MyCorsoScreen() {
+  const { t } = useLanguage();
+
   return (
     <USGSectionScreen
       heroImage={require('../../assets/my-corso-hero.png')}
-      kicker="OWNER SPACE"
-      title="My Corso"
-      subtitle="Growth, care, behavior and life with your Cane Corso."
-      body="This section will become the personal space for the dog — growth, care, behavior, challenges and journal."
+      kicker={t('sections.myCorso.kicker')}
+      title={t('sections.myCorso.title')}
+      subtitle={t('sections.myCorso.subtitle')}
+      body={t('sections.myCorso.body')}
     />
   );
 }

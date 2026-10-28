@@ -1,13 +1,16 @@
 import USGSectionScreen from '../components/USGSectionScreen';
+import { useLanguage } from '../i18n/LanguageContext';
 
 export default function AboutScreen() {
+  const { t } = useLanguage();
+
   return (
     <USGSectionScreen
       heroImage={require('../../assets/about-usg-hero.png')}
-      kicker="UNICO SUO GENERE"
-      title="About USG"
-      subtitle="Knowledge, history, responsibility and respect for the Cane Corso."
-      body="USG is a cultural and educational Cane Corso project. It is not designed as a dog-selling marketplace and is not intended to compete with canine organizations."
+      kicker={t('sections.about.kicker')}
+      title={t('sections.about.title')}
+      subtitle={t('sections.about.subtitle')}
+      body={t('sections.about.body')}
     />
   );
 }

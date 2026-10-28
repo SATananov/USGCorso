@@ -1,13 +1,16 @@
 import USGSectionScreen from '../components/USGSectionScreen';
+import { useLanguage } from '../i18n/LanguageContext';
 
 export default function KnowledgeScreen() {
+  const { t } = useLanguage();
+
   return (
     <USGSectionScreen
       heroImage={require('../../assets/knowledge-hero.png')}
-      kicker="BREED KNOWLEDGE"
-      title="Knowledge"
-      subtitle="History, function, development, care and responsible ownership."
-      body="This section will become the educational heart of USG Corso, connecting breed heritage with practical knowledge."
+      kicker={t('sections.knowledge.kicker')}
+      title={t('sections.knowledge.title')}
+      subtitle={t('sections.knowledge.subtitle')}
+      body={t('sections.knowledge.body')}
     />
   );
 }
