@@ -3,6 +3,7 @@ import {
   Image,
   Pressable,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -13,7 +14,7 @@ export default function App() {
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
 
-      <View style={styles.content}>
+      <ScrollView contentContainerStyle={styles.content}>
         <Image
           source={require('./assets/usg-seal.png')}
           style={styles.logo}
@@ -41,8 +42,40 @@ export default function App() {
           </Pressable>
         </View>
 
+        <Text style={styles.sectionTitle}>Categories</Text>
+
+        <View style={styles.categories}>
+          <Pressable
+            style={styles.categoryButton}
+            onPress={() => console.log('Hotels pressed')}
+          >
+            <Text style={styles.categoryText}>Hotels</Text>
+          </Pressable>
+
+          <Pressable
+            style={styles.categoryButton}
+            onPress={() => console.log('Food & Drink pressed')}
+          >
+            <Text style={styles.categoryText}>Food & Drink</Text>
+          </Pressable>
+
+          <Pressable
+            style={styles.categoryButton}
+            onPress={() => console.log('Parks pressed')}
+          >
+            <Text style={styles.categoryText}>Parks</Text>
+          </Pressable>
+
+          <Pressable
+            style={styles.categoryButton}
+            onPress={() => console.log('Veterinary pressed')}
+          >
+            <Text style={styles.categoryText}>Veterinary</Text>
+          </Pressable>
+        </View>
+
         <Text style={styles.footer}>USG • Unico Suo Genere</Text>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -54,9 +87,9 @@ const styles = StyleSheet.create({
   },
 
   content: {
-    flex: 1,
-    justifyContent: 'center',
     paddingHorizontal: 24,
+    paddingTop: 30,
+    paddingBottom: 36,
   },
 
   logo: {
@@ -117,10 +150,41 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 
+  sectionTitle: {
+    color: '#ffffff',
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginTop: 28,
+    marginBottom: 14,
+  },
+
+  categories: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+
+  categoryButton: {
+    width: '48%',
+    backgroundColor: '#171717',
+    borderWidth: 1,
+    borderColor: '#3d3420',
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+
+  categoryText: {
+    color: '#d4af37',
+    fontSize: 15,
+    fontWeight: 'bold',
+  },
+
   footer: {
     color: '#777777',
     fontSize: 12,
     textAlign: 'center',
-    marginTop: 28,
+    marginTop: 22,
   },
 });
