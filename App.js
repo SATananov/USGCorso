@@ -15,8 +15,9 @@ export default function App() {
 
       <View style={styles.content}>
         <Image
-          source={require('./assets/icon.png')}
+          source={require('./assets/usg-seal.png')}
           style={styles.logo}
+          resizeMode="contain"
         />
 
         <Text style={styles.title}>USG Corso Companion</Text>
@@ -59,11 +60,10 @@ const styles = StyleSheet.create({
   },
 
   logo: {
-    width: 80,
-    height: 80,
+    width: 150,
+    height: 138,
     alignSelf: 'center',
-    marginBottom: 24,
-    borderRadius: 20,
+    marginBottom: 18,
   },
 
   title: {
