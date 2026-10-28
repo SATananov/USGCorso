@@ -1,5 +1,6 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { colors, radius, spacing } from '../styles/usgTheme';
 
 export default function DetailsScreen({ route }) {
   const title = route.params?.title || 'USG Corso';
@@ -7,11 +8,28 @@ export default function DetailsScreen({ route }) {
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <View style={styles.content}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.subtitle}>USG Corso</Text>
-        <Text style={styles.copy}>
-          This is the first dynamic details screen. The selected item title is passed through route parameters.
-        </Text>
+        <View style={styles.card}>
+          <Image
+            source={require('../../assets/usg-seal-splash.png')}
+            style={styles.watermark}
+            resizeMode="contain"
+          />
+
+          <Text style={styles.kicker}>USG CORSO</Text>
+          <Text style={styles.title}>{title}</Text>
+
+          <View style={styles.divider}>
+            <View style={styles.line} />
+            <View style={styles.diamond} />
+            <View style={styles.line} />
+          </View>
+
+          <Text style={styles.copy}>
+            This is the first dynamic details screen. The selected item title is passed through route parameters.
+          </Text>
+        </View>
+
+        <Text style={styles.footer}>USG — Unico Suo Genere™</Text>
       </View>
     </SafeAreaView>
   );
@@ -20,30 +38,71 @@ export default function DetailsScreen({ route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0d0d0d',
+    backgroundColor: colors.background,
   },
   content: {
     flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: 28,
+    paddingHorizontal: spacing.md,
+  },
+  card: {
+    minHeight: 330,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    padding: spacing.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  watermark: {
+    position: 'absolute',
+    width: 245,
+    height: 245,
+    opacity: 0.05,
+  },
+  kicker: {
+    color: colors.goldSoft,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 3,
+    marginBottom: spacing.sm,
   },
   title: {
-    color: '#d4af37',
-    fontSize: 28,
-    fontWeight: 'bold',
+    color: colors.text,
+    fontSize: 30,
+    fontWeight: '700',
     textAlign: 'center',
   },
-  subtitle: {
-    color: '#ffffff',
-    fontSize: 16,
-    textAlign: 'center',
-    marginTop: 8,
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: 145,
+    marginVertical: spacing.lg,
+  },
+  line: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.goldDark,
+  },
+  diamond: {
+    width: 7,
+    height: 7,
+    marginHorizontal: 8,
+    backgroundColor: colors.gold,
+    transform: [{ rotate: '45deg' }],
   },
   copy: {
-    color: '#b8b8b8',
+    color: colors.textSoft,
     fontSize: 15,
-    lineHeight: 23,
+    lineHeight: 24,
     textAlign: 'center',
-    marginTop: 24,
+  },
+  footer: {
+    color: colors.textMuted,
+    fontSize: 10,
+    textAlign: 'center',
+    marginTop: spacing.lg,
   },
 });

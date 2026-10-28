@@ -1,45 +1,12 @@
-import { StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import USGSectionScreen from '../components/USGSectionScreen';
 
 export default function AboutScreen() {
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
-      <View style={styles.content}>
-        <Text style={styles.title}>About USG</Text>
-        <Text style={styles.subtitle}>USG Corso</Text>
-        <Text style={styles.copy}>USG — Unico Suo Genere™\n\nFUNZIONE CREA IL TIPO\n\nKnowledge, responsibility and respect for Cane Corso.</Text>
-      </View>
-    </SafeAreaView>
+    <USGSectionScreen
+      kicker="UNICO SUO GENERE"
+      title="About USG"
+      subtitle="Knowledge, history, responsibility and respect for the Cane Corso."
+      body="USG is a cultural and educational Cane Corso project. It is not designed as a dog-selling marketplace and is not intended to compete with canine organizations."
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0d0d0d',
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 28,
-  },
-  title: {
-    color: '#d4af37',
-    fontSize: 28,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  subtitle: {
-    color: '#ffffff',
-    fontSize: 16,
-    textAlign: 'center',
-    marginTop: 8,
-  },
-  copy: {
-    color: '#b8b8b8',
-    fontSize: 15,
-    lineHeight: 23,
-    textAlign: 'center',
-    marginTop: 24,
-  },
-});

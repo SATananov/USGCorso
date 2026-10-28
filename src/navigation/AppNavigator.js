@@ -57,15 +57,21 @@ function ScrollableTabBar({ state, descriptors, navigation }) {
             <Pressable
               key={route.key}
               onPress={onPress}
-              style={styles.tabItem}
+              style={[
+                styles.tabItem,
+                isFocused && styles.tabItemActive,
+              ]}
             >
+              {isFocused && <View style={styles.activeLine} />}
+
               <Image
                 source={tabIcons[route.name]}
                 style={[
                   styles.tabIcon,
-                  { opacity: isFocused ? 1 : 0.5 },
+                  { opacity: isFocused ? 1 : 0.48 },
                 ]}
               />
+
               <Text
                 numberOfLines={1}
                 style={[
@@ -91,51 +97,15 @@ function MainTabs() {
         headerShown: false,
       }}
     >
-      <Tab.Screen
-        name="Home"
-        component={HomeScreen}
-        options={{ tabBarLabel: 'Home' }}
-      />
-      <Tab.Screen
-        name="My Corso"
-        component={MyCorsoScreen}
-        options={{ tabBarLabel: 'My Corso' }}
-      />
-      <Tab.Screen
-        name="Corso Friendly"
-        component={CorsoFriendlyScreen}
-        options={{ tabBarLabel: 'Corso Friendly' }}
-      />
-      <Tab.Screen
-        name="Knowledge"
-        component={KnowledgeScreen}
-        options={{ tabBarLabel: 'Knowledge' }}
-      />
-      <Tab.Screen
-        name="Community"
-        component={CommunityScreen}
-        options={{ tabBarLabel: 'Community' }}
-      />
-      <Tab.Screen
-        name="Services"
-        component={ServicesScreen}
-        options={{ tabBarLabel: 'Services' }}
-      />
-      <Tab.Screen
-        name="Events"
-        component={EventsScreen}
-        options={{ tabBarLabel: 'Events' }}
-      />
-      <Tab.Screen
-        name="Corso Match"
-        component={CorsoMatchScreen}
-        options={{ tabBarLabel: 'Corso Match' }}
-      />
-      <Tab.Screen
-        name="About"
-        component={AboutScreen}
-        options={{ tabBarLabel: 'About USG' }}
-      />
+      <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarLabel: 'Home' }} />
+      <Tab.Screen name="My Corso" component={MyCorsoScreen} options={{ tabBarLabel: 'My Corso' }} />
+      <Tab.Screen name="Corso Friendly" component={CorsoFriendlyScreen} options={{ tabBarLabel: 'Corso Friendly' }} />
+      <Tab.Screen name="Knowledge" component={KnowledgeScreen} options={{ tabBarLabel: 'Knowledge' }} />
+      <Tab.Screen name="Community" component={CommunityScreen} options={{ tabBarLabel: 'Community' }} />
+      <Tab.Screen name="Services" component={ServicesScreen} options={{ tabBarLabel: 'Services' }} />
+      <Tab.Screen name="Events" component={EventsScreen} options={{ tabBarLabel: 'Events' }} />
+      <Tab.Screen name="Corso Match" component={CorsoMatchScreen} options={{ tabBarLabel: 'Corso Match' }} />
+      <Tab.Screen name="About" component={AboutScreen} options={{ tabBarLabel: 'About USG' }} />
     </Tab.Navigator>
   );
 }
@@ -154,14 +124,14 @@ export default function AppNavigator() {
         options={{
           title: 'USG Corso',
           headerStyle: {
-            backgroundColor: '#0d0d0d',
+            backgroundColor: '#0b0b0c',
           },
           headerTintColor: '#d4af37',
           headerTitleStyle: {
             fontWeight: 'bold',
           },
           contentStyle: {
-            backgroundColor: '#0d0d0d',
+            backgroundColor: '#0b0b0c',
           },
         }}
       />
@@ -171,31 +141,45 @@ export default function AppNavigator() {
 
 const styles = StyleSheet.create({
   tabBarContainer: {
-    backgroundColor: '#111111',
+    backgroundColor: '#101011',
     borderTopWidth: 1,
-    borderTopColor: '#302a1d',
+    borderTopColor: '#332a18',
   },
   tabBarContent: {
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingTop: 6,
-    paddingBottom: 8,
+    paddingHorizontal: 6,
+    paddingTop: 4,
+    paddingBottom: 6,
   },
   tabItem: {
-    minWidth: 88,
-    paddingHorizontal: 10,
+    minWidth: 74,
+    minHeight: 46,
+    paddingHorizontal: 8,
+    paddingTop: 4,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 10,
+  },
+  tabItemActive: {
+    backgroundColor: '#18150e',
+  },
+  activeLine: {
+    position: 'absolute',
+    top: 0,
+    width: 28,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: '#d4af37',
   },
   tabIcon: {
-    width: 25,
-    height: 25,
-    borderRadius: 13,
-    marginBottom: 4,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    marginBottom: 3,
   },
   tabLabel: {
     color: '#777777',
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '600',
   },
   tabLabelActive: {

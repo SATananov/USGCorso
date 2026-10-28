@@ -97,59 +97,69 @@ export default function HomeScreen({ navigation }) {
         <Text style={styles.subtitle}>The Cane Corso Mobile Ecosystem</Text>
 
         <View style={styles.menu}>
-          {sections.map((section) => (
-            <View key={section.id} style={styles.section}>
-              <Pressable
-                style={styles.sectionHeader}
-                onPress={() => toggleSection(section.id)}
+          {sections.map((section) => {
+            const isOpen = openSection === section.id;
+
+            return (
+              <View
+                key={section.id}
+                style={[
+                  styles.section,
+                  isOpen && styles.sectionOpen,
+                ]}
               >
-                <View style={styles.sectionTitleRow}>
-                  <Image source={section.icon} style={styles.sectionIconImage} />
-                  <Text
-                    style={[
-                      styles.sectionHeaderText,
-                      section.id === 'services' && styles.longSectionTitle,
-                    ]}
-                  >
-                    {section.title}
+                <Pressable
+                  style={styles.sectionHeader}
+                  onPress={() => toggleSection(section.id)}
+                >
+                  <View style={styles.sectionTitleRow}>
+                    <Image source={section.icon} style={styles.sectionIconImage} />
+                    <Text
+                      style={[
+                        styles.sectionHeaderText,
+                        section.id === 'services' && styles.longSectionTitle,
+                      ]}
+                    >
+                      {section.title}
+                    </Text>
+                  </View>
+
+                  <Text style={styles.sectionToggle}>
+                    {isOpen ? '−' : '+'}
                   </Text>
-                </View>
+                </Pressable>
 
-                <Text style={styles.sectionToggle}>
-                  {openSection === section.id ? '−' : '+'}
-                </Text>
-              </Pressable>
+                {isOpen && (
+                  <View style={styles.sectionContent}>
+                    {section.id === 'about' ? (
+                      <>
+                        <Text style={styles.aboutText}>
+                          USG promotes knowledge, responsibility and community around Cane Corso.
+                          It does not exist to sell dogs or to compete with canine organizations.
+                        </Text>
 
-              {openSection === section.id && (
-                <View style={styles.sectionContent}>
-                  {section.id === 'about' ? (
-                    <>
-                      <Text style={styles.aboutText}>
-                        USG promotes knowledge, responsibility and community around Cane Corso.
-                        It does not exist to sell dogs or to compete with canine organizations.
-                      </Text>
-
-                      <Text style={styles.philosophy}>FUNZIONE CREA IL TIPO</Text>
-                      <Text style={styles.philosophySmall}>
-                        ФУНКЦИЯТА СЪЗДАВА ТИПА
-                      </Text>
-                    </>
-                  ) : (
-                    section.items.map((item) => (
-                      <Pressable
-                        key={item}
-                        style={styles.menuItem}
-                        onPress={() => openItem(item)}
-                      >
-                        <Text style={styles.menuItemText}>{item}</Text>
-                        <Text style={styles.menuItemArrow}>›</Text>
-                      </Pressable>
-                    ))
-                  )}
-                </View>
-              )}
-            </View>
-          ))}
+                        <Text style={styles.philosophy}>FUNZIONE CREA IL TIPO</Text>
+                        <Text style={styles.philosophySmall}>
+                          ФУНКЦИЯТА СЪЗДАВА ТИПА
+                        </Text>
+                      </>
+                    ) : (
+                      section.items.map((item) => (
+                        <Pressable
+                          key={item}
+                          style={styles.menuItem}
+                          onPress={() => openItem(item)}
+                        >
+                          <Text style={styles.menuItemText}>{item}</Text>
+                          <Text style={styles.menuItemArrow}>›</Text>
+                        </Pressable>
+                      ))
+                    )}
+                  </View>
+                )}
+              </View>
+            );
+          })}
         </View>
 
         <View style={styles.footer}>
@@ -220,10 +230,20 @@ const styles = StyleSheet.create({
   section: {
     backgroundColor: '#141414',
     borderWidth: 1,
-    borderColor: '#302a1d',
+    borderColor: '#8f6418',
     borderRadius: 12,
     marginBottom: 7,
     overflow: 'hidden',
+    shadowColor: '#d4af37',
+    shadowOpacity: 0.08,
+    shadowRadius: 5,
+    elevation: 1,
+  },
+  sectionOpen: {
+    borderColor: '#d4af37',
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    elevation: 3,
   },
   sectionHeader: {
     minHeight: 56,
@@ -262,7 +282,7 @@ const styles = StyleSheet.create({
   },
   sectionContent: {
     borderTopWidth: 1,
-    borderTopColor: '#29251c',
+    borderTopColor: '#5d4318',
     paddingHorizontal: 12,
     paddingVertical: 4,
   },
