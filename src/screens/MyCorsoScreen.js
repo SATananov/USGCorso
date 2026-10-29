@@ -1,6 +1,7 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
+  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -13,12 +14,18 @@ import {
   View,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '../auth/AuthContext';
 import GeoSelector from '../components/GeoSelector';
 import USGProgressBar from '../components/USGProgressBar';
 import { dogCopy } from '../dogs/dogCopy';
+import {
+  deleteDogPhoto,
+  getDogPhotoUrl,
+  uploadDogPhoto,
+} from '../dogs/dogPhotoService';
 import {
   createDog,
   deleteDog,
@@ -46,6 +53,45 @@ const EMPTY_FORM = {
   communityVisible: false,
 };
 
+const photoCopy = {
+  bg: {
+    addPhoto: 'КАЧИ СНИМКА',
+    changePhoto: 'СМЕНИ СНИМКА',
+    removePhoto: 'ИЗТРИЙ СНИМКА',
+    removePhotoConfirm: 'Сигурни ли сте, че искате да изтриете снимката на Корсо?',
+    photoWorking: 'ОБРАБОТВА СЕ...',
+    permission: 'Нужно е разрешение за достъп до снимките.',
+    uploadError: 'Снимката на Корсо не можа да се качи.',
+    uploaded: 'Снимката на Корсо е запазена.',
+    removeError: 'Снимката на Корсо не можа да се изтрие.',
+    removed: 'Снимката на Корсо е изтрита.',
+  },
+  en: {
+    addPhoto: 'ADD PHOTO',
+    changePhoto: 'CHANGE PHOTO',
+    removePhoto: 'REMOVE PHOTO',
+    removePhotoConfirm: 'Are you sure you want to remove the Corso photo?',
+    photoWorking: 'WORKING...',
+    permission: 'Photo library permission is required.',
+    uploadError: 'The Corso photo could not be uploaded.',
+    uploaded: 'The Corso photo was saved.',
+    removeError: 'The Corso photo could not be removed.',
+    removed: 'The Corso photo was removed.',
+  },
+  it: {
+    addPhoto: 'AGGIUNGI FOTO',
+    changePhoto: 'CAMBIA FOTO',
+    removePhoto: 'RIMUOVI FOTO',
+    removePhotoConfirm: 'Vuoi rimuovere la foto del Corso?',
+    photoWorking: 'ELABORAZIONE...',
+    permission: 'È necessaria l’autorizzazione per accedere alle foto.',
+    uploadError: 'Impossibile caricare la foto del Corso.',
+    uploaded: 'La foto del Corso è stata salvata.',
+    removeError: 'Impossibile rimuovere la foto del Corso.',
+    removed: 'La foto del Corso è stata rimossa.',
+  },
+};
+
 const COLOR_OPTIONS = [
   'black',
   'gray',
@@ -70,6 +116,7 @@ export default function MyCorsoScreen({ route, navigation }) {
   const [openFormSection, setOpenFormSection] = useState('basic');
   const [loading, setLoading] = useState(Boolean(user));
   const [saving, setSaving] = useState(false);
+  const [photoBusyId, setPhotoBusyId] = useState(null);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [countries, setCountries] = useState([]);
@@ -294,6 +341,96 @@ export default function MyCorsoScreen({ route, navigation }) {
     await loadDogs();
   }
 
+  async function handlePhotoUpload(dog) {
+    if (!user || photoBusyId) {
+      return;
+    }
+
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permission.granted) {
+      setError(photoCopy[language]?.permission ?? photoCopy.en.permission);
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.85,
+    });
+
+    if (result.canceled || !result.assets?.length) {
+      return;
+    }
+
+    const asset = result.assets[0];
+    setPhotoBusyId(dog.id);
+    setError('');
+    setMessage('');
+
+    try {
+      const uploadResult = await uploadDogPhoto(
+        user.id,
+        dog.id,
+        asset.uri,
+        asset.mimeType
+      );
+
+      if (uploadResult.error) {
+        setError(photoCopy[language]?.uploadError ?? photoCopy.en.uploadError);
+        return;
+      }
+
+      setMessage(photoCopy[language]?.uploaded ?? photoCopy.en.uploaded);
+      await loadDogs();
+    } finally {
+      setPhotoBusyId(null);
+    }
+  }
+
+  function handlePhotoDelete(dog) {
+    const text = photoCopy[language] ?? photoCopy.en;
+
+    Alert.alert(text.removePhoto, text.removePhotoConfirm, [
+      {
+        text: copy.no,
+        style: 'cancel',
+      },
+      {
+        text: text.removePhoto,
+        style: 'destructive',
+        onPress: async () => {
+          if (!user || photoBusyId) {
+            return;
+          }
+
+          setPhotoBusyId(dog.id);
+          setError('');
+          setMessage('');
+
+          try {
+            const result = await deleteDogPhoto(
+              user.id,
+              dog.id,
+              dog.photo_path
+            );
+
+            if (result.error) {
+              setError(text.removeError);
+              return;
+            }
+
+            setMessage(text.removed);
+            await loadDogs();
+          } finally {
+            setPhotoBusyId(null);
+          }
+        },
+      },
+    ]);
+  }
+
   function handleDelete(dog) {
     Alert.alert(copy.confirmDelete, copy.confirmDeleteText, [
       {
@@ -390,14 +527,23 @@ export default function MyCorsoScreen({ route, navigation }) {
           ) : dogs.length ? (
             <View style={styles.list}>
               {dogs.map((dog) => (
-                <DogCard
-                  key={dog.id}
-                  dog={dog}
-                  copy={copy}
-                  styles={styles}
-                  onEdit={() => openEditDog(dog)}
-                  onDelete={() => handleDelete(dog)}
-                />
+                <View key={dog.id} style={styles.dogCardWrap}>
+                  <DogPhotoPanel
+                    dog={dog}
+                    language={language}
+                    styles={styles}
+                    busy={photoBusyId === dog.id}
+                    onUpload={() => handlePhotoUpload(dog)}
+                    onDelete={() => handlePhotoDelete(dog)}
+                  />
+                  <DogCard
+                    dog={dog}
+                    copy={copy}
+                    styles={styles}
+                    onEdit={() => openEditDog(dog)}
+                    onDelete={() => handleDelete(dog)}
+                  />
+                </View>
               ))}
             </View>
           ) : !error ? (
@@ -667,6 +813,115 @@ function AccordionSection({ title, open, onPress, styles, children }) {
         <Text style={styles.accordionToggle}>{open ? '−' : '+'}</Text>
       </Pressable>
       {open ? <View style={styles.accordionContent}>{children}</View> : null}
+    </View>
+  );
+}
+
+function DogPhotoPanel({
+  dog,
+  language,
+  styles,
+  busy,
+  onUpload,
+  onDelete,
+}) {
+  const text = photoCopy[language] ?? photoCopy.en;
+  const [photoUrl, setPhotoUrl] = useState('');
+  const [previewOpen, setPreviewOpen] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadPhoto() {
+      if (!dog.photo_path) {
+        setPhotoUrl('');
+        return;
+      }
+
+      const { data } = await getDogPhotoUrl(dog.photo_path);
+
+      if (active) {
+        setPhotoUrl(data ?? '');
+      }
+    }
+
+    loadPhoto();
+
+    return () => {
+      active = false;
+    };
+  }, [dog.photo_path]);
+
+  return (
+    <View style={styles.photoPanel}>
+      <View style={styles.photoFrame}>
+        {photoUrl ? (
+          <Pressable style={styles.photoTapTarget} onPress={() => setPreviewOpen(true)}>
+            <Image
+              source={{ uri: photoUrl }}
+              style={styles.dogPhoto}
+              resizeMode="contain"
+            />
+          </Pressable>
+        ) : (
+          <View style={styles.photoFallback}>
+            <Text style={styles.photoFallbackText}>
+              {(dog.name || 'C').slice(0, 1).toUpperCase()}
+            </Text>
+          </View>
+        )}
+      </View>
+
+      <Modal
+        visible={previewOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPreviewOpen(false)}
+      >
+        <Pressable
+          style={styles.photoPreviewBackdrop}
+          onPress={() => setPreviewOpen(false)}
+        >
+          <Pressable
+            style={styles.photoPreviewClose}
+            onPress={() => setPreviewOpen(false)}
+          >
+            <Text style={styles.photoPreviewCloseText}>×</Text>
+          </Pressable>
+
+          <Image
+            source={{ uri: photoUrl }}
+            style={styles.photoPreviewImage}
+            resizeMode="contain"
+          />
+        </Pressable>
+      </Modal>
+
+      <View style={styles.photoActions}>
+        <Pressable
+          style={styles.photoPrimaryButton}
+          onPress={onUpload}
+          disabled={busy}
+        >
+          <Text style={styles.photoPrimaryText}>
+            {busy
+              ? text.photoWorking
+              : dog.photo_path
+                ? text.changePhoto
+                : text.addPhoto}
+          </Text>
+        </Pressable>
+
+        {dog.photo_path ? (
+          <Pressable
+            style={styles.photoSecondaryButton}
+            onPress={onDelete}
+            disabled={busy}
+          >
+            <Text style={styles.photoSecondaryText}>{text.removePhoto}</Text>
+          </Pressable>
+        ) : null}
+      </View>
     </View>
   );
 }
@@ -1117,6 +1372,111 @@ function createStyles(colors) {
     },
     savingWrap: { flex: 1 },
     list: { marginTop: 12, gap: 12 },
+    dogCardWrap: {
+      borderRadius: radius.lg,
+      overflow: 'hidden',
+    },
+    photoPanel: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderBottomWidth: 0,
+      borderTopLeftRadius: radius.lg,
+      borderTopRightRadius: radius.lg,
+      backgroundColor: colors.surface,
+      padding: 12,
+    },
+    photoFrame: {
+      width: '100%',
+      aspectRatio: 16 / 10,
+      borderRadius: radius.md,
+      overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.background,
+    },
+    photoTapTarget: {
+      width: '100%',
+      height: '100%',
+    },
+    dogPhoto: {
+      width: '100%',
+      height: '100%',
+    },
+    photoPreviewBackdrop: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.96)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 18,
+    },
+    photoPreviewImage: {
+      width: '100%',
+      height: '82%',
+    },
+    photoPreviewClose: {
+      position: 'absolute',
+      top: 48,
+      right: 22,
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: colors.gold,
+      backgroundColor: colors.surface,
+      zIndex: 2,
+    },
+    photoPreviewCloseText: {
+      color: colors.gold,
+      fontSize: 30,
+      lineHeight: 32,
+    },
+    photoFallback: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.activeSurface,
+    },
+    photoFallbackText: {
+      color: colors.gold,
+      fontSize: 42,
+      fontWeight: '900',
+    },
+    photoActions: {
+      flexDirection: 'row',
+      gap: 8,
+      marginTop: 10,
+    },
+    photoPrimaryButton: {
+      flex: 1,
+      minHeight: 38,
+      borderRadius: 9,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.gold,
+      paddingHorizontal: 10,
+    },
+    photoPrimaryText: {
+      color: colors.background,
+      fontSize: 9,
+      fontWeight: '900',
+    },
+    photoSecondaryButton: {
+      flex: 1,
+      minHeight: 38,
+      borderRadius: 9,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: 10,
+    },
+    photoSecondaryText: {
+      color: colors.textSoft,
+      fontSize: 9,
+      fontWeight: '800',
+    },
     dogCard: {
       borderRadius: radius.lg,
       borderWidth: 1,

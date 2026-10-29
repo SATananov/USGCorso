@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase';
 
 const DOG_FIELDS =
-  'id, owner_id, name, sex, color, birth_date, country, city, kennel, breeder, registration_number, description, community_visible, created_at, updated_at';
+  'id, owner_id, name, sex, color, birth_date, country, city, kennel, breeder, registration_number, description, community_visible, photo_path, created_at, updated_at';
 
 export async function getMyDogs(userId) {
   if (!userId) {
@@ -64,6 +64,27 @@ export async function updateDog(userId, dogId, dog) {
 }
 
 export async function deleteDog(userId, dogId) {
+  const { data: dog, error: loadError } = await supabase
+    .from('dogs')
+    .select('photo_path')
+    .eq('id', dogId)
+    .eq('owner_id', userId)
+    .maybeSingle();
+
+  if (loadError) {
+    return { data: null, error: loadError };
+  }
+
+  if (dog?.photo_path) {
+    const removeResult = await supabase.storage
+      .from('corso-photos')
+      .remove([dog.photo_path]);
+
+    if (removeResult.error) {
+      return { data: null, error: removeResult.error };
+    }
+  }
+
   return supabase
     .from('dogs')
     .delete()

@@ -215,7 +215,12 @@ export default function HomeScreen({ navigation }) {
                         <Pressable
                           key={item}
                           style={styles.menuItem}
-                          onPress={() => openItem(item)}
+                          onPress={() =>
+                            section.id === 'community' &&
+                            item === items[items.length - 1]
+                              ? navigation.navigate('Community')
+                              : openItem(item)
+                          }
                         >
                           <Text style={styles.menuItemText}>{item}</Text>
                           <Text style={styles.menuItemArrow}>›</Text>
@@ -510,5 +515,6 @@ function createStyles(colors) {
     modalHint: { color: '#b8b8b8', fontSize: 12, marginTop: 10 },
   });
 }
+
 
 
