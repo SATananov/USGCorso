@@ -42,21 +42,6 @@ export default function HomeScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.topRow}>
-          <View style={styles.topRowSpacer} />
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t('settings.title')}
-            onPress={() => navigation.navigate('Settings')}
-            style={({ pressed }) => [
-              styles.settingsButton,
-              pressed && styles.settingsButtonPressed,
-            ]}
-          >
-            <Text style={styles.settingsIcon}>⚙</Text>
-          </Pressable>
-        </View>
-
         <Pressable style={styles.heroBox} onPress={() => setShowHero(true)}>
           <Image
             source={require('../../assets/ecosystem-hero.png')}
@@ -173,34 +158,6 @@ function createStyles(colors) {
       paddingHorizontal: 18,
       paddingTop: 10,
       paddingBottom: 28,
-    },
-    topRow: {
-      minHeight: 42,
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    },
-    topRowSpacer: {
-      width: 42,
-    },
-    settingsButton: {
-      width: 42,
-      height: 42,
-      borderRadius: 21,
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.surface,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    settingsButtonPressed: {
-      borderColor: colors.gold,
-      backgroundColor: colors.activeSurface,
-    },
-    settingsIcon: {
-      color: colors.gold,
-      fontSize: 22,
-      lineHeight: 24,
     },
     heroBox: {
       width: '100%',

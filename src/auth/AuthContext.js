@@ -9,9 +9,13 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let active = true;
+
     supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setLoading(false);
+      if (active) {
+        setSession(data.session);
+        setLoading(false);
+      }
     });
 
     const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
@@ -20,9 +24,28 @@ export function AuthProvider({ children }) {
     });
 
     return () => {
+      active = false;
       data.subscription.unsubscribe();
     };
   }, []);
+
+  async function signIn(email, password) {
+    return supabase.auth.signInWithPassword({
+      email: email.trim().toLowerCase(),
+      password,
+    });
+  }
+
+  async function signUp(email, password) {
+    return supabase.auth.signUp({
+      email: email.trim().toLowerCase(),
+      password,
+    });
+  }
+
+  async function signOut() {
+    return supabase.auth.signOut();
+  }
 
   return (
     <AuthContext.Provider
@@ -30,6 +53,9 @@ export function AuthProvider({ children }) {
         session,
         user: session?.user ?? null,
         loading,
+        signIn,
+        signUp,
+        signOut,
       }}
     >
       {children}

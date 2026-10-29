@@ -1,8 +1,8 @@
-export const translations = {
+﻿export const translations = {
   en: {
     intro: {
       tagline: 'The Global Cane Corso Mobile Ecosystem',
-      explore: 'EXPLORE',
+      explore: 'CONTINUE',
     },
     nav: {
       home: 'Home',
@@ -191,7 +191,7 @@ export const translations = {
   bg: {
     intro: {
       tagline: 'Глобалната мобилна екосистема за Кане Корсо',
-      explore: 'РАЗГЛЕДАЙ',
+      explore: 'ПРОДЪЛЖИ',
     },
     nav: {
       home: 'Начало',
@@ -380,7 +380,7 @@ export const translations = {
   it: {
     intro: {
       tagline: 'L’ecosistema mobile globale del Cane Corso',
-      explore: 'ESPLORA',
+      explore: 'CONTINUA',
     },
     nav: {
       home: 'Home',
@@ -566,3 +566,4 @@ export const translations = {
     },
   },
 };
+

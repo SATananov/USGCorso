@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+﻿import { useMemo } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -21,6 +21,7 @@ import LegalScreen from '../screens/LegalScreen';
 import HelpSupportScreen from '../screens/HelpSupportScreen';
 import { useLanguage } from '../i18n/LanguageContext';
 import USGBackButton from '../components/USGBackButton';
+import USGGlobalHeader from '../components/USGGlobalHeader';
 import { useTheme } from '../theme/ThemeContext';
 
 const Stack = createNativeStackNavigator();
@@ -108,9 +109,22 @@ function MainTabs() {
   return (
     <Tab.Navigator
       tabBar={(props) => <ScrollableTabBar {...props} />}
-      screenOptions={{
-        headerShown: false,
-      }}
+      screenOptions={({ navigation, route }) => ({
+        headerShown: true,
+        header: () => (
+          <USGGlobalHeader
+            navigation={navigation}
+            route={route}
+            title={t(`nav.${route.name === 'My Corso'
+              ? 'myCorso'
+              : route.name === 'Corso Friendly'
+                ? 'corsoFriendly'
+                : route.name === 'Corso Match'
+                  ? 'corsoMatch'
+                  : route.name.toLowerCase()}`)}
+          />
+        ),
+      })}
     >
       <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarLabel: t('nav.home') }} />
       <Tab.Screen name="My Corso" component={MyCorsoScreen} options={{ tabBarLabel: t('nav.myCorso') }} />
@@ -242,3 +256,5 @@ function createStyles(colors) {
     },
   });
 }
+
+

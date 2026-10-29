@@ -9,13 +9,18 @@ import {
 import AppNavigator from './src/navigation/AppNavigator';
 import USGIntro3DDirect from './src/components/USGIntro3DDirect';
 import { AppControlProvider } from './src/app/AppControlContext';
-import { AuthProvider } from './src/auth/AuthContext';
+import { AuthProvider, useAuth } from './src/auth/AuthContext';
+import AuthGateway from './src/auth/AuthGateway';
+import AuthLoadingScreen from './src/auth/AuthLoadingScreen';
+import AuthSignedInBanner from './src/auth/AuthSignedInBanner';
 import { LanguageProvider } from './src/i18n/LanguageContext';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 
 function AppContent() {
   const [showIntro, setShowIntro] = useState(true);
+  const [guestMode, setGuestMode] = useState(false);
   const { isDark, colors } = useTheme();
+  const { session, loading } = useAuth();
 
   const replayIntro = useCallback(() => {
     setShowIntro(true);
@@ -25,9 +30,25 @@ function AppContent() {
     return (
       <AppControlProvider replayIntro={replayIntro}>
         <StatusBar style="light" />
-        <USGIntro3DDirect
-          onExplore={() => setShowIntro(false)}
-        />
+        <USGIntro3DDirect onExplore={() => setShowIntro(false)} />
+      </AppControlProvider>
+    );
+  }
+
+  if (loading) {
+    return (
+      <AppControlProvider replayIntro={replayIntro}>
+        <StatusBar style={isDark ? 'light' : 'dark'} />
+        <AuthLoadingScreen />
+      </AppControlProvider>
+    );
+  }
+
+  if (!session && !guestMode) {
+    return (
+      <AppControlProvider replayIntro={replayIntro}>
+        <StatusBar style={isDark ? 'light' : 'dark'} />
+        <AuthGateway onContinueGuest={() => setGuestMode(true)} />
       </AppControlProvider>
     );
   }
@@ -52,6 +73,7 @@ function AppContent() {
     <AppControlProvider replayIntro={replayIntro}>
       <NavigationContainer theme={navigationTheme}>
         <StatusBar style={isDark ? 'light' : 'dark'} />
+        <AuthSignedInBanner />
         <AppNavigator />
       </NavigationContainer>
     </AppControlProvider>
