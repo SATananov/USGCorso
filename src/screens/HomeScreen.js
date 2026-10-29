@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+﻿import { useCallback, useMemo, useState } from 'react';
 import {
   Image,
   Modal,
@@ -12,6 +12,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '../auth/AuthContext';
+import { dogCopy } from '../dogs/dogCopy';
+import { getMyDogs } from '../dogs/dogService';
 import { useLanguage } from '../i18n/LanguageContext';
 import { profileCopy } from '../profile/profileCopy';
 import { getMyProfile, isLocalProfileReady } from '../profile/profileService';
@@ -33,31 +35,41 @@ export default function HomeScreen({ navigation }) {
   const { colors } = useTheme();
   const { user } = useAuth();
   const copy = profileCopy[language] ?? profileCopy.en;
+  const dogText = dogCopy[language] ?? dogCopy.en;
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [openSection, setOpenSection] = useState(null);
   const [showHero, setShowHero] = useState(false);
   const [profileIncomplete, setProfileIncomplete] = useState(false);
+  const [dogCount, setDogCount] = useState(null);
 
   useFocusEffect(
     useCallback(() => {
       let active = true;
 
-      async function checkProfile() {
+      async function loadHomeState() {
         if (!user) {
           if (active) {
             setProfileIncomplete(false);
+            setDogCount(null);
           }
           return;
         }
 
-        const { data, error } = await getMyProfile(user.id);
+        const [{ data: profile, error: profileError }, { data: dogs, error: dogsError }] =
+          await Promise.all([
+            getMyProfile(user.id),
+            getMyDogs(user.id),
+          ]);
 
-        if (active) {
-          setProfileIncomplete(!error && !isLocalProfileReady(data));
+        if (!active) {
+          return;
         }
+
+        setProfileIncomplete(!profileError && !isLocalProfileReady(profile));
+        setDogCount(dogsError ? null : (dogs?.length ?? 0));
       }
 
-      checkProfile();
+      loadHomeState();
 
       return () => {
         active = false;
@@ -75,6 +87,30 @@ export default function HomeScreen({ navigation }) {
 
   function openProfile() {
     navigation.getParent()?.navigate('AccountSettings');
+  }
+
+  function openMyCorso() {
+    navigation.navigate('My Corso');
+  }
+
+  function addDog() {
+    navigation.navigate('My Corso', { openAddDog: true });
+  }
+
+  function dogStatusText() {
+    if (dogCount === null) {
+      return '';
+    }
+
+    if (dogCount === 0) {
+      return dogText.noDogsHome;
+    }
+
+    if (dogCount === 1) {
+      return dogText.dogCountOne;
+    }
+
+    return `${dogCount} ${dogText.dogCountMany}`;
   }
 
   return (
@@ -126,20 +162,43 @@ export default function HomeScreen({ navigation }) {
                 >
                   <View style={styles.sectionTitleRow}>
                     <Image source={section.icon} style={styles.sectionIconImage} />
-                    <Text
-                      style={[
-                        styles.sectionHeaderText,
-                        section.id === 'services' && styles.longSectionTitle,
-                      ]}
-                    >
-                      {title}
-                    </Text>
+                    <View style={styles.sectionTitleTextWrap}>
+                      <Text
+                        style={[
+                          styles.sectionHeaderText,
+                          section.id === 'services' && styles.longSectionTitle,
+                        ]}
+                      >
+                        {title}
+                      </Text>
+
+                    </View>
                   </View>
 
                   <Text style={styles.sectionToggle}>
                     {isOpen ? '−' : '+'}
                   </Text>
                 </Pressable>
+
+                {section.id === 'myCorso' ? (
+                  <View style={styles.myCorsoActions}>
+                    <Pressable style={styles.myCorsoOpenButton} onPress={openMyCorso}>
+                      <Text style={styles.myCorsoOpenButtonText}>
+                        {dogText.viewDogs}
+                      </Text>
+                      {dogCount !== null ? (
+                        <View style={styles.myCorsoCountBadge}>
+                          <Text style={styles.myCorsoCountText}>{dogCount}</Text>
+                        </View>
+                      ) : null}
+                    </Pressable>
+                    <Pressable style={styles.myCorsoAddButton} onPress={addDog}>
+                      <Text style={styles.myCorsoAddButtonText}>
+                        + {dogText.addDog}
+                      </Text>
+                    </Pressable>
+                  </View>
+                ) : null}
 
                 {isOpen ? (
                   <View style={styles.sectionContent}>
@@ -200,10 +259,7 @@ export default function HomeScreen({ navigation }) {
 
 function createStyles(colors) {
   return StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.background,
-    },
+    container: { flex: 1, backgroundColor: colors.background },
     content: {
       paddingHorizontal: 18,
       paddingTop: 10,
@@ -216,10 +272,7 @@ function createStyles(colors) {
       alignItems: 'center',
       marginBottom: 10,
     },
-    hero: {
-      width: '100%',
-      height: '100%',
-    },
+    hero: { width: '100%', height: '100%' },
     title: {
       color: colors.text,
       fontSize: 27,
@@ -250,9 +303,7 @@ function createStyles(colors) {
       marginTop: 5,
       marginRight: 10,
     },
-    profileWarningText: {
-      flex: 1,
-    },
+    profileWarningText: { flex: 1 },
     profileWarningTitle: {
       color: colors.gold,
       fontSize: 12,
@@ -279,9 +330,7 @@ function createStyles(colors) {
       fontWeight: '900',
       letterSpacing: 0.6,
     },
-    menu: {
-      width: '100%',
-    },
+    menu: { width: '100%' },
     section: {
       backgroundColor: colors.surface,
       borderWidth: 1,
@@ -319,6 +368,10 @@ function createStyles(colors) {
       marginRight: 11,
       borderRadius: 21,
     },
+    sectionTitleTextWrap: {
+      flex: 1,
+      minWidth: 0,
+    },
     sectionHeaderText: {
       flexShrink: 1,
       color: colors.text,
@@ -335,6 +388,63 @@ function createStyles(colors) {
       fontSize: 22,
       marginLeft: 8,
     },
+    myCorsoActions: {
+      flexDirection: 'row',
+      gap: 8,
+      paddingHorizontal: 12,
+      paddingBottom: 10,
+    },
+    myCorsoOpenButton: {
+      flex: 1,
+      minHeight: 48,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: 9,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: 10,
+      paddingVertical: 8,
+    },
+    myCorsoOpenButtonText: {
+      color: colors.textSoft,
+      fontSize: 9,
+      fontWeight: '800',
+      textAlign: 'center',
+    },
+    myCorsoCountBadge: {
+      minWidth: 22,
+      height: 22,
+      borderRadius: 11,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.activeSurface,
+      borderWidth: 1,
+      borderColor: colors.gold,
+      marginLeft: 8,
+      paddingHorizontal: 6,
+    },
+    myCorsoCountText: {
+      color: colors.gold,
+      fontSize: 10,
+      fontWeight: '900',
+    },
+    myCorsoAddButton: {
+      flex: 1,
+      minHeight: 48,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: 9,
+      backgroundColor: colors.gold,
+      paddingHorizontal: 10,
+      paddingVertical: 8,
+    },
+    myCorsoAddButtonText: {
+      color: colors.background,
+      fontSize: 9,
+      fontWeight: '900',
+      textAlign: 'center',
+    },
     sectionContent: {
       borderTopWidth: 1,
       borderTopColor: colors.border,
@@ -349,14 +459,8 @@ function createStyles(colors) {
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
     },
-    menuItemText: {
-      color: colors.gold,
-      fontSize: 14,
-    },
-    menuItemArrow: {
-      color: colors.goldSoft,
-      fontSize: 22,
-    },
+    menuItemText: { color: colors.gold, fontSize: 14 },
+    menuItemArrow: { color: colors.goldSoft, fontSize: 22 },
     aboutText: {
       color: colors.textSoft,
       fontSize: 12,
@@ -377,19 +481,9 @@ function createStyles(colors) {
       marginTop: 4,
       marginBottom: 8,
     },
-    footer: {
-      alignItems: 'center',
-      marginTop: 10,
-    },
-    footerBrand: {
-      color: colors.textMuted,
-      fontSize: 11,
-    },
-    footerRights: {
-      color: colors.textMuted,
-      fontSize: 10,
-      marginTop: 2,
-    },
+    footer: { alignItems: 'center', marginTop: 10 },
+    footerBrand: { color: colors.textMuted, fontSize: 11 },
+    footerRights: { color: colors.textMuted, fontSize: 10, marginTop: 2 },
     modalBackground: {
       flex: 1,
       backgroundColor: colors.overlay,
@@ -397,10 +491,7 @@ function createStyles(colors) {
       alignItems: 'center',
       padding: 16,
     },
-    modalImage: {
-      width: '100%',
-      height: '78%',
-    },
+    modalImage: { width: '100%', height: '78%' },
     closeButton: {
       position: 'absolute',
       top: 46,
@@ -415,15 +506,9 @@ function createStyles(colors) {
       justifyContent: 'center',
       zIndex: 2,
     },
-    closeButtonText: {
-      color: colors.gold,
-      fontSize: 30,
-      lineHeight: 32,
-    },
-    modalHint: {
-      color: '#b8b8b8',
-      fontSize: 12,
-      marginTop: 10,
-    },
+    closeButtonText: { color: colors.gold, fontSize: 30, lineHeight: 32 },
+    modalHint: { color: '#b8b8b8', fontSize: 12, marginTop: 10 },
   });
 }
+
+
