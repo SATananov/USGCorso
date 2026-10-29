@@ -15,6 +15,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppControls } from '../app/AppControlContext';
 import { requestHeaderPanel } from '../app/headerPanelRequest';
 import { accountSettingsCopy, formatMemberSince } from '../account/accountSettingsCopy';
+import { adminCopy } from '../admin/adminCopy';
+import { getMyRole } from '../admin/adminService';
 import { accountCopy } from '../auth/accountCopy';
 import { useAuth } from '../auth/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -373,11 +375,13 @@ function AccountPanel({ navigation, onClose }) {
   const [passwordBusy, setPasswordBusy] = useState(false);
   const [accountMessage, setAccountMessage] = useState('');
   const [accountError, setAccountError] = useState('');
+  const [isAdmin, setIsAdmin] = useState(false);
   const styles = useMemo(() => createStyles(colors), [colors]);
   const labels = copy[language] ?? copy.en;
   const authLabels = accountCopy[language] ?? accountCopy.en;
   const profileLabels = profileCopy[language] ?? profileCopy.en;
   const accountLabels = accountSettingsCopy[language] ?? accountSettingsCopy.en;
+  const adminLabels = adminCopy[language] ?? adminCopy.en;
   const initial = user?.email?.trim()?.charAt(0)?.toUpperCase() || 'G';
   const avatar = profile?.avatar_preset
     ? getAvatarPreset(profile.avatar_preset)
@@ -422,6 +426,31 @@ function AccountPanel({ navigation, onClose }) {
     };
   }, [profileLabels.loadError, user]);
 
+  useEffect(() => {
+    let active = true;
+
+    async function loadRole() {
+      if (!user) {
+        if (active) {
+          setIsAdmin(false);
+        }
+        return;
+      }
+
+      const { data } = await getMyRole(user.id);
+
+      if (active) {
+        setIsAdmin(data?.role === 'admin');
+      }
+    }
+
+    loadRole();
+
+    return () => {
+      active = false;
+    };
+  }, [user]);
+
   function toggle(key) {
     setOpenKey((current) => (current === key ? null : key));
   }
@@ -431,6 +460,12 @@ function AccountPanel({ navigation, onClose }) {
     onClose();
     navigation.getParent()?.navigate('AccountSettings');
   }
+
+  function openAdmin() {
+    onClose();
+    navigation.getParent()?.navigate('Admin');
+  }
+
   async function sendPasswordReset() {
     if (!user?.email || passwordBusy) {
       return;
@@ -599,6 +634,17 @@ function AccountPanel({ navigation, onClose }) {
             <Text style={styles.hint}>{profileLabels.avatarHint}</Text>
             <ActionButton label={labels.open} onPress={openAccount} />
           </AccordionRow>
+
+          {isAdmin ? (
+            <AccordionRow
+              title={adminLabels.panelTitle}
+              open={openKey === 'admin'}
+              onPress={() => toggle('admin')}
+            >
+              <Text style={styles.hint}>{adminLabels.panelHint}</Text>
+              <ActionButton label={adminLabels.open} onPress={openAdmin} />
+            </AccordionRow>
+          ) : null}
 
           <AccordionRow
             title={labels.signOut}
@@ -959,6 +1005,7 @@ function createStyles(colors) {
     },
   });
 }
+
 
 
 

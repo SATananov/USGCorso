@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import AboutScreen from '../screens/AboutScreen';
+import AdminScreen from '../screens/AdminScreen';
 import CommunityScreen from '../screens/CommunityScreen';
 import CorsoFriendlyScreen from '../screens/CorsoFriendlyScreen';
 import CorsoMatchScreen from '../screens/CorsoMatchScreen';
@@ -174,6 +175,11 @@ export default function AppNavigator() {
         options={{ title: 'USG Corso' }}
       />
       <Stack.Screen
+        name="Admin"
+        component={AdminScreen}
+        options={{ title: 'USG Admin' }}
+      />
+      <Stack.Screen
         name="Settings"
         component={SettingsScreen}
         options={{ title: t('settings.title') }}
@@ -256,5 +262,6 @@ function createStyles(colors) {
     },
   });
 }
+
 
 

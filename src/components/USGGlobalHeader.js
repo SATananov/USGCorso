@@ -1,9 +1,11 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '../auth/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
+import { getAvatarPreset } from '../profile/avatarPresets';
+import { getMyProfile } from '../profile/profileService';
 import { useTheme } from '../theme/ThemeContext';
 import USGHeaderPanels from './USGHeaderPanels';
 import { consumeHeaderPanel } from '../app/headerPanelRequest';
@@ -15,6 +17,34 @@ export default function USGGlobalHeader({ navigation, route, title }) {
   const insets = useSafeAreaInsets();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [panel, setPanel] = useState(null);
+  const [profile, setProfile] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadProfile() {
+      if (!user?.id) {
+        if (active) {
+          setProfile(null);
+        }
+        return;
+      }
+
+      const { data } = await getMyProfile(user.id);
+
+      if (active) {
+        setProfile(data ?? null);
+      }
+    }
+
+    loadProfile();
+    const unsubscribe = navigation.addListener('focus', loadProfile);
+
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, [navigation, user?.id]);
 
   useEffect(() => {
     const openRequestedPanel = () => {
@@ -40,6 +70,9 @@ export default function USGGlobalHeader({ navigation, route, title }) {
 
   const accountLabel = user?.email || t('settings.account');
   const initial = user?.email?.trim()?.charAt(0)?.toUpperCase() || 'G';
+  const avatar = profile?.avatar_preset
+    ? getAvatarPreset(profile.avatar_preset)
+    : null;
 
   return (
     <>
@@ -82,7 +115,11 @@ export default function USGGlobalHeader({ navigation, route, title }) {
               pressed && styles.controlButtonPressed,
             ]}
           >
-            <Text style={styles.avatarText}>{initial}</Text>
+            {avatar ? (
+              <Image source={avatar.source} style={styles.headerAvatarImage} />
+            ) : (
+              <Text style={styles.avatarText}>{initial}</Text>
+            )}
           </Pressable>
         </View>
       </View>
@@ -137,6 +174,11 @@ function createStyles(colors) {
     avatarButtonActive: {
       borderWidth: 2,
     },
+    headerAvatarImage: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+    },
     controlButtonPressed: {
       opacity: 0.7,
     },
@@ -170,5 +212,6 @@ function createStyles(colors) {
     },
   });
 }
+
 
 
