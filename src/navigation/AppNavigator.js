@@ -13,6 +13,7 @@ import EventsScreen from '../screens/EventsScreen';
 import HomeScreen from '../screens/HomeScreen';
 import KnowledgeScreen from '../screens/KnowledgeScreen';
 import MyCorsoScreen from '../screens/MyCorsoScreen';
+import PlaceDetailsScreen from '../screens/PlaceDetailsScreen';
 import ServicesScreen from '../screens/ServicesScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import NotificationSettingsScreen from '../screens/NotificationSettingsScreen';
@@ -173,6 +174,11 @@ export default function AppNavigator() {
         name="Details"
         component={DetailsScreen}
         options={{ title: 'USG Corso' }}
+      />
+      <Stack.Screen
+        name="PlaceDetails"
+        component={PlaceDetailsScreen}
+        options={{ title: 'Corso Map' }}
       />
       <Stack.Screen
         name="Admin"

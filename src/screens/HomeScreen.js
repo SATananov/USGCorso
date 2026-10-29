@@ -219,7 +219,9 @@ export default function HomeScreen({ navigation }) {
                             section.id === 'community' &&
                             item === items[items.length - 1]
                               ? navigation.navigate('Community')
-                              : openItem(item)
+                              : section.id === 'corsoFriendly'
+                                ? navigation.navigate('Corso Friendly')
+                                : openItem(item)
                           }
                         >
                           <Text style={styles.menuItemText}>{item}</Text>
