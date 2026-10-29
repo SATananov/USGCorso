@@ -32,8 +32,6 @@ export const lightTheme = {
   overlay: 'rgba(18, 15, 10, 0.96)',
 };
 
-// Backward-compatible dark alias for components intentionally kept outside
-// the runtime theme system, including the approved 3D intro.
 export const colors = darkTheme;
 
 export const spacing = {

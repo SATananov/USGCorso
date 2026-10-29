@@ -129,8 +129,6 @@ async function buildCrestMedallion() {
 
   const group = new THREE.Group();
 
-  // ONE physical coin body.
-  // Its silhouette is scaled to the same oval proportion as the approved face.
   const aspect = width / height;
   const faceHeight = 3.10;
   const faceWidth = faceHeight * aspect;
@@ -145,14 +143,12 @@ async function buildCrestMedallion() {
     128
   );
 
-  // Side wall is intentionally UNLIT so it can never turn brown/dark.
   const sideMaterial = new THREE.MeshStandardMaterial({
     color: 0xc99a36,
     metalness: 0.84,
     roughness: 0.42,
   });
 
-  // Caps are fully transparent because the approved artwork is the coin face.
   const transparentCapMaterial = new THREE.MeshBasicMaterial({
     transparent: true,
     opacity: 0,
@@ -170,14 +166,11 @@ async function buildCrestMedallion() {
 
   body.rotation.x = Math.PI / 2;
 
-  // Match the physical body silhouette to the approved face proportions.
-  // No second disk can protrude around the face.
   const targetAspect = faceWidth / faceHeight;
   body.scale.set(targetAspect, 1, 1);
 
   group.add(body);
 
-  // The approved crest coin is the entire visible face.
   const faceGeometry = new THREE.PlaneGeometry(
     faceWidth,
     faceHeight
@@ -303,7 +296,6 @@ export default function USGIntro3DDirect({ onExplore }) {
         );
       scene.add(ambientLight);
 
-      // Strong warm top-front light for relief.
       const keyLight =
         new THREE.DirectionalLight(
           0xffd27a,
@@ -312,7 +304,6 @@ export default function USGIntro3DDirect({ onExplore }) {
       keyLight.position.set(3.2, 6.2, 6.8);
       scene.add(keyLight);
 
-      // Stronger side light, targeted to show coin thickness and relief edges.
       const rimLight =
         new THREE.DirectionalLight(
           0xd99a32,
@@ -321,7 +312,6 @@ export default function USGIntro3DDirect({ onExplore }) {
       rimLight.position.set(-5.8, 1.0, 3.2);
       scene.add(rimLight);
 
-      // Gentle opposing side light adds minted-metal separation.
       const sideFill =
         new THREE.DirectionalLight(
           0xffdf95,
@@ -330,7 +320,6 @@ export default function USGIntro3DDirect({ onExplore }) {
       sideFill.position.set(5.5, -0.8, 2.8);
       scene.add(sideFill);
 
-      // Low front fill, enough for readability without flattening.
       const frontFill =
         new THREE.DirectionalLight(
           0xffe6ad,
