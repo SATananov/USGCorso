@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   Image,
   Modal,
@@ -8,9 +8,13 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useAuth } from '../auth/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
+import { profileCopy } from '../profile/profileCopy';
+import { getMyProfile, isLocalProfileReady } from '../profile/profileService';
 import { useTheme } from '../theme/ThemeContext';
 
 const sectionConfig = [
@@ -25,11 +29,41 @@ const sectionConfig = [
 ];
 
 export default function HomeScreen({ navigation }) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { colors } = useTheme();
+  const { user } = useAuth();
+  const copy = profileCopy[language] ?? profileCopy.en;
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [openSection, setOpenSection] = useState(null);
   const [showHero, setShowHero] = useState(false);
+  const [profileIncomplete, setProfileIncomplete] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+
+      async function checkProfile() {
+        if (!user) {
+          if (active) {
+            setProfileIncomplete(false);
+          }
+          return;
+        }
+
+        const { data, error } = await getMyProfile(user.id);
+
+        if (active) {
+          setProfileIncomplete(!error && !isLocalProfileReady(data));
+        }
+      }
+
+      checkProfile();
+
+      return () => {
+        active = false;
+      };
+    }, [user])
+  );
 
   function toggleSection(sectionId) {
     setOpenSection(openSection === sectionId ? null : sectionId);
@@ -37,6 +71,10 @@ export default function HomeScreen({ navigation }) {
 
   function openItem(item) {
     navigation.navigate('Details', { title: item });
+  }
+
+  function openProfile() {
+    navigation.getParent()?.navigate('AccountSettings');
   }
 
   return (
@@ -53,6 +91,21 @@ export default function HomeScreen({ navigation }) {
         <Text style={styles.title}>USG Corso</Text>
         <Text style={styles.subtitle}>{t('home.subtitle')}</Text>
 
+        {profileIncomplete ? (
+          <View style={styles.profileWarning}>
+            <View style={styles.profileWarningMarker} />
+            <View style={styles.profileWarningText}>
+              <Text style={styles.profileWarningTitle}>{copy.homeWarningTitle}</Text>
+              <Text style={styles.profileWarningBody}>{copy.homeWarningText}</Text>
+              <Pressable style={styles.profileWarningButton} onPress={openProfile}>
+                <Text style={styles.profileWarningButtonText}>
+                  {copy.homeWarningAction}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        ) : null}
+
         <View style={styles.menu}>
           {sectionConfig.map((section) => {
             const isOpen = openSection === section.id;
@@ -65,10 +118,7 @@ export default function HomeScreen({ navigation }) {
             return (
               <View
                 key={section.id}
-                style={[
-                  styles.section,
-                  isOpen && styles.sectionOpen,
-                ]}
+                style={[styles.section, isOpen && styles.sectionOpen]}
               >
                 <Pressable
                   style={styles.sectionHeader}
@@ -91,7 +141,7 @@ export default function HomeScreen({ navigation }) {
                   </Text>
                 </Pressable>
 
-                {isOpen && (
+                {isOpen ? (
                   <View style={styles.sectionContent}>
                     {section.id === 'about' ? (
                       <>
@@ -114,7 +164,7 @@ export default function HomeScreen({ navigation }) {
                       ))
                     )}
                   </View>
-                )}
+                ) : null}
               </View>
             );
           })}
@@ -182,6 +232,52 @@ function createStyles(colors) {
       textAlign: 'center',
       marginTop: 3,
       marginBottom: 13,
+    },
+    profileWarning: {
+      flexDirection: 'row',
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.gold,
+      backgroundColor: colors.activeSurface,
+      padding: 12,
+      marginBottom: 10,
+    },
+    profileWarningMarker: {
+      width: 9,
+      height: 9,
+      borderRadius: 5,
+      backgroundColor: colors.gold,
+      marginTop: 5,
+      marginRight: 10,
+    },
+    profileWarningText: {
+      flex: 1,
+    },
+    profileWarningTitle: {
+      color: colors.gold,
+      fontSize: 12,
+      fontWeight: '800',
+    },
+    profileWarningBody: {
+      color: colors.textSoft,
+      fontSize: 10,
+      lineHeight: 15,
+      marginTop: 4,
+    },
+    profileWarningButton: {
+      alignSelf: 'flex-start',
+      borderRadius: 9,
+      borderWidth: 1,
+      borderColor: colors.gold,
+      paddingHorizontal: 10,
+      paddingVertical: 7,
+      marginTop: 9,
+    },
+    profileWarningButtonText: {
+      color: colors.gold,
+      fontSize: 9,
+      fontWeight: '900',
+      letterSpacing: 0.6,
     },
     menu: {
       width: '100%',

@@ -1,7 +1,8 @@
 ﻿import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
+  Image,
   Modal,
   Pressable,
   ScrollView,
@@ -13,9 +14,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAppControls } from '../app/AppControlContext';
 import { requestHeaderPanel } from '../app/headerPanelRequest';
+import { accountSettingsCopy, formatMemberSince } from '../account/accountSettingsCopy';
 import { accountCopy } from '../auth/accountCopy';
 import { useAuth } from '../auth/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
+import { supabase } from '../lib/supabase';
+import { getAvatarPreset } from '../profile/avatarPresets';
+import { profileCopy } from '../profile/profileCopy';
+import { getMyProfile } from '../profile/profileService';
 import { useTheme } from '../theme/ThemeContext';
 import USGProgressBar from './USGProgressBar';
 
@@ -361,10 +367,60 @@ function AccountPanel({ navigation, onClose }) {
   const [openKey, setOpenKey] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [profile, setProfile] = useState(null);
+  const [profileLoading, setProfileLoading] = useState(Boolean(user));
+  const [profileError, setProfileError] = useState('');
+  const [passwordBusy, setPasswordBusy] = useState(false);
+  const [accountMessage, setAccountMessage] = useState('');
+  const [accountError, setAccountError] = useState('');
   const styles = useMemo(() => createStyles(colors), [colors]);
   const labels = copy[language] ?? copy.en;
   const authLabels = accountCopy[language] ?? accountCopy.en;
+  const profileLabels = profileCopy[language] ?? profileCopy.en;
+  const accountLabels = accountSettingsCopy[language] ?? accountSettingsCopy.en;
   const initial = user?.email?.trim()?.charAt(0)?.toUpperCase() || 'G';
+  const avatar = profile?.avatar_preset
+    ? getAvatarPreset(profile.avatar_preset)
+    : null;
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadProfile() {
+      if (!user) {
+        if (active) {
+          setProfile(null);
+          setProfileLoading(false);
+        }
+        return;
+      }
+
+      setProfileLoading(true);
+      setProfileError('');
+
+      const { data, error: loadError } = await getMyProfile(user.id);
+
+      if (!active) {
+        return;
+      }
+
+      if (loadError) {
+        setProfile(null);
+        setProfileError(profileLabels.loadError);
+        setProfileLoading(false);
+        return;
+      }
+
+      setProfile(data);
+      setProfileLoading(false);
+    }
+
+    loadProfile();
+
+    return () => {
+      active = false;
+    };
+  }, [profileLabels.loadError, user]);
 
   function toggle(key) {
     setOpenKey((current) => (current === key ? null : key));
@@ -374,6 +430,28 @@ function AccountPanel({ navigation, onClose }) {
     requestHeaderPanel('account');
     onClose();
     navigation.getParent()?.navigate('AccountSettings');
+  }
+  async function sendPasswordReset() {
+    if (!user?.email || passwordBusy) {
+      return;
+    }
+
+    setPasswordBusy(true);
+    setAccountMessage('');
+    setAccountError('');
+
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+      user.email
+    );
+
+    if (resetError) {
+      setAccountError(accountLabels.passwordError + ' ' + resetError.message);
+      setPasswordBusy(false);
+      return;
+    }
+
+    setAccountMessage(accountLabels.passwordSent);
+    setPasswordBusy(false);
   }
 
   async function handleSignOut() {
@@ -394,16 +472,20 @@ function AccountPanel({ navigation, onClose }) {
   return (
     <PanelShell title={labels.accountTitle} onClose={onClose}>
       <View style={styles.accountHero}>
-        <View style={styles.largeAvatar}>
-          <Text style={styles.largeAvatarText}>{initial}</Text>
-        </View>
+        {avatar ? (
+          <Image source={avatar.source} style={styles.largeAvatar} />
+        ) : (
+          <View style={styles.largeAvatar}>
+            <Text style={styles.largeAvatarText}>{initial}</Text>
+          </View>
+        )}
 
         <View style={styles.accountHeroText}>
           <Text style={styles.accountStatus}>
-            {user ? labels.accountStatus : labels.guestTitle}
+            {profile?.display_name || (user ? labels.accountStatus : labels.guestTitle)}
           </Text>
           <Text style={styles.accountEmail} numberOfLines={1}>
-            {user?.email || labels.guestHint}
+            {profile?.username ? `@${profile.username}` : user?.email || labels.guestHint}
           </Text>
         </View>
       </View>
@@ -415,10 +497,53 @@ function AccountPanel({ navigation, onClose }) {
             open={openKey === 'profile'}
             onPress={() => toggle('profile')}
           >
-            <Text style={styles.miniLabel}>{labels.accountEmail}</Text>
-            <Text style={styles.valueText}>{user.email}</Text>
-            <Text style={styles.hint}>{labels.profileHint}</Text>
-            <Text style={styles.hint}>{labels.editProfileHint}</Text>
+            {profileLoading ? (
+              <USGProgressBar label={profileLabels.title} />
+            ) : profileError ? (
+              <Text style={styles.error}>{profileError}</Text>
+            ) : profile ? (
+              <>
+                {profile.display_name ? (
+                  <>
+                    <Text style={styles.miniLabel}>{profileLabels.displayName}</Text>
+                    <Text style={styles.valueText}>{profile.display_name}</Text>
+                  </>
+                ) : null}
+
+                {profile.username ? (
+                  <>
+                    <Text style={styles.miniLabel}>{profileLabels.username}</Text>
+                    <Text style={styles.valueText}>@{profile.username}</Text>
+                  </>
+                ) : null}
+
+                {profile.bio ? (
+                  <>
+                    <Text style={styles.miniLabel}>{profileLabels.bio}</Text>
+                    <Text style={styles.valueText}>{profile.bio}</Text>
+                  </>
+                ) : null}
+
+                {profile.country ? (
+                  <>
+                    <Text style={styles.miniLabel}>{profileLabels.country}</Text>
+                    <Text style={styles.valueText}>{profile.country}</Text>
+                  </>
+                ) : null}
+
+                {profile.city ? (
+                  <>
+                    <Text style={styles.miniLabel}>{profileLabels.city}</Text>
+                    <Text style={styles.valueText}>{profile.city}</Text>
+                  </>
+                ) : null}
+
+                <Text style={styles.miniLabel}>{profileLabels.email}</Text>
+                <Text style={styles.valueText}>{user.email}</Text>
+              </>
+            ) : (
+              <Text style={styles.hint}>{profileLabels.incompleteText}</Text>
+            )}
           </AccordionRow>
 
           <AccordionRow
@@ -426,9 +551,44 @@ function AccountPanel({ navigation, onClose }) {
             open={openKey === 'account'}
             onPress={() => toggle('account')}
           >
-            <Text style={styles.miniLabel}>{labels.accountEmail}</Text>
+            <Text style={styles.miniLabel}>{accountLabels.email}</Text>
             <Text style={styles.valueText}>{user.email}</Text>
-            <Text style={styles.hint}>{labels.accountDetailsHint}</Text>
+
+            <Text style={styles.miniLabel}>{accountLabels.memberSince}</Text>
+            <Text style={styles.valueText}>
+              {formatMemberSince(user.created_at, language)}
+            </Text>
+
+            <Text style={styles.miniLabel}>{accountLabels.security}</Text>
+            <Text style={styles.hint}>{accountLabels.securityHint}</Text>
+
+            <Text style={styles.miniLabel}>{accountLabels.password}</Text>
+            <Text style={styles.hint}>{accountLabels.passwordHint}</Text>
+
+            {accountError ? (
+              <Text style={styles.error}>{accountError}</Text>
+            ) : null}
+
+            {accountMessage ? (
+              <Text style={styles.accountSuccess}>{accountMessage}</Text>
+            ) : null}
+
+            {passwordBusy ? (
+              <USGProgressBar label={accountLabels.passwordSending} />
+            ) : (
+              <ActionButton
+                label={accountLabels.passwordAction}
+                onPress={sendPasswordReset}
+              />
+            )}
+
+            <View style={styles.dangerZone}>
+              <Text style={styles.dangerZoneTitle}>{accountLabels.dangerTitle}</Text>
+              <Text style={styles.hint}>{accountLabels.dangerHint}</Text>
+              <Text style={styles.dangerZoneDisabled}>
+                {accountLabels.dangerUnavailable}
+              </Text>
+            </View>
           </AccordionRow>
 
           <AccordionRow
@@ -436,7 +596,7 @@ function AccountPanel({ navigation, onClose }) {
             open={openKey === 'edit'}
             onPress={() => toggle('edit')}
           >
-            <Text style={styles.hint}>{labels.editProfileHint}</Text>
+            <Text style={styles.hint}>{profileLabels.avatarHint}</Text>
             <ActionButton label={labels.open} onPress={openAccount} />
           </AccordionRow>
 
@@ -765,6 +925,31 @@ function createStyles(colors) {
       lineHeight: 17,
       marginTop: 10,
     },
+    accountSuccess: {
+      color: colors.gold,
+      fontSize: 11,
+      lineHeight: 17,
+      marginTop: 10,
+    },
+    dangerZone: {
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      marginTop: 18,
+      paddingTop: 16,
+    },
+    dangerZoneTitle: {
+      color: '#d56b6b',
+      fontSize: 11,
+      fontWeight: '800',
+      marginBottom: 6,
+    },
+    dangerZoneDisabled: {
+      color: colors.textMuted,
+      fontSize: 9,
+      fontWeight: '800',
+      letterSpacing: 0.5,
+      marginTop: 10,
+    },
     guestCard: {
       borderRadius: 16,
       borderWidth: 1,
@@ -774,4 +959,7 @@ function createStyles(colors) {
     },
   });
 }
+
+
+
 
