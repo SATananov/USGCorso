@@ -9,6 +9,7 @@ import {
 import AppNavigator from './src/navigation/AppNavigator';
 import USGIntro3DDirect from './src/components/USGIntro3DDirect';
 import { AppControlProvider } from './src/app/AppControlContext';
+import { AuthProvider } from './src/auth/AuthContext';
 import { LanguageProvider } from './src/i18n/LanguageContext';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 
@@ -61,7 +62,9 @@ export default function App() {
   return (
     <LanguageProvider>
       <ThemeProvider>
-        <AppContent />
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
       </ThemeProvider>
     </LanguageProvider>
   );
