@@ -124,7 +124,7 @@ async function buildCrestMedallion() {
     width,
     height,
   } = await loadExpoTexture(
-    require('../../assets/usg-final-approved-coin.png')
+    require('../../assets/usg-coin.png')
   );
 
   const group = new THREE.Group();
@@ -410,7 +410,7 @@ export default function USGIntro3DDirect({ onExplore }) {
   return (
     <View style={styles.container}>
       <Image
-        source={require('../../assets/usg-3d-world-bg-final.png')}
+        source={require('../../assets/usg-world-background.png')}
         style={styles.backgroundImage}
         resizeMode="cover"
       />

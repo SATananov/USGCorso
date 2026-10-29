@@ -7,10 +7,10 @@ import {
 } from 'react-native';
 
 const slides = [
-  require('../../assets/auth/auth-welcome-01.jpg'),
-  require('../../assets/auth/auth-welcome-02.jpg'),
-  require('../../assets/auth/auth-welcome-03.jpg'),
-  require('../../assets/auth/auth-welcome-04.jpg'),
+  require('../../assets/auth/welcome-slide-1.jpg'),
+  require('../../assets/auth/welcome-slide-2.jpg'),
+  require('../../assets/auth/welcome-slide-3.jpg'),
+  require('../../assets/auth/welcome-slide-4.jpg'),
 ];
 
 const loopSlides = [...slides, slides[0]];
