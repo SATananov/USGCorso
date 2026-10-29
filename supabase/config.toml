@@ -1,0 +1,2 @@
+﻿[functions.delete-account]
+entrypoint = "./functions/delete-account/index.js"

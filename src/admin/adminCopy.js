@@ -2,7 +2,7 @@ export const adminCopy = {
   en: {
     panelTitle: 'Administration',
     panelHint: 'Open the protected USG administration area.',
-    open: 'OPEN ADMIN',
+    open: 'OPEN ADMINISTRATION',
     title: 'Administration',
     subtitle: 'Protected tools for USG Corso administrators.',
     accessChecking: 'Checking administrator access...',
@@ -22,7 +22,7 @@ export const adminCopy = {
   bg: {
     panelTitle: 'Администрация',
     panelHint: 'Отвори защитената административна зона на USG.',
-    open: 'ОТВОРИ ADMIN',
+    open: 'ОТВОРИ АДМИНИСТРАЦИЯТА',
     title: 'Администрация',
     subtitle: 'Защитени инструменти за администраторите на USG Corso.',
     accessChecking: 'Проверка на администраторския достъп...',
@@ -42,7 +42,7 @@ export const adminCopy = {
   it: {
     panelTitle: 'Amministrazione',
     panelHint: 'Apri l’area amministrativa protetta di USG.',
-    open: 'APRI ADMIN',
+    open: 'APRI AMMINISTRAZIONE',
     title: 'Amministrazione',
     subtitle: 'Strumenti protetti per gli amministratori di USG Corso.',
     accessChecking: 'Verifica dell’accesso amministratore...',

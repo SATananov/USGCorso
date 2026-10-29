@@ -1,4 +1,4 @@
-﻿import { useMemo } from 'react';
+import { useMemo } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -177,7 +177,7 @@ export default function AppNavigator() {
       <Stack.Screen
         name="Admin"
         component={AdminScreen}
-        options={{ title: 'USG Admin' }}
+        options={{ title: t('settings.account') }}
       />
       <Stack.Screen
         name="Settings"
@@ -262,6 +262,3 @@ function createStyles(colors) {
     },
   });
 }
-
-
-

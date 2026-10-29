@@ -8,12 +8,14 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAppControls } from '../app/AppControlContext';
 import { requestHeaderPanel } from '../app/headerPanelRequest';
+import { deleteMyAccount } from '../account/accountDeleteService';
 import { accountSettingsCopy, formatMemberSince } from '../account/accountSettingsCopy';
 import { adminCopy } from '../admin/adminCopy';
 import { getMyRole } from '../admin/adminService';
@@ -375,6 +377,10 @@ function AccountPanel({ navigation, onClose }) {
   const [passwordBusy, setPasswordBusy] = useState(false);
   const [accountMessage, setAccountMessage] = useState('');
   const [accountError, setAccountError] = useState('');
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState('');
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
   const styles = useMemo(() => createStyles(colors), [colors]);
   const labels = copy[language] ?? copy.en;
@@ -487,6 +493,41 @@ function AccountPanel({ navigation, onClose }) {
 
     setAccountMessage(accountLabels.passwordSent);
     setPasswordBusy(false);
+  }
+
+  async function handleDeleteAccount() {
+    if (deleteBusy) {
+      return;
+    }
+
+    if (deleteConfirm.trim() !== 'DELETE') {
+      setDeleteError(accountLabels.dangerConfirmError);
+      return;
+    }
+
+    setDeleteBusy(true);
+    setDeleteError('');
+
+    const { data, error: deleteAccountError } = await deleteMyAccount();
+
+    if (deleteAccountError) {
+      setDeleteError(accountLabels.dangerDeleteError);
+      setDeleteBusy(false);
+      return;
+    }
+
+    if (!data?.ok) {
+      setDeleteError(
+        data?.code === 'last_admin'
+          ? accountLabels.dangerLastAdmin
+          : accountLabels.dangerDeleteError
+      );
+      setDeleteBusy(false);
+      return;
+    }
+
+    await supabase.auth.signOut({ scope: 'local' });
+    onClose();
   }
 
   async function handleSignOut() {
@@ -620,9 +661,61 @@ function AccountPanel({ navigation, onClose }) {
             <View style={styles.dangerZone}>
               <Text style={styles.dangerZoneTitle}>{accountLabels.dangerTitle}</Text>
               <Text style={styles.hint}>{accountLabels.dangerHint}</Text>
-              <Text style={styles.dangerZoneDisabled}>
-                {accountLabels.dangerUnavailable}
-              </Text>
+
+              {!deleteOpen ? (
+                <ActionButton
+                  label={accountLabels.dangerAction}
+                  onPress={() => {
+                    setDeleteOpen(true);
+                    setDeleteConfirm('');
+                    setDeleteError('');
+                  }}
+                  danger
+                />
+              ) : (
+                <>
+                  <Text style={styles.deleteWarning}>
+                    {accountLabels.dangerWarning}
+                  </Text>
+
+                  <TextInput
+                    value={deleteConfirm}
+                    onChangeText={(value) => {
+                      setDeleteConfirm(value);
+                      setDeleteError('');
+                    }}
+                    autoCapitalize="characters"
+                    autoCorrect={false}
+                    placeholder={accountLabels.dangerConfirmLabel}
+                    placeholderTextColor={colors.textMuted}
+                    style={styles.deleteInput}
+                  />
+
+                  {deleteError ? (
+                    <Text style={styles.error}>{deleteError}</Text>
+                  ) : null}
+
+                  {deleteBusy ? (
+                    <USGProgressBar label={accountLabels.dangerBusy} />
+                  ) : (
+                    <>
+                      <ActionButton
+                        label={accountLabels.dangerConfirmAction}
+                        onPress={handleDeleteAccount}
+                        danger
+                      />
+                      <ActionButton
+                        label={accountLabels.dangerCancel}
+                        onPress={() => {
+                          setDeleteOpen(false);
+                          setDeleteConfirm('');
+                          setDeleteError('');
+                        }}
+                      />
+                    </>
+                  )}
+                </>
+              )}
             </View>
           </AccordionRow>
 
@@ -989,12 +1082,25 @@ function createStyles(colors) {
       fontWeight: '800',
       marginBottom: 6,
     },
-    dangerZoneDisabled: {
-      color: colors.textMuted,
-      fontSize: 9,
-      fontWeight: '800',
-      letterSpacing: 0.5,
-      marginTop: 10,
+    deleteWarning: {
+      color: '#d56b6b',
+      fontSize: 11,
+      lineHeight: 17,
+      fontWeight: '700',
+      marginTop: 12,
+    },
+    deleteInput: {
+      minHeight: 44,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: '#a84b4b',
+      color: colors.text,
+      backgroundColor: colors.surface,
+      paddingHorizontal: 12,
+      marginTop: 12,
+      fontSize: 12,
+      fontWeight: '700',
+      letterSpacing: 1,
     },
     guestCard: {
       borderRadius: 16,
@@ -1005,6 +1111,7 @@ function createStyles(colors) {
     },
   });
 }
+
 
 
 
