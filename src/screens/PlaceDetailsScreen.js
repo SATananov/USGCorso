@@ -8,7 +8,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -95,8 +95,20 @@ export default function PlaceDetailsScreen({ route }) {
           </Text>
         </View>
 
+        {place.cane_corso_friendly ? (
+          <View style={styles.friendlyBadge}>
+            <Text style={styles.friendlyBadgeText}>{copy.details.caneCorsoFriendly}</Text>
+          </View>
+        ) : null}
+
         <MapView
+          provider={PROVIDER_GOOGLE}
           style={styles.map}
+          mapType="hybrid"
+          showsPointsOfInterest
+          showsBuildings
+          showsCompass={false}
+          toolbarEnabled={false}
           initialRegion={{
             ...coordinate,
             latitudeDelta: 0.02,
@@ -105,7 +117,27 @@ export default function PlaceDetailsScreen({ route }) {
           scrollEnabled={false}
           zoomEnabled={false}
         >
-          <Marker coordinate={coordinate} />
+          <Marker coordinate={coordinate}>
+            <View style={styles.marker}>
+              <View style={styles.markerHead}>
+                {place.category === 'pet_shop' ? (
+                  <View style={styles.pawIcon}>
+                    <View style={styles.pawPad} />
+                    <View style={[styles.pawToe, styles.pawToeLeft]} />
+                    <View style={[styles.pawToe, styles.pawToeTopLeft]} />
+                    <View style={[styles.pawToe, styles.pawToeTopRight]} />
+                    <View style={[styles.pawToe, styles.pawToeRight]} />
+                  </View>
+                ) : (
+                  <Text style={styles.markerSymbol}>
+                    {getPlaceMarkerSymbol(place.category)}
+                  </Text>
+                )}
+              </View>
+              <View style={styles.markerTip} />
+              <View style={styles.markerGlow} />
+            </View>
+          </Marker>
         </MapView>
 
         <InfoRow
@@ -142,6 +174,18 @@ export default function PlaceDetailsScreen({ route }) {
       </ScrollView>
     </SafeAreaView>
   );
+}
+
+function getPlaceMarkerSymbol(category) {
+  if (category === 'veterinary') return '+';
+  if (category === 'grooming') return '✂';
+  if (category === 'pet_shop') return '';
+  if (category === 'breeder') return '⌂';
+  if (category === 'trainer') return 'K9';
+  if (category === 'large_dog_hotel') return 'H';
+  if (category === 'pet_transport') return '↔';
+  if (category === 'pharmacy') return 'Rx';
+  return 'USG';
 }
 
 function InfoRow({ label, value, styles }) {
@@ -199,10 +243,111 @@ function createStyles(colors) {
       fontSize: 10,
       fontWeight: '800',
     },
+    friendlyBadge: {
+      alignSelf: 'flex-start',
+      borderWidth: 1,
+      borderColor: colors.gold,
+      borderRadius: 999,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      backgroundColor: colors.activeSurface,
+    },
+    friendlyBadgeText: {
+      color: colors.gold,
+      fontSize: 10,
+      fontWeight: '900',
+      letterSpacing: 0.45,
+      textTransform: 'uppercase',
+    },
     map: {
       height: 240,
       borderRadius: 18,
       overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: 'rgba(212, 175, 55, 0.34)',
+      backgroundColor: '#08090b',
+    },
+    marker: {
+      width: 52,
+      height: 66,
+      alignItems: 'center',
+    },
+    markerHead: {
+      width: 46,
+      height: 46,
+      borderRadius: 23,
+      backgroundColor: '#070708',
+      borderWidth: 3,
+      borderColor: '#d4af37',
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: '#d4af37',
+      shadowOpacity: 0.55,
+      shadowRadius: 9,
+      elevation: 9,
+    },
+    markerSymbol: {
+      color: '#d4af37',
+      fontSize: 19,
+      fontWeight: '900',
+    },
+    markerTip: {
+      width: 18,
+      height: 18,
+      marginTop: -8,
+      backgroundColor: '#070708',
+      borderRightWidth: 3,
+      borderBottomWidth: 3,
+      borderColor: '#d4af37',
+      transform: [{ rotate: '45deg' }],
+    },
+    markerGlow: {
+      width: 8,
+      height: 8,
+      marginTop: 1,
+      borderRadius: 4,
+      backgroundColor: '#d4af37',
+      shadowColor: '#d4af37',
+      shadowOpacity: 0.9,
+      shadowRadius: 5,
+      elevation: 6,
+    },
+    pawIcon: {
+      width: 24,
+      height: 24,
+      position: 'relative',
+    },
+    pawPad: {
+      position: 'absolute',
+      left: 7,
+      top: 9,
+      width: 11,
+      height: 10,
+      borderRadius: 7,
+      backgroundColor: '#d4af37',
+    },
+    pawToe: {
+      position: 'absolute',
+      width: 6,
+      height: 7,
+      borderRadius: 4,
+      backgroundColor: '#d4af37',
+    },
+    pawToeLeft: {
+      left: 2,
+      top: 5,
+    },
+    pawToeTopLeft: {
+      left: 7,
+      top: 1,
+    },
+    pawToeTopRight: {
+      right: 5,
+      top: 1,
+    },
+    pawToeRight: {
+      right: 0,
+      top: 5,
     },
     infoCard: {
       borderWidth: 1,

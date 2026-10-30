@@ -25,7 +25,7 @@ import {
   isPasswordValid,
 } from './authValidation';
 
-export default function AuthFormScreen({ mode, onBack, onSwitch, onRegistered }) {
+export default function AuthFormScreen({ mode, onBack, onSwitch, onForgotPassword, onRegistered }) {
   const { language } = useLanguage();
   const { colors } = useTheme();
   const { signIn, signUp } = useAuth();
@@ -124,6 +124,8 @@ export default function AuthFormScreen({ mode, onBack, onSwitch, onRegistered })
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
         >
           <AuthLanguageSelector />
 
@@ -178,6 +180,21 @@ export default function AuthFormScreen({ mode, onBack, onSwitch, onRegistered })
             </View>
             {errors.password ? <Text style={styles.errorText}>{errors.password}</Text> : null}
 
+            {!isRegister && onForgotPassword ? (
+              <Pressable
+                style={styles.forgotButton}
+                onPress={onForgotPassword}
+                disabled={submitting}
+              >
+                <Text style={styles.forgotText}>
+                  {language === 'bg'
+                    ? '\u0417\u0430\u0431\u0440\u0430\u0432\u0435\u043d\u0430 \u043f\u0430\u0440\u043e\u043b\u0430?'
+                    : language === 'it'
+                      ? 'Password dimenticata?'
+                      : 'Forgot password?'}
+                </Text>
+              </Pressable>
+            ) : null}
             {isRegister ? (
               <>
                 <View style={styles.rulesBox}>
@@ -556,7 +573,16 @@ function createStyles(colors) {
       lineHeight: 14,
       fontWeight: '700',
     },
-    primaryButton: {
+    forgotButton: {
+      alignSelf: 'flex-end',
+      paddingVertical: 8,
+      marginTop: 2,
+    },
+    forgotText: {
+      color: colors.gold,
+      fontSize: 11,
+      fontWeight: '700',
+    },    primaryButton: {
       minHeight: 50,
       borderRadius: radius.md,
       backgroundColor: colors.gold,

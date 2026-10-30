@@ -15,6 +15,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { radius, spacing } from '../styles/usgTheme';
 import { useTheme } from '../theme/ThemeContext';
 import USGProgressBar from '../components/USGProgressBar';
+import AdminPlacesModeration from '../components/AdminPlacesModeration';
 
 export default function AdminScreen() {
   const { user } = useAuth();
@@ -107,6 +108,8 @@ export default function AdminScreen() {
             <Text style={styles.buttonText}>{labels.refresh}</Text>
           </Pressable>
         </View>
+
+        <AdminPlacesModeration />
 
         <Text style={styles.sectionTitle}>{labels.usersTitle}</Text>
 

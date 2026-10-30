@@ -1,2 +1,5 @@
-﻿[functions.delete-account]
+[functions.delete-account]
 entrypoint = "./functions/delete-account/index.js"
+
+[functions.reverse-geocode]
+entrypoint = './functions/reverse-geocode/index.js'

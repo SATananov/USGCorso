@@ -199,6 +199,8 @@ function PanelShell({ title, children, onClose }) {
 
           <ScrollView
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
             contentContainerStyle={styles.panelContent}
           >
             {children}

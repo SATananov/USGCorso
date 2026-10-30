@@ -4,24 +4,33 @@
     "slug": "usg-corso",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/usg-app-icon.png",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
-      }
+        "backgroundColor": "#050505",
+        "foregroundImage": "./assets/usg-app-icon-foreground.png"
+      },
+      "package": "com.usgcorso.mobile",
+      "softwareKeyboardLayoutMode": "resize"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-asset"
-    ]
+    ],
+    "scheme": "usgcorso",
+    "extra": {
+      "eas": {
+        "projectId": "6487907d-d936-4b56-95e4-dc349d0a8c47"
+      }
+    },
+    "androidStatusBar": {
+      "translucent": false
+    }
   }
 }

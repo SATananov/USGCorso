@@ -102,6 +102,7 @@ export default function GeoSelector({
 
             <ScrollView
               keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
               showsVerticalScrollIndicator={false}
             >
               {filtered.length ? (

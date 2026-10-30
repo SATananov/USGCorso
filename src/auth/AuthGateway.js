@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import AuthCheckEmailScreen from './AuthCheckEmailScreen';
+import AuthForgotPasswordScreen from './AuthForgotPasswordScreen';
 import AuthFormScreen from './AuthFormScreen';
 import AuthWelcomeScreen from './AuthWelcomeScreen';
 
@@ -13,7 +14,16 @@ export default function AuthGateway({ onContinueGuest }) {
         mode="login"
         onBack={() => setScreen('welcome')}
         onSwitch={() => setScreen('register')}
+        onForgotPassword={() => setScreen('forgot-password')}
         onRegistered={() => setScreen('check-email')}
+      />
+    );
+  }
+
+  if (screen === 'forgot-password') {
+    return (
+      <AuthForgotPasswordScreen
+        onBack={() => setScreen('login')}
       />
     );
   }

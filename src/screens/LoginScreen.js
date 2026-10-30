@@ -87,6 +87,8 @@ export default function LoginScreen({ navigation }) {
         <ScrollView
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
         >
           <View style={styles.card}>
             <Text style={styles.kicker}>USG CORSO</Text>

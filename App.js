@@ -1,4 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
+import * as Linking from 'expo-linking';
 import { useCallback, useState } from 'react';
 import {
   DarkTheme,
@@ -12,6 +13,7 @@ import { AppControlProvider } from './src/app/AppControlContext';
 import { AuthProvider, useAuth } from './src/auth/AuthContext';
 import AuthGateway from './src/auth/AuthGateway';
 import AuthLoadingScreen from './src/auth/AuthLoadingScreen';
+import AuthResetPasswordScreen from './src/auth/AuthResetPasswordScreen';
 import AuthSignedInBanner from './src/auth/AuthSignedInBanner';
 import { LanguageProvider } from './src/i18n/LanguageContext';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
@@ -19,6 +21,8 @@ import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 function AppContent() {
   const [showIntro, setShowIntro] = useState(true);
   const [guestMode, setGuestMode] = useState(false);
+  const recoveryUrl = Linking.useLinkingURL();
+  const [completedRecoveryUrl, setCompletedRecoveryUrl] = useState(null);
   const { isDark, colors } = useTheme();
   const { session, loading } = useAuth();
 
@@ -26,6 +30,30 @@ function AppContent() {
     setShowIntro(true);
   }, []);
 
+  const isPasswordRecovery =
+    recoveryUrl?.includes('reset-password') &&
+    recoveryUrl !== completedRecoveryUrl;
+
+  if (isPasswordRecovery) {
+    return (
+      <AppControlProvider replayIntro={replayIntro}>
+        <StatusBar style={isDark ? 'light' : 'dark'} />
+        <AuthResetPasswordScreen
+          recoveryUrl={recoveryUrl}
+          onBack={() => {
+            setCompletedRecoveryUrl(recoveryUrl);
+            setShowIntro(false);
+            setGuestMode(false);
+          }}
+          onComplete={() => {
+            setCompletedRecoveryUrl(recoveryUrl);
+            setShowIntro(false);
+            setGuestMode(false);
+          }}
+        />
+      </AppControlProvider>
+    );
+  }
   if (showIntro) {
     return (
       <AppControlProvider replayIntro={replayIntro}>
