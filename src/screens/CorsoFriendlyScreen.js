@@ -26,6 +26,7 @@ import {
   createPlace,
   getApprovedPlaces,
   getFavoritePlaceIds,
+  getPlaceReviewSummaryRows,
 } from '../places/placeService';
 import { reverseGeocodePlace } from '../places/geocodingService';
 import { useTheme } from '../theme/ThemeContext';
@@ -37,7 +38,14 @@ const DEFAULT_REGION = {
   longitudeDelta: 4.8,
 };
 
-function PlaceCard({ place, copy, colors, onPress }) {
+function PlaceCard({
+  place,
+  copy,
+  colors,
+  onPress,
+  reviewSummary,
+  isFavorite,
+}) {
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
@@ -54,6 +62,35 @@ function PlaceCard({ place, copy, colors, onPress }) {
       <Text style={styles.placeAddress}>
         {place.address}, {place.city}, {place.country}
       </Text>
+      <View style={styles.placeRatingSummary}>
+        <View style={styles.placeRatingLeft}>
+          {reviewSummary?.reviewCount > 0 ? (
+            <>
+              <Text style={styles.placeRatingText}>
+                ★ {reviewSummary.averageRating.toFixed(1)}
+                {' · '}
+                {reviewSummary.reviewCount} {copy.ratingSummary.reviews}
+              </Text>
+              <Text style={styles.placeHelpfulText}>
+                👍 {reviewSummary.helpfulCount}
+              </Text>
+              {isFavorite ? (
+                <Text style={styles.personalFavoriteHeart}>♥</Text>
+              ) : null}
+            </>
+          ) : (
+            <>
+              <Text style={styles.placeNoRatingText}>
+                ☆ {copy.ratingSummary.noRatings}
+              </Text>
+              {isFavorite ? (
+                <Text style={styles.personalFavoriteHeart}>♥</Text>
+              ) : null}
+            </>
+          )}
+        </View>
+      </View>
+
       {place.cane_corso_friendly ? (
         <View style={styles.friendlyBadge}>
           <Text style={styles.friendlyBadgeText}>{copy.details.caneCorsoFriendly.toUpperCase()}</Text>
@@ -1002,6 +1039,7 @@ navigation }) {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [places, setPlaces] = useState([]);
   const [favoritePlaceIds, setFavoritePlaceIds] = useState([]);
+  const [placeReviewSummaries, setPlaceReviewSummaries] = useState({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [errorText, setErrorText] = useState('');
@@ -1026,12 +1064,14 @@ navigation }) {
     }
 
     setErrorText('');
-    const [{ data, error }, favoriteResult] = await Promise.all([
-      getApprovedPlaces(),
-      user?.id
-        ? getFavoritePlaceIds(user.id)
-        : Promise.resolve({ data: [], error: null }),
-    ]);
+    const [{ data, error }, favoriteResult, reviewSummaryResult] =
+      await Promise.all([
+        getApprovedPlaces(),
+        user?.id
+          ? getFavoritePlaceIds(user.id)
+          : Promise.resolve({ data: [], error: null }),
+        getPlaceReviewSummaryRows(),
+      ]);
 
     if (error) {
       setErrorText(copy.loadError);
@@ -1042,6 +1082,52 @@ navigation }) {
       if (!favoriteResult.error) {
         setFavoritePlaceIds(
           (favoriteResult.data ?? []).map((item) => item.place_id)
+        );
+      }
+
+      if (
+        !reviewSummaryResult.reviews.error &&
+        !reviewSummaryResult.helpful.error
+      ) {
+        const summaries = {};
+
+        for (const review of reviewSummaryResult.reviews.data ?? []) {
+          const current = summaries[review.place_id] ?? {
+            ratingTotal: 0,
+            reviewCount: 0,
+            helpfulCount: 0,
+          };
+
+          current.ratingTotal += Number(review.rating);
+          current.reviewCount += 1;
+          summaries[review.place_id] = current;
+        }
+
+        for (const helpful of reviewSummaryResult.helpful.data ?? []) {
+          const current = summaries[helpful.place_id] ?? {
+            ratingTotal: 0,
+            reviewCount: 0,
+            helpfulCount: 0,
+          };
+
+          current.helpfulCount += 1;
+          summaries[helpful.place_id] = current;
+        }
+
+        setPlaceReviewSummaries(
+          Object.fromEntries(
+            Object.entries(summaries).map(([placeId, summary]) => [
+              placeId,
+              {
+                reviewCount: summary.reviewCount,
+                helpfulCount: summary.helpfulCount,
+                averageRating:
+                  summary.reviewCount > 0
+                    ? summary.ratingTotal / summary.reviewCount
+                    : 0,
+              },
+            ])
+          )
         );
       }
 
@@ -1508,6 +1594,8 @@ navigation }) {
                 place={place}
                 copy={copy}
                 colors={colors}
+                reviewSummary={placeReviewSummaries[place.id]}
+                isFavorite={favoritePlaceIds.includes(place.id)}
                 onPress={() => openDetails(place)}
               />
             ))
@@ -1856,6 +1944,49 @@ function createStyles(colors) {
       color: colors.textMuted,
       fontSize: 9,
       fontWeight: '800',
+    },
+    placeRatingSummary: {
+      marginTop: 10,
+      minHeight: 22,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 10,
+    },
+    placeRatingLeft: {
+      flex: 1,
+      minWidth: 0,
+      flexDirection: 'row',
+      alignItems: 'center',
+      flexWrap: 'wrap',
+      gap: 8,
+    },
+    placeRatingText: {
+      color: colors.gold,
+      fontSize: 11,
+      lineHeight: 16,
+      fontWeight: '800',
+    },
+    placeHelpfulText: {
+      color: colors.textMuted,
+      fontSize: 11,
+      lineHeight: 16,
+      fontWeight: '800',
+    },
+    placeNoRatingText: {
+      color: colors.textMuted,
+      fontSize: 11,
+      lineHeight: 16,
+      fontWeight: '700',
+    },
+    personalFavoriteHeart: {
+      color: colors.gold,
+      fontSize: 13,
+      lineHeight: 16,
+      fontWeight: '900',
+      includeFontPadding: false,
+      textAlign: 'center',
+      marginLeft: 2,
     },
     friendlyBadge: {
       alignSelf: 'flex-start',
