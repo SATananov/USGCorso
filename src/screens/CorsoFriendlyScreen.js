@@ -426,6 +426,7 @@ function AddPlaceForm({ copy, colors, user, onCreated }) {
 
   return (
     <ScrollView
+        ref={scrollRef}
       contentContainerStyle={styles.formContent}
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
@@ -976,7 +977,18 @@ const getPlaceMarkerSymbol = (category) => {
   return 'USG';
 };
 
-export default function CorsoFriendlyScreen({ navigation }) {
+export default function CorsoFriendlyScreen({
+navigation }) {
+  const scrollRef = useRef(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      scrollRef.current?.scrollTo({
+        y: 0,
+        animated: false,
+      });
+    }, [])
+  );
   const { language } = useLanguage();
   const { colors } = useTheme();
   const { user } = useAuth();

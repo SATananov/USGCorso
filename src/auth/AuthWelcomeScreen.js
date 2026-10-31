@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -6,8 +6,12 @@ import {
   Text,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 
+import USGScrollHint from '../components/USGScrollHint';
 import { useLanguage } from '../i18n/LanguageContext';
 import { radius, spacing } from '../styles/usgTheme';
 import { useTheme } from '../theme/ThemeContext';
@@ -19,17 +23,29 @@ export default function AuthWelcomeScreen({
   onLogin,
   onRegister,
   onContinueGuest,
+  onAboutUSG,
 }) {
   const { language } = useLanguage();
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const copy = authCopy[language] ?? authCopy.en;
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const [showScrollHint, setShowScrollHint] = useState(true);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: Math.max(insets.bottom, 16) + 28 },
+        ]}
         showsVerticalScrollIndicator={false}
+        onScroll={(event) => {
+          if (event.nativeEvent.contentOffset.y > 24 && showScrollHint) {
+            setShowScrollHint(false);
+          }
+        }}
+        scrollEventThrottle={16}
       >
         <AuthLanguageSelector />
 
@@ -58,6 +74,25 @@ export default function AuthWelcomeScreen({
             </Text>
           </Pressable>
 
+          <Pressable style={styles.aboutButton} onPress={onAboutUSG}>
+            <Text style={styles.aboutButtonText}>
+              {language === 'bg'
+                ? 'КАКВО Е USG?'
+                : language === 'it'
+                  ? 'CHE COS’È USG?'
+                  : 'WHAT IS USG?'}
+            </Text>
+            <Text style={styles.aboutArrow}>→</Text>
+          </Pressable>
+
+          <Text style={styles.aboutHint}>
+            {language === 'bg'
+              ? 'Научи идеята зад Unico Suo Genere™ преди да разгледаш платформата.'
+              : language === 'it'
+                ? 'Scopri l’idea dietro Unico Suo Genere™ prima di esplorare la piattaforma.'
+                : 'Learn the idea behind Unico Suo Genere™ before exploring the platform.'}
+          </Text>
+
           <Pressable style={styles.guestButton} onPress={onContinueGuest}>
             <View style={styles.guestIconRing}>
               <View style={styles.guestIconDiamond} />
@@ -75,6 +110,11 @@ export default function AuthWelcomeScreen({
           <Text style={styles.guestHint}>{copy.guestHint}</Text>
         </View>
       </ScrollView>
+
+      <USGScrollHint
+        visible={showScrollHint}
+        bottom={Math.max(insets.bottom, 16) + 8}
+      />
     </SafeAreaView>
   );
 }
@@ -98,7 +138,6 @@ function createStyles(colors) {
       flexGrow: 1,
       justifyContent: 'center',
       padding: spacing.md,
-      paddingBottom: 28,
     },
     card: {
       borderRadius: radius.lg,
@@ -231,6 +270,38 @@ function createStyles(colors) {
       letterSpacing: 0.7,
       textAlign: 'center',
       width: '100%',
+    },
+    aboutButton: {
+      minHeight: 50,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.gold,
+      backgroundColor: colors.surface,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 18,
+      marginTop: 18,
+      gap: 10,
+    },
+    aboutButtonText: {
+      color: colors.gold,
+      fontSize: 12,
+      fontWeight: '900',
+      letterSpacing: 0.9,
+      textAlign: 'center',
+    },
+    aboutArrow: {
+      color: colors.gold,
+      fontSize: 18,
+      fontWeight: '700',
+    },
+    aboutHint: {
+      color: colors.textMuted,
+      fontSize: 10,
+      lineHeight: 16,
+      textAlign: 'center',
+      marginTop: 8,
     },
     guestHint: {
       color: colors.textMuted,

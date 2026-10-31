@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import {
   Alert,
   Image,
@@ -102,7 +102,18 @@ const COLOR_OPTIONS = [
   'brindle',
 ];
 
-export default function MyCorsoScreen({ route, navigation }) {
+export default function MyCorsoScreen({
+route, navigation }) {
+  const scrollRef = useRef(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      scrollRef.current?.scrollTo({
+        y: 0,
+        animated: false,
+      });
+    }, [])
+  );
   const { user } = useAuth();
   const { language } = useLanguage();
   const { colors } = useTheme();
@@ -476,6 +487,7 @@ export default function MyCorsoScreen({ route, navigation }) {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView
+        ref={scrollRef}
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"

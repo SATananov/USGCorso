@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, useRef } from 'react';
 import {
   Image,
   Modal,
@@ -21,6 +21,16 @@ import { radius, spacing } from '../styles/usgTheme';
 import { useTheme } from '../theme/ThemeContext';
 
 export default function CommunityScreen() {
+  const scrollRef = useRef(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      scrollRef.current?.scrollTo({
+        y: 0,
+        animated: false,
+      });
+    }, [])
+  );
   const { language } = useLanguage();
   const { colors } = useTheme();
   const copy = communityCorsoCopy[language] ?? communityCorsoCopy.en;
@@ -55,6 +65,7 @@ export default function CommunityScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >

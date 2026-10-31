@@ -4,6 +4,8 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useAuth } from '../auth/AuthContext';
+import GuestSectionPreview from '../components/GuestSectionPreview';
 import AboutScreen from '../screens/AboutScreen';
 import AdminScreen from '../screens/AdminScreen';
 import CommunityScreen from '../screens/CommunityScreen';
@@ -112,8 +114,29 @@ function ScrollableTabBar({ state, descriptors, navigation }) {
   );
 }
 
+function createGuestTabScreen(sectionKey) {
+  return function GuestTabScreen({ navigation }) {
+    return (
+      <GuestSectionPreview
+        sectionKey={sectionKey}
+        navigation={navigation}
+      />
+    );
+  };
+}
+
+const GuestMyCorsoScreen = createGuestTabScreen('myCorso');
+const GuestCorsoFriendlyScreen = createGuestTabScreen('corsoFriendly');
+const GuestKnowledgeScreen = createGuestTabScreen('knowledge');
+const GuestCommunityScreen = createGuestTabScreen('community');
+const GuestServicesScreen = createGuestTabScreen('services');
+const GuestEventsScreen = createGuestTabScreen('events');
+const GuestCorsoMatchScreen = createGuestTabScreen('corsoMatch');
+const GuestAboutScreen = createGuestTabScreen('about');
+
 function MainTabs() {
   const { t } = useLanguage();
+  const { session } = useAuth();
 
   return (
     <Tab.Navigator
@@ -136,14 +159,14 @@ function MainTabs() {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarLabel: t('nav.home') }} />
-      <Tab.Screen name="My Corso" component={MyCorsoScreen} options={{ tabBarLabel: t('nav.myCorso') }} />
-      <Tab.Screen name="Corso Friendly" component={CorsoFriendlyScreen} options={{ tabBarLabel: t('nav.corsoFriendly') }} />
-      <Tab.Screen name="Knowledge" component={KnowledgeScreen} options={{ tabBarLabel: t('nav.knowledge') }} />
-      <Tab.Screen name="Community" component={CommunityScreen} options={{ tabBarLabel: t('nav.community') }} />
-      <Tab.Screen name="Services" component={ServicesScreen} options={{ tabBarLabel: t('nav.services') }} />
-      <Tab.Screen name="Events" component={EventsScreen} options={{ tabBarLabel: t('nav.events') }} />
-      <Tab.Screen name="Corso Match" component={CorsoMatchScreen} options={{ tabBarLabel: t('nav.corsoMatch') }} />
-      <Tab.Screen name="About" component={AboutScreen} options={{ tabBarLabel: t('nav.about') }} />
+      <Tab.Screen name="My Corso" component={session ? MyCorsoScreen : GuestMyCorsoScreen} options={{ tabBarLabel: t('nav.myCorso') }} />
+      <Tab.Screen name="Corso Friendly" component={session ? CorsoFriendlyScreen : GuestCorsoFriendlyScreen} options={{ tabBarLabel: t('nav.corsoFriendly') }} />
+      <Tab.Screen name="Knowledge" component={session ? KnowledgeScreen : GuestKnowledgeScreen} options={{ tabBarLabel: t('nav.knowledge') }} />
+      <Tab.Screen name="Community" component={session ? CommunityScreen : GuestCommunityScreen} options={{ tabBarLabel: t('nav.community') }} />
+      <Tab.Screen name="Services" component={session ? ServicesScreen : GuestServicesScreen} options={{ tabBarLabel: t('nav.services') }} />
+      <Tab.Screen name="Events" component={session ? EventsScreen : GuestEventsScreen} options={{ tabBarLabel: t('nav.events') }} />
+      <Tab.Screen name="Corso Match" component={session ? CorsoMatchScreen : GuestCorsoMatchScreen} options={{ tabBarLabel: t('nav.corsoMatch') }} />
+      <Tab.Screen name="About" component={session ? AboutScreen : GuestAboutScreen} options={{ tabBarLabel: t('nav.about') }} />
     </Tab.Navigator>
   );
 }

@@ -1,4 +1,4 @@
-﻿import { useCallback, useMemo, useState } from 'react';
+﻿import { useCallback, useMemo, useState, useRef } from 'react';
 import {
   Image,
   Modal,
@@ -11,6 +11,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useAppControls } from '../app/AppControlContext';
 import { useAuth } from '../auth/AuthContext';
 import { dogCopy } from '../dogs/dogCopy';
 import { getMyDogs } from '../dogs/dogService';
@@ -30,10 +31,22 @@ const sectionConfig = [
   { id: 'about', icon: require('../../assets/icons/about-usg.png') },
 ];
 
-export default function HomeScreen({ navigation }) {
+export default function HomeScreen({
+navigation }) {
+  const scrollRef = useRef(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      scrollRef.current?.scrollTo({
+        y: 0,
+        animated: false,
+      });
+    }, [])
+  );
   const { t, language } = useLanguage();
   const { colors } = useTheme();
   const { user } = useAuth();
+  const { leaveGuestMode } = useAppControls();
   const copy = profileCopy[language] ?? profileCopy.en;
   const dogText = dogCopy[language] ?? dogCopy.en;
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -81,7 +94,27 @@ export default function HomeScreen({ navigation }) {
     setOpenSection(openSection === sectionId ? null : sectionId);
   }
 
-  function openItem(item) {
+  function openItem(item, sectionId) {
+    if (!user) {
+      const guestSectionRoutes = {
+        myCorso: 'My Corso',
+        corsoFriendly: 'Corso Friendly',
+        knowledge: 'Knowledge',
+        community: 'Community',
+        services: 'Services',
+        events: 'Events',
+        corsoMatch: 'Corso Match',
+        about: 'About',
+      };
+
+      const routeName = guestSectionRoutes[sectionId];
+
+      if (routeName) {
+        navigation.navigate(routeName);
+        return;
+      }
+    }
+
     navigation.navigate('Details', { title: item });
   }
 
@@ -95,6 +128,10 @@ export default function HomeScreen({ navigation }) {
 
   function addDog() {
     navigation.navigate('My Corso', { openAddDog: true });
+  }
+
+  function exitGuestHome() {
+    leaveGuestMode();
   }
 
   function dogStatusText() {
@@ -115,7 +152,8 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        ref={scrollRef} contentContainerStyle={styles.content}>
         <Pressable style={styles.heroBox} onPress={() => setShowHero(true)}>
           <Image
             source={require('../../assets/ecosystem-hero.png')}
@@ -221,7 +259,7 @@ export default function HomeScreen({ navigation }) {
                               ? navigation.navigate('Community')
                               : section.id === 'corsoFriendly'
                                 ? navigation.navigate('Corso Friendly')
-                                : openItem(item)
+                                : openItem(item, section.id)
                           }
                         >
                           <Text style={styles.menuItemText}>{item}</Text>
@@ -235,6 +273,29 @@ export default function HomeScreen({ navigation }) {
             );
           })}
         </View>
+
+        {!user ? (
+          <View style={styles.guestExitRow}>
+            <Pressable style={styles.guestBackButton} onPress={exitGuestHome}>
+              <Text style={styles.guestBackText}>← {language === 'bg' ? 'НАЗАД' : language === 'it' ? 'INDIETRO' : 'BACK'}</Text>
+            </Pressable>
+
+            <Pressable style={styles.guestAuthButton} onPress={exitGuestHome}>
+              <Text
+                style={styles.guestAuthText}
+                numberOfLines={2}
+                adjustsFontSizeToFit
+                minimumFontScale={0.78}
+              >
+                {language === 'bg'
+                  ? 'ВХОД / РЕГИСТРАЦИЯ'
+                  : language === 'it'
+                    ? 'ACCEDI / REGISTRATI'
+                    : 'SIGN IN / REGISTER'} →
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
 
         <View style={styles.footer}>
           <Text style={styles.footerBrand}>USG — Unico Suo Genere™</Text>
@@ -487,6 +548,48 @@ function createStyles(colors) {
       textAlign: 'center',
       marginTop: 4,
       marginBottom: 8,
+    },
+    guestExitRow: {
+      flexDirection: 'row',
+      gap: 12,
+      marginTop: 16,
+      marginBottom: 14,
+    },
+    guestBackButton: {
+      flex: 1,
+      minHeight: 56,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.gold,
+      backgroundColor: colors.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 12,
+    },
+    guestBackText: {
+      color: colors.gold,
+      fontSize: 11,
+      lineHeight: 16,
+      fontWeight: '900',
+      letterSpacing: 0.5,
+      textAlign: 'center',
+    },
+    guestAuthButton: {
+      flex: 1,
+      minHeight: 56,
+      borderRadius: 12,
+      backgroundColor: colors.gold,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 12,
+    },
+    guestAuthText: {
+      color: colors.background,
+      fontSize: 11,
+      lineHeight: 16,
+      fontWeight: '900',
+      letterSpacing: 0.4,
+      textAlign: 'center',
     },
     footer: { alignItems: 'center', marginTop: 10 },
     footerBrand: { color: colors.textMuted, fontSize: 11 },

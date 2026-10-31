@@ -117,8 +117,13 @@ export default function USGGlobalHeader({ navigation, route, title }) {
           >
             {avatar ? (
               <Image source={avatar.source} style={styles.headerAvatarImage} />
-            ) : (
+            ) : user ? (
               <Text style={styles.avatarText}>{initial}</Text>
+            ) : (
+              <View style={styles.guestAvatar}>
+                <View style={styles.guestAvatarHead} />
+                <View style={styles.guestAvatarBody} />
+              </View>
             )}
           </Pressable>
         </View>
@@ -209,6 +214,40 @@ function createStyles(colors) {
       color: colors.gold,
       fontSize: 15,
       fontWeight: '800',
+    },
+    guestAvatar: {
+      width: 24,
+      height: 24,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    guestAvatarHead: {
+      width: 9,
+      height: 9,
+      borderRadius: 5,
+      backgroundColor: colors.gold,
+      marginBottom: 2,
+    },
+    guestAvatarBody: {
+      width: 17,
+      height: 9,
+      borderTopLeftRadius: 9,
+      borderTopRightRadius: 9,
+      backgroundColor: colors.gold,
+    },
+    guestAvatarHead: {
+      width: 11,
+      height: 11,
+      borderRadius: 6,
+      backgroundColor: colors.gold,
+      marginBottom: 3,
+    },
+    guestAvatarBody: {
+      width: 18,
+      height: 10,
+      borderTopLeftRadius: 9,
+      borderTopRightRadius: 9,
+      backgroundColor: colors.gold,
     },
   });
 }

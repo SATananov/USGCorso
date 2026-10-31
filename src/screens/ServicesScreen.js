@@ -2,6 +2,16 @@ import USGSectionScreen from '../components/USGSectionScreen';
 import { useLanguage } from '../i18n/LanguageContext';
 
 export default function ServicesScreen() {
+  const scrollRef = useRef(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      scrollRef.current?.scrollTo({
+        y: 0,
+        animated: false,
+      });
+    }, [])
+  );
   const { t } = useLanguage();
 
   return (

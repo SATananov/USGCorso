@@ -1,5 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import * as Linking from 'expo-linking';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useCallback, useState } from 'react';
 import {
   DarkTheme,
@@ -30,13 +31,18 @@ function AppContent() {
     setShowIntro(true);
   }, []);
 
+  const leaveGuestMode = useCallback(() => {
+    setGuestMode(false);
+    setShowIntro(false);
+  }, []);
+
   const isPasswordRecovery =
     recoveryUrl?.includes('reset-password') &&
     recoveryUrl !== completedRecoveryUrl;
 
   if (isPasswordRecovery) {
     return (
-      <AppControlProvider replayIntro={replayIntro}>
+      <AppControlProvider replayIntro={replayIntro} leaveGuestMode={leaveGuestMode}>
         <StatusBar style={isDark ? 'light' : 'dark'} />
         <AuthResetPasswordScreen
           recoveryUrl={recoveryUrl}
@@ -56,7 +62,7 @@ function AppContent() {
   }
   if (showIntro) {
     return (
-      <AppControlProvider replayIntro={replayIntro}>
+      <AppControlProvider replayIntro={replayIntro} leaveGuestMode={leaveGuestMode}>
         <StatusBar style="light" />
         <USGIntro3DDirect onExplore={() => setShowIntro(false)} />
       </AppControlProvider>
@@ -65,7 +71,7 @@ function AppContent() {
 
   if (loading) {
     return (
-      <AppControlProvider replayIntro={replayIntro}>
+      <AppControlProvider replayIntro={replayIntro} leaveGuestMode={leaveGuestMode}>
         <StatusBar style={isDark ? 'light' : 'dark'} />
         <AuthLoadingScreen />
       </AppControlProvider>
@@ -74,7 +80,7 @@ function AppContent() {
 
   if (!session && !guestMode) {
     return (
-      <AppControlProvider replayIntro={replayIntro}>
+      <AppControlProvider replayIntro={replayIntro} leaveGuestMode={leaveGuestMode}>
         <StatusBar style={isDark ? 'light' : 'dark'} />
         <AuthGateway onContinueGuest={() => setGuestMode(true)} />
       </AppControlProvider>
@@ -98,7 +104,7 @@ function AppContent() {
   };
 
   return (
-    <AppControlProvider replayIntro={replayIntro}>
+    <AppControlProvider replayIntro={replayIntro} leaveGuestMode={leaveGuestMode}>
       <NavigationContainer theme={navigationTheme}>
         <StatusBar style={isDark ? 'light' : 'dark'} />
         <AuthSignedInBanner />
@@ -110,12 +116,14 @@ function AppContent() {
 
 export default function App() {
   return (
-    <LanguageProvider>
-      <ThemeProvider>
-        <AuthProvider>
-          <AppContent />
-        </AuthProvider>
-      </ThemeProvider>
-    </LanguageProvider>
+    <SafeAreaProvider>
+      <LanguageProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <AppContent />
+          </AuthProvider>
+        </ThemeProvider>
+      </LanguageProvider>
+    </SafeAreaProvider>
   );
 }

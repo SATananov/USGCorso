@@ -2,12 +2,13 @@ import { createContext, useContext, useMemo } from 'react';
 
 const AppControlContext = createContext(null);
 
-export function AppControlProvider({ children, replayIntro }) {
+export function AppControlProvider({ children, replayIntro, leaveGuestMode }) {
   const value = useMemo(
     () => ({
       replayIntro,
+      leaveGuestMode,
     }),
-    [replayIntro]
+    [leaveGuestMode, replayIntro]
   );
 
   return (

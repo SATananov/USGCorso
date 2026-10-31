@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import AuthAboutUSGScreen from './AuthAboutUSGScreen';
 import AuthCheckEmailScreen from './AuthCheckEmailScreen';
 import AuthForgotPasswordScreen from './AuthForgotPasswordScreen';
 import AuthFormScreen from './AuthFormScreen';
@@ -7,6 +8,15 @@ import AuthWelcomeScreen from './AuthWelcomeScreen';
 
 export default function AuthGateway({ onContinueGuest }) {
   const [screen, setScreen] = useState('welcome');
+
+  if (screen === 'about-usg') {
+    return (
+      <AuthAboutUSGScreen
+        onBack={() => setScreen('welcome')}
+        onContinueGuest={onContinueGuest}
+      />
+    );
+  }
 
   if (screen === 'login') {
     return (
@@ -48,6 +58,7 @@ export default function AuthGateway({ onContinueGuest }) {
       onLogin={() => setScreen('login')}
       onRegister={() => setScreen('register')}
       onContinueGuest={onContinueGuest}
+      onAboutUSG={() => setScreen('about-usg')}
     />
   );
 }
