@@ -24,7 +24,7 @@
         },
         corsoFriendly: {
           title: 'CORSO FRIENDLY',
-          items: ['Map', 'Near Me', 'Places', 'Add a Place', 'Favorites', 'Reviews'],
+          items: ['Map', 'Near Me', 'Places', 'Add a Place', 'Favorites', 'Reviews', 'Routes'],
         },
         knowledge: {
           title: 'KNOWLEDGE',
@@ -213,7 +213,7 @@
         },
         corsoFriendly: {
           title: 'КОРСО МЕСТА',
-          items: ['Карта', 'Близо до мен', 'Места', 'Добави място', 'Любими', 'Отзиви'],
+          items: ['Карта', 'Близо до мен', 'Места', 'Добави място', 'Любими', 'Отзиви', 'Маршрути'],
         },
         knowledge: {
           title: 'ЗНАНИЕ',
@@ -402,7 +402,7 @@
         },
         corsoFriendly: {
           title: 'CORSO FRIENDLY',
-          items: ['Mappa', 'Vicino a me', 'Luoghi', 'Aggiungi un luogo', 'Preferiti', 'Recensioni'],
+          items: ['Mappa', 'Vicino a me', 'Luoghi', 'Aggiungi un luogo', 'Preferiti', 'Recensioni', 'Percorsi'],
         },
         knowledge: {
           title: 'CONOSCENZA',

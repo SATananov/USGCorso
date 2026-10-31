@@ -83,6 +83,29 @@ export default function PlaceDetailsScreen({ route }) {
     longitude: Number(place.longitude),
   };
 
+  const address = [place.address, place.city, place.country]
+    .filter(Boolean)
+    .join(', ');
+
+  function openDirections() {
+    const destination = `${coordinate.latitude},${coordinate.longitude}`;
+    Linking.openURL(
+      `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}`
+    );
+  }
+
+  function callPlace() {
+    Linking.openURL(`tel:${place.phone}`);
+  }
+
+  function openWebsite() {
+    Linking.openURL(
+      place.website.startsWith('http')
+        ? place.website
+        : `https://${place.website}`
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -142,28 +165,34 @@ export default function PlaceDetailsScreen({ route }) {
 
         <InfoRow
           label={copy.details.address}
-          value={`${place.address}, ${place.city}, ${place.country}`}
+          value={address}
           styles={styles}
         />
 
-        {place.phone ? (
-          <Pressable onPress={() => Linking.openURL(`tel:${place.phone}`)}>
-            <InfoRow label={copy.details.phone} value={place.phone} styles={styles} />
+        <View style={styles.actions}>
+          <Pressable style={styles.primaryAction} onPress={openDirections}>
+            <Text style={styles.primaryActionText}>{copy.details.directions}</Text>
           </Pressable>
+
+          {place.phone ? (
+            <Pressable style={styles.secondaryAction} onPress={callPlace}>
+              <Text style={styles.secondaryActionText}>{copy.details.call}</Text>
+            </Pressable>
+          ) : null}
+
+          {place.website ? (
+            <Pressable style={styles.secondaryAction} onPress={openWebsite}>
+              <Text style={styles.secondaryActionText}>{copy.details.openWebsite}</Text>
+            </Pressable>
+          ) : null}
+        </View>
+
+        {place.phone ? (
+          <InfoRow label={copy.details.phone} value={place.phone} styles={styles} />
         ) : null}
 
         {place.website ? (
-          <Pressable
-            onPress={() =>
-              Linking.openURL(
-                place.website.startsWith('http')
-                  ? place.website
-                  : `https://${place.website}`
-              )
-            }
-          >
-            <InfoRow label={copy.details.website} value={place.website} styles={styles} />
-          </Pressable>
+          <InfoRow label={copy.details.website} value={place.website} styles={styles} />
         ) : null}
 
         <InfoRow
@@ -348,6 +377,37 @@ function createStyles(colors) {
     pawToeRight: {
       right: 0,
       top: 5,
+    },
+    actions: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 10,
+    },
+    primaryAction: {
+      borderRadius: 14,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      backgroundColor: colors.gold,
+    },
+    primaryActionText: {
+      color: colors.background,
+      fontSize: 11,
+      fontWeight: '900',
+      letterSpacing: 0.5,
+    },
+    secondaryAction: {
+      borderRadius: 14,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      borderWidth: 1,
+      borderColor: colors.gold,
+      backgroundColor: colors.surface,
+    },
+    secondaryActionText: {
+      color: colors.gold,
+      fontSize: 11,
+      fontWeight: '900',
+      letterSpacing: 0.5,
     },
     infoCard: {
       borderWidth: 1,

@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { communityCorsoCopy } from '../community/communityCorsoCopy';
 import { getCommunityCorsos } from '../community/communityCorsoService';
 import USGProgressBar from '../components/USGProgressBar';
+import USGInteractiveHeroImage from '../components/USGInteractiveHeroImage';
 import { useLanguage } from '../i18n/LanguageContext';
 import { getAvatarPreset } from '../profile/avatarPresets';
 import { radius, spacing } from '../styles/usgTheme';
@@ -57,6 +58,11 @@ export default function CommunityScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
+        <USGInteractiveHeroImage
+          source={require('../../assets/community-hero.png')}
+          title={copy.title}
+        />
+
         <View style={styles.hero}>
           <Text style={styles.kicker}>{copy.kicker}</Text>
           <Text style={styles.title}>{copy.title}</Text>

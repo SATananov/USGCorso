@@ -18,6 +18,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '../auth/AuthContext';
+import USGInteractiveHeroImage from '../components/USGInteractiveHeroImage';
 import { useLanguage } from '../i18n/LanguageContext';
 import { getCountryPosition } from '../profile/geoService';
 import { getMyProfile } from '../profile/profileService';
@@ -52,7 +53,7 @@ function PlaceCard({ place, copy, colors, onPress }) {
       </Text>
       {place.cane_corso_friendly ? (
         <View style={styles.friendlyBadge}>
-          <Text style={styles.friendlyBadgeText}>CANE CORSO FRIENDLY</Text>
+          <Text style={styles.friendlyBadgeText}>{copy.details.caneCorsoFriendly.toUpperCase()}</Text>
         </View>
       ) : null}
     </Pressable>
@@ -618,7 +619,7 @@ function AddPlaceForm({ copy, colors, user, onCreated }) {
         onRequestClose={() => setMapPickerVisible(false)}
       >
         <SafeAreaView style={{ flex: 1, backgroundColor: '#070708' }}>
-          <View
+      <View
             style={{
               paddingHorizontal: 18,
               paddingTop: 8,
@@ -984,6 +985,7 @@ export default function CorsoFriendlyScreen({ navigation }) {
   const mapRef = useRef(null);
   const [mode, setMode] = useState('map');
   const [category, setCategory] = useState('all');
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -1117,7 +1119,17 @@ export default function CorsoFriendlyScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <View style={styles.hero}>
+      <ScrollView
+        contentContainerStyle={styles.screenScrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+      <USGInteractiveHeroImage
+          source={require('../../assets/corso-friendly-hero.png')}
+          title={copy.title}
+        />
+
+        <View style={styles.hero}>
         <Text style={styles.kicker}>USG CORSO</Text>
         <Text style={styles.title}>{copy.title}</Text>
         <Text style={styles.subtitle}>{copy.subtitle}</Text>
@@ -1147,31 +1159,71 @@ export default function CorsoFriendlyScreen({ navigation }) {
       </View>
 
       {mode !== 'add' ? (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filters}
-        >
-          {['all', ...placeCategories].map((value) => (
-            <Pressable
-              key={value}
-              onPress={() => setCategory(value)}
-              style={[
-                styles.filterChip,
-                category === value && styles.filterChipActive,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.filterText,
-                  category === value && styles.filterTextActive,
-                ]}
-              >
-                {copy.categories[value]}
+        <View style={styles.filterAccordion}>
+          <Pressable
+            onPress={() => setFiltersOpen((current) => !current)}
+            style={styles.filterSummary}
+          >
+            <Text style={styles.filterSummaryLabel}>
+              {language === 'bg' ? 'Категория' : language === 'it' ? 'Categoria' : 'Category'}
+            </Text>
+            <View style={styles.filterSummaryRight}>
+              <Text style={styles.filterSummaryValue}>
+                {copy.categories[category]}
               </Text>
-            </Pressable>
-          ))}
-        </ScrollView>
+              <Text style={styles.filterSummaryArrow}>
+                {filtersOpen ? '▲' : '▼'}
+              </Text>
+            </View>
+          </Pressable>
+
+          {filtersOpen ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.filterOptions}
+              contentContainerStyle={styles.filters}
+            >
+              {['all', ...placeCategories].map((category) => (
+                <Pressable
+                  key={category}
+                  onPress={() => {
+                    setCategory(category);
+                    setFiltersOpen(false);
+                  }}
+                  style={[
+                    styles.filterChip,
+                    {
+                      borderColor:
+                        category === category ? '#d4af37' : '#5f5124',
+                      backgroundColor:
+                        category === category ? '#1a170d' : '#111112',
+                    },
+                    category === category && styles.filterChipActive,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      {
+                        color:
+                          category === category
+                            ? '#d4af37'
+                            : '#d7d7d9',
+                        fontWeight:
+                          category === category ? '900' : '700',
+                      },
+                      category === category &&
+                        styles.filterChipTextActive,
+                    ]}
+                  >
+                    {copy.categories[category]}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          ) : null}
+        </View>
       ) : null}
 
       {mode === 'map' ? (
@@ -1304,11 +1356,23 @@ export default function CorsoFriendlyScreen({ navigation }) {
                       {place.name}
                     </Text>
 
+                    <Text
+                      style={{
+                        marginTop: 5,
+                        color: '#d4af37',
+                        fontSize: 11,
+                        lineHeight: 16,
+                        fontWeight: '700',
+                      }}
+                    >
+                      {copy.categories[place.category]}
+                    </Text>
+
                     {!!place.address && (
                       <Text
                         style={{
                           marginTop: 5,
-                          color: '#d4af37',
+                          color: '#f0eadb',
                           fontSize: 12,
                           lineHeight: 17,
                           fontWeight: '600',
@@ -1330,6 +1394,22 @@ export default function CorsoFriendlyScreen({ navigation }) {
                         {place.city}
                       </Text>
                     )}
+
+                    <Text
+                      style={{
+                        marginTop: 7,
+                        color: place.cane_corso_friendly ? '#d4af37' : '#8b877f',
+                        fontSize: 10,
+                        lineHeight: 14,
+                        fontWeight: '800',
+                      }}
+                    >
+                      {place.cane_corso_friendly
+                        ? copy.details.caneCorsoFriendly
+                        : place.verified
+                          ? copy.status.verified
+                          : copy.status.community}
+                    </Text>
                   </View>
                 </Callout>
               </Marker>
@@ -1413,6 +1493,7 @@ export default function CorsoFriendlyScreen({ navigation }) {
           onCreated={() => loadPlaces(true)}
         />
       ) : null}
+          </ScrollView>
     </SafeAreaView>
   );
 }
@@ -1422,6 +1503,9 @@ function createStyles(colors) {
     container: {
       flex: 1,
       backgroundColor: colors.background,
+    },
+    screenScrollContent: {
+      paddingBottom: 28,
     },
     hero: {
       paddingHorizontal: 16,
@@ -1451,6 +1535,7 @@ function createStyles(colors) {
       flexDirection: 'row',
       paddingHorizontal: 12,
       gap: 7,
+      marginBottom: 10,
     },
     modeButton: {
       flex: 1,
@@ -1477,12 +1562,60 @@ function createStyles(colors) {
     modeButtonTextActive: {
       color: colors.gold,
     },
-    filters: {
-      gap: 7,
+    filterAccordion: {
       paddingHorizontal: 12,
-      paddingTop: 8,
-      paddingBottom: 8,
+      marginBottom: 14,
+    },
+    filterSummary: {
+      minHeight: 54,
+      borderWidth: 1,
+      borderColor: '#6f5b1f',
+      borderRadius: 18,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      flexDirection: 'row',
       alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: '#111112',
+    },
+    filterSummaryLabel: {
+      color: '#8f8f92',
+      fontSize: 13,
+      fontWeight: '800',
+      textTransform: 'uppercase',
+      letterSpacing: 0.8,
+    },
+    filterSummaryRight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      flexShrink: 1,
+      marginLeft: 12,
+    },
+    filterSummaryValue: {
+      color: '#d4af37',
+      fontSize: 15,
+      fontWeight: '900',
+      flexShrink: 1,
+      textAlign: 'right',
+    },
+    filterSummaryArrow: {
+      color: '#d4af37',
+      fontSize: 13,
+      fontWeight: '900',
+    },
+    filterOptions: {
+      marginTop: 8,
+      borderWidth: 1,
+      borderColor: '#2d281a',
+      borderRadius: 16,
+      backgroundColor: '#0b0b0c',
+      overflow: 'hidden',
+    },
+    filters: {
+      gap: 8,
+      paddingHorizontal: 10,
+      paddingVertical: 10,
     },
     filterChip: {
       height: 32,
@@ -1506,8 +1639,7 @@ function createStyles(colors) {
       color: colors.gold,
     },
     mapWrap: {
-      flex: 1,
-      minHeight: 430,
+      height: 520,
       marginTop: 0,
       marginHorizontal: 0,
       marginBottom: 0,

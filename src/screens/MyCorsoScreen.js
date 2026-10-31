@@ -482,6 +482,14 @@ export default function MyCorsoScreen({ route, navigation }) {
           automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
           showsVerticalScrollIndicator={false}
         >
+          <View style={styles.sectionHeroFrame}>
+            <Image
+              source={require('../../assets/my-corso-hero.png')}
+              style={styles.sectionHeroImage}
+              resizeMode="cover"
+            />
+          </View>
+
           <View style={styles.hero}>
             <Text style={styles.kicker}>{copy.kicker}</Text>
             <Text style={styles.title}>{copy.title}</Text>
@@ -1135,6 +1143,20 @@ function createStyles(colors) {
       alignItems: 'center',
       justifyContent: 'center',
       padding: spacing.lg,
+    },
+    sectionHeroFrame: {
+      width: '100%',
+      aspectRatio: 1.5,
+      marginBottom: 14,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      overflow: 'hidden',
+    },
+    sectionHeroImage: {
+      width: '100%',
+      height: '100%',
     },
     hero: {
       borderRadius: radius.lg,
