@@ -228,3 +228,42 @@ export async function adminDeleteSharedContentItem(itemId) {
 
   return { data: paths, error: null };
 }
+
+
+export async function registerMyContentAsset(itemId, values) {
+  return supabase.rpc('register_my_content_asset', {
+    target_item_id: itemId,
+    target_asset_type: values.assetType,
+    target_storage_path: values.storagePath,
+    target_file_name: values.fileName || null,
+    target_mime_type: values.mimeType || null,
+  });
+}
+
+export async function getMyContentAssets(itemId) {
+  const result = await supabase.rpc('list_my_content_assets', {
+    target_item_id: itemId,
+  });
+
+  if (result.error) {
+    return result;
+  }
+
+  const hydrated = await Promise.all(
+    (result.data ?? []).map(async (asset) => {
+      const signed = await supabase.storage
+        .from('usg-content')
+        .createSignedUrl(asset.storage_path, 3600);
+
+      return {
+        ...asset,
+        signed_url: signed.data?.signedUrl ?? null,
+      };
+    })
+  );
+
+  return {
+    data: hydrated,
+    error: null,
+  };
+}

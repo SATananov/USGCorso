@@ -23,6 +23,10 @@ import PlaceDetailsScreen from '../screens/PlaceDetailsScreen';
 import ServicesScreen from '../screens/ServicesScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import NotificationSettingsScreen from '../screens/NotificationSettingsScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
+import MyMaterialsScreen from '../screens/MyMaterialsScreen';
+import MyMaterialDetailsScreen from '../screens/MyMaterialDetailsScreen';
+import AddMaterialScreen from '../screens/AddMaterialScreen';
 import PrivacySettingsScreen from '../screens/PrivacySettingsScreen';
 import AccountSettingsScreen from '../screens/AccountSettingsScreen';
 import LegalScreen from '../screens/LegalScreen';
@@ -237,6 +241,26 @@ export default function AppNavigator() {
         name="Settings"
         component={SettingsScreen}
         options={{ title: t('settings.title') }}
+      />
+      <Stack.Screen
+        name="MyMaterials"
+        component={MyMaterialsScreen}
+        options={{ title: t('myMaterials.title') }}
+      />
+      <Stack.Screen
+        name="MyMaterialDetails"
+        component={MyMaterialDetailsScreen}
+        options={{ title: t('myMaterials.detailsTitle') }}
+      />
+      <Stack.Screen
+        name="AddMaterial"
+        component={AddMaterialScreen}
+        options={{ title: t('addMaterial.title') }}
+      />
+      <Stack.Screen
+        name="Notifications"
+        component={NotificationsScreen}
+        options={{ title: t('settings.notificationsCenter') }}
       />
       <Stack.Screen
         name="NotificationSettings"

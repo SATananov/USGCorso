@@ -36,6 +36,12 @@ export default function SettingsScreen({ navigation }) {
 
   const rows = [
     {
+      key: 'myMaterials',
+      title: t('myMaterials.title'),
+      description: t('myMaterials.settingsHint'),
+      route: 'MyMaterials',
+    },
+    {
       key: 'notifications',
       title: t('settings.notifications'),
       description: t('settings.notificationsHint'),

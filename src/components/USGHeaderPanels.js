@@ -44,6 +44,7 @@ const copy = {
     theme: 'Theme',
     language: 'Language',
     notifications: 'Notifications',
+    myMaterials: 'My Materials',
     privacy: 'Privacy',
     profile: 'My profile',
     legal: 'Legal information',
@@ -82,6 +83,7 @@ const copy = {
     theme: 'Тема',
     language: 'Език',
     notifications: 'Известия',
+    myMaterials: 'Моите материали',
     privacy: 'Поверителност',
     profile: 'Моят профил',
     legal: 'Правна информация',
@@ -120,6 +122,7 @@ const copy = {
     theme: 'Tema',
     language: 'Lingua',
     notifications: 'Notifiche',
+    myMaterials: 'I miei contenuti',
     privacy: 'Privacy',
     profile: 'Il mio profilo',
     legal: 'Informazioni legali',
@@ -306,6 +309,15 @@ function SettingsPanel({ navigation, onClose }) {
         open={openKey === 'notifications'}
         onToggle={() => toggle('notifications')}
         onOpen={() => openRoute('NotificationSettings')}
+        openLabel={labels.open}
+      />
+
+      <RouteAccordion
+        title={labels.myMaterials}
+        description={t('myMaterials.settingsHint')}
+        open={openKey === 'myMaterials'}
+        onToggle={() => toggle('myMaterials')}
+        onOpen={() => openRoute('MyMaterials')}
         openLabel={labels.open}
       />
 
