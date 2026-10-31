@@ -43,3 +43,36 @@ export async function createPlace(userId, values) {
     .select('id')
     .single();
 }
+
+export async function getFavoritePlaceIds(userId) {
+  return supabase
+    .from('place_favorites')
+    .select('place_id')
+    .eq('user_id', userId);
+}
+
+export async function isPlaceFavorite(userId, placeId) {
+  return supabase
+    .from('place_favorites')
+    .select('place_id')
+    .eq('user_id', userId)
+    .eq('place_id', placeId)
+    .maybeSingle();
+}
+
+export async function addPlaceFavorite(userId, placeId) {
+  return supabase
+    .from('place_favorites')
+    .insert({
+      user_id: userId,
+      place_id: placeId,
+    });
+}
+
+export async function removePlaceFavorite(userId, placeId) {
+  return supabase
+    .from('place_favorites')
+    .delete()
+    .eq('user_id', userId)
+    .eq('place_id', placeId);
+}

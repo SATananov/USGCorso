@@ -2,7 +2,6 @@ import { Image } from 'react-native';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  FlatList,
   Modal,
   Pressable,
   RefreshControl,
@@ -23,7 +22,11 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { getCountryPosition } from '../profile/geoService';
 import { getMyProfile } from '../profile/profileService';
 import { placeCategories, placeCopy } from '../places/placeCopy';
-import { createPlace, getApprovedPlaces } from '../places/placeService';
+import {
+  createPlace,
+  getApprovedPlaces,
+  getFavoritePlaceIds,
+} from '../places/placeService';
 import { reverseGeocodePlace } from '../places/geocodingService';
 import { useTheme } from '../theme/ThemeContext';
 
@@ -426,7 +429,6 @@ function AddPlaceForm({ copy, colors, user, onCreated }) {
 
   return (
     <ScrollView
-        ref={scrollRef}
       contentContainerStyle={styles.formContent}
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
@@ -999,18 +1001,22 @@ navigation }) {
   const [category, setCategory] = useState('all');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [places, setPlaces] = useState([]);
+  const [favoritePlaceIds, setFavoritePlaceIds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [errorText, setErrorText] = useState('');
   const [userLocation, setUserLocation] = useState(null);
 
-  const filteredPlaces = useMemo(
-    () =>
-      category === 'all'
-        ? places
-        : places.filter((place) => place.category === category),
-    [category, places]
-  );
+  const filteredPlaces = useMemo(() => {
+    const source =
+      mode === 'favorites'
+        ? places.filter((place) => favoritePlaceIds.includes(place.id))
+        : places;
+
+    return category === 'all'
+      ? source
+      : source.filter((place) => place.category === category);
+  }, [category, favoritePlaceIds, mode, places]);
 
   const loadPlaces = useCallback(async (refresh = false) => {
     if (refresh) {
@@ -1020,13 +1026,24 @@ navigation }) {
     }
 
     setErrorText('');
-    const { data, error } = await getApprovedPlaces();
+    const [{ data, error }, favoriteResult] = await Promise.all([
+      getApprovedPlaces(),
+      user?.id
+        ? getFavoritePlaceIds(user.id)
+        : Promise.resolve({ data: [], error: null }),
+    ]);
 
     if (error) {
       setErrorText(copy.loadError);
     } else {
       const nextPlaces = data ?? [];
       setPlaces(nextPlaces);
+
+      if (!favoriteResult.error) {
+        setFavoritePlaceIds(
+          (favoriteResult.data ?? []).map((item) => item.place_id)
+        );
+      }
 
       if (nextPlaces.length > 0) {
         requestAnimationFrame(() => {
@@ -1051,7 +1068,7 @@ navigation }) {
 
     setLoading(false);
     setRefreshing(false);
-  }, [copy.loadError]);
+  }, [copy.loadError, user?.id]);
 
   useFocusEffect(
     useCallback(() => {
@@ -1132,9 +1149,16 @@ navigation }) {
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={styles.screenScrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => loadPlaces(true)}
+          />
+        }
       >
       <USGInteractiveHeroImage
           source={require('../../assets/corso-friendly-hero.png')}
@@ -1151,6 +1175,7 @@ navigation }) {
         {[
           ['map', copy.map],
           ['list', copy.list],
+          ['favorites', `♥ ${copy.favorites.tab}`],
           ['add', copy.add],
         ].map(([value, label]) => (
           <Pressable
@@ -1468,33 +1493,26 @@ navigation }) {
         </View>
       ) : null}
 
-      {mode === 'list' ? (
-        <FlatList
-          data={filteredPlaces}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={() => loadPlaces(true)}
-            />
-          }
-          ListEmptyComponent={
-            loading ? (
-              <Text style={styles.emptyText}>{copy.loading}</Text>
-            ) : (
-              <Text style={styles.emptyText}>{errorText || copy.empty}</Text>
-            )
-          }
-          renderItem={({ item }) => (
-            <PlaceCard
-              place={item}
-              copy={copy}
-              colors={colors}
-              onPress={() => openDetails(item)}
-            />
+      {mode === 'list' || mode === 'favorites' ? (
+        <View style={styles.listContent}>
+          {loading ? (
+            <Text style={styles.emptyText}>{copy.loading}</Text>
+          ) : filteredPlaces.length === 0 ? (
+            <Text style={styles.emptyText}>
+              {errorText || (mode === 'favorites' ? copy.favorites.empty : copy.empty)}
+            </Text>
+          ) : (
+            filteredPlaces.map((place) => (
+              <PlaceCard
+                key={place.id}
+                place={place}
+                copy={copy}
+                colors={colors}
+                onPress={() => openDetails(place)}
+              />
+            ))
           )}
-        />
+        </View>
       ) : null}
 
       {mode === 'add' ? (
@@ -1545,12 +1563,14 @@ function createStyles(colors) {
     },
     modeRow: {
       flexDirection: 'row',
+      flexWrap: 'wrap',
       paddingHorizontal: 12,
       gap: 7,
       marginBottom: 10,
     },
     modeButton: {
-      flex: 1,
+      flexGrow: 1,
+      flexBasis: '46%',
       minHeight: 38,
       borderWidth: 1,
       borderColor: colors.border,
@@ -1651,7 +1671,7 @@ function createStyles(colors) {
       color: colors.gold,
     },
     mapWrap: {
-      height: 520,
+      height: 520,
       marginTop: 0,
       marginHorizontal: 0,
       marginBottom: 0,

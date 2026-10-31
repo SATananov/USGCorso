@@ -12,20 +12,30 @@ import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useAuth } from '../auth/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
 import { placeCopy } from '../places/placeCopy';
-import { getPlaceById } from '../places/placeService';
+import {
+  addPlaceFavorite,
+  getPlaceById,
+  isPlaceFavorite,
+  removePlaceFavorite,
+} from '../places/placeService';
 import { useTheme } from '../theme/ThemeContext';
 
 export default function PlaceDetailsScreen({ route }) {
   const { placeId } = route.params ?? {};
   const { language } = useLanguage();
+  const { user } = useAuth();
   const { colors } = useTheme();
   const copy = placeCopy[language] ?? placeCopy.en;
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [place, setPlace] = useState(null);
   const [loading, setLoading] = useState(true);
   const [errorText, setErrorText] = useState('');
+  const [favorite, setFavorite] = useState(false);
+  const [favoriteSaving, setFavoriteSaving] = useState(false);
+  const [favoriteError, setFavoriteError] = useState('');
 
   useFocusEffect(
     useCallback(() => {
@@ -33,7 +43,12 @@ export default function PlaceDetailsScreen({ route }) {
 
       async function load() {
         setLoading(true);
-        const { data, error } = await getPlaceById(placeId);
+        const [{ data, error }, favoriteResult] = await Promise.all([
+          getPlaceById(placeId),
+          user?.id
+            ? isPlaceFavorite(user.id, placeId)
+            : Promise.resolve({ data: null, error: null }),
+        ]);
 
         if (!active) {
           return;
@@ -44,6 +59,10 @@ export default function PlaceDetailsScreen({ route }) {
         } else {
           setPlace(data);
           setErrorText('');
+        }
+
+        if (!favoriteResult.error) {
+          setFavorite(Boolean(favoriteResult.data));
         }
 
         setLoading(false);
@@ -59,7 +78,7 @@ export default function PlaceDetailsScreen({ route }) {
       return () => {
         active = false;
       };
-    }, [copy.loadError, placeId])
+    }, [copy.loadError, placeId, user?.id])
   );
 
   if (loading) {
@@ -106,11 +125,49 @@ export default function PlaceDetailsScreen({ route }) {
     );
   }
 
+  async function toggleFavorite() {
+    if (!user?.id || favoriteSaving) {
+      return;
+    }
+
+    setFavoriteSaving(true);
+    setFavoriteError('');
+
+    const result = favorite
+      ? await removePlaceFavorite(user.id, place.id)
+      : await addPlaceFavorite(user.id, place.id);
+
+    if (result.error) {
+      setFavoriteError(copy.favorites.error);
+    } else {
+      setFavorite((current) => !current);
+    }
+
+    setFavoriteSaving(false);
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.kicker}>{copy.categories[place.category]}</Text>
         <Text style={styles.title}>{place.name}</Text>
+
+        <Pressable
+          style={[styles.favoriteButton, favorite && styles.favoriteButtonActive]}
+          onPress={toggleFavorite}
+          disabled={favoriteSaving}
+        >
+          <Text style={[styles.favoriteIcon, favorite && styles.favoriteIconActive]}>
+            {favorite ? '♥' : '♡'}
+          </Text>
+          <Text style={[styles.favoriteText, favorite && styles.favoriteTextActive]}>
+            {favorite ? copy.favorites.remove : copy.favorites.add}
+          </Text>
+        </Pressable>
+
+        {favoriteError ? (
+          <Text style={styles.favoriteError}>{favoriteError}</Text>
+        ) : null}
 
         <View style={[styles.badge, place.verified && styles.badgeVerified]}>
           <Text style={styles.badgeText}>
@@ -377,6 +434,44 @@ function createStyles(colors) {
     pawToeRight: {
       right: 0,
       top: 5,
+    },
+    favoriteButton: {
+      minHeight: 46,
+      borderWidth: 1,
+      borderColor: colors.gold,
+      borderRadius: 14,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      backgroundColor: colors.surface,
+    },
+    favoriteButtonActive: {
+      backgroundColor: colors.gold,
+    },
+    favoriteIcon: {
+      color: colors.gold,
+      fontSize: 20,
+      lineHeight: 22,
+    },
+    favoriteIconActive: {
+      color: colors.background,
+    },
+    favoriteText: {
+      color: colors.gold,
+      fontSize: 11,
+      fontWeight: '900',
+      letterSpacing: 0.4,
+    },
+    favoriteTextActive: {
+      color: colors.background,
+    },
+    favoriteError: {
+      color: colors.textMuted,
+      fontSize: 12,
+      lineHeight: 17,
     },
     actions: {
       flexDirection: 'row',
