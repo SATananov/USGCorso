@@ -8,6 +8,9 @@ import { useAuth } from '../auth/AuthContext';
 import GuestSectionPreview from '../components/GuestSectionPreview';
 import AboutScreen from '../screens/AboutScreen';
 import AdminScreen from '../screens/AdminScreen';
+import AdminPlaceDetailsScreen from '../screens/AdminPlaceDetailsScreen';
+import AdminContentDetailsScreen from '../screens/AdminContentDetailsScreen';
+import AdminDogDetailsScreen from '../screens/AdminDogDetailsScreen';
 import CommunityScreen from '../screens/CommunityScreen';
 import CorsoFriendlyScreen from '../screens/CorsoFriendlyScreen';
 import CorsoMatchScreen from '../screens/CorsoMatchScreen';
@@ -214,6 +217,21 @@ export default function AppNavigator() {
         name="Admin"
         component={AdminScreen}
         options={{ title: t('settings.account') }}
+      />
+      <Stack.Screen
+        name="AdminPlaceDetails"
+        component={AdminPlaceDetailsScreen}
+        options={{ title: 'USG Admin' }}
+      />
+      <Stack.Screen
+        name="AdminContentDetails"
+        component={AdminContentDetailsScreen}
+        options={{ title: 'USG Admin' }}
+      />
+      <Stack.Screen
+        name="AdminDogDetails"
+        component={AdminDogDetailsScreen}
+        options={{ title: 'USG Admin' }}
       />
       <Stack.Screen
         name="Settings"

@@ -20,8 +20,15 @@ import { useAuth } from '../auth/AuthContext';
 import USGInteractiveHeroImage from '../components/USGInteractiveHeroImage';
 import { useLanguage } from '../i18n/LanguageContext';
 import { getCountryPosition } from '../profile/geoService';
+import { getAvatarPreset } from '../profile/avatarPresets';
 import { getMyProfile } from '../profile/profileService';
 import { placeCategories, placeCopy } from '../places/placeCopy';
+import USGMapMarker from '../places/USGMapMarker';
+import {
+  getMyMapPresence,
+  getVisibleMapUsers,
+  setMyMapPresence,
+} from '../places/mapPresenceService';
 import {
   createPlace,
   getApprovedPlaces,
@@ -1004,18 +1011,6 @@ const USG_MAP_STYLE = [
   },
 ];
 
-const getPlaceMarkerSymbol = (category) => {
-  if (category === 'veterinary') return '+';
-  if (category === 'grooming') return '✂';
-  if (category === 'pet_shop') return '';
-  if (category === 'breeder') return '⌂';
-  if (category === 'trainer') return 'K9';
-  if (category === 'large_dog_hotel') return 'H';
-  if (category === 'pet_transport') return '↔';
-  if (category === 'pharmacy') return 'Rx';
-  return 'USG';
-};
-
 export default function CorsoFriendlyScreen({
 navigation }) {
   const scrollRef = useRef(null);
@@ -1044,6 +1039,12 @@ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [errorText, setErrorText] = useState('');
   const [userLocation, setUserLocation] = useState(null);
+  const [profile, setProfile] = useState(null);
+  const [mapSharingEnabled, setMapSharingEnabled] = useState(false);
+  const [visibleMapUsers, setVisibleMapUsers] = useState([]);
+  const [presenceSaving, setPresenceSaving] = useState(false);
+  const [selectedPlaceId, setSelectedPlaceId] = useState(null);
+  const [selectedMember, setSelectedMember] = useState(null);
 
   const filteredPlaces = useMemo(() => {
     const source =
@@ -1163,14 +1164,67 @@ navigation }) {
       async function loadScreen() {
         await loadPlaces();
 
-        const { data: profile, error: profileError } = await getMyProfile(user?.id);
+        const [
+          { data: nextProfile, error: profileError },
+          presenceResult,
+          visibleUsersResult,
+        ] = await Promise.all([
+          getMyProfile(user?.id),
+          getMyMapPresence(user?.id),
+          getVisibleMapUsers(),
+        ]);
 
-        if (!active || profileError || !profile?.country) {
+        if (!active) {
+          return;
+        }
+
+        if (!profileError) {
+          setProfile(nextProfile);
+        }
+
+        if (!presenceResult.error) {
+          setMapSharingEnabled(Boolean(presenceResult.data?.sharing_enabled));
+        }
+
+        if (!visibleUsersResult.error) {
+          setVisibleMapUsers(visibleUsersResult.data ?? []);
+        }
+
+        if (presenceResult.data?.sharing_enabled) {
+          try {
+            const permission = await Location.getForegroundPermissionsAsync();
+
+            if (permission.status === 'granted') {
+              const position = await Location.getCurrentPositionAsync({
+                accuracy: Location.Accuracy.Balanced,
+              });
+
+              if (active) {
+                const currentLocation = {
+                  latitude: position.coords.latitude,
+                  longitude: position.coords.longitude,
+                };
+
+                setUserLocation(currentLocation);
+                await setMyMapPresence(
+                  user.id,
+                  currentLocation.latitude,
+                  currentLocation.longitude,
+                  true
+                );
+              }
+            }
+          } catch {
+            setErrorText(copy.mapPresence.error);
+          }
+        }
+
+        if (profileError || !nextProfile?.country) {
           return;
         }
 
         try {
-          const countryPosition = await getCountryPosition(profile.country);
+          const countryPosition = await getCountryPosition(nextProfile.country);
 
           if (!active || !countryPosition) {
             return;
@@ -1218,6 +1272,15 @@ navigation }) {
 
       setUserLocation(currentLocation);
 
+      if (mapSharingEnabled) {
+        await setMyMapPresence(
+          user.id,
+          currentLocation.latitude,
+          currentLocation.longitude,
+          true
+        );
+      }
+
       mapRef.current?.animateToRegion({
         ...currentLocation,
         latitudeDelta: 0.08,
@@ -1225,6 +1288,73 @@ navigation }) {
       });
     } catch {
       setErrorText(copy.locationError);
+    }
+  }
+
+  async function toggleMapPresence() {
+    if (!user?.id || presenceSaving) {
+      return;
+    }
+
+    setPresenceSaving(true);
+    setErrorText('');
+
+    try {
+      if (mapSharingEnabled) {
+        const result = await setMyMapPresence(user.id, null, null, false);
+
+        if (result.error) {
+          setErrorText(copy.mapPresence.error);
+        } else {
+          setMapSharingEnabled(false);
+          setUserLocation(null);
+          setVisibleMapUsers((current) =>
+            current.filter((item) => item.user_id !== user.id)
+          );
+        }
+
+        return;
+      }
+
+      const permission = await Location.requestForegroundPermissionsAsync();
+
+      if (permission.status !== 'granted') {
+        setErrorText(copy.locationDenied);
+        return;
+      }
+
+      const position = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+
+      const currentLocation = {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+      };
+
+      const result = await setMyMapPresence(
+        user.id,
+        currentLocation.latitude,
+        currentLocation.longitude,
+        true
+      );
+
+      if (result.error) {
+        setErrorText(copy.mapPresence.error);
+      } else {
+        setUserLocation(currentLocation);
+        setMapSharingEnabled(true);
+
+        const visibleUsersResult = await getVisibleMapUsers();
+
+        if (!visibleUsersResult.error) {
+          setVisibleMapUsers(visibleUsersResult.data ?? []);
+        }
+      }
+    } catch {
+      setErrorText(copy.mapPresence.error);
+    } finally {
+      setPresenceSaving(false);
     }
   }
 
@@ -1351,6 +1481,28 @@ navigation }) {
 
       {mode === 'map' ? (
         <View style={styles.mapWrap}>
+          <View style={styles.presenceControlWrap}>
+            <Pressable
+              style={[
+                styles.presenceControl,
+                mapSharingEnabled && styles.presenceControlActive,
+              ]}
+              onPress={toggleMapPresence}
+              disabled={presenceSaving}
+            >
+              <Text
+                style={[
+                  styles.presenceControlText,
+                  mapSharingEnabled && styles.presenceControlTextActive,
+                ]}
+              >
+                {mapSharingEnabled
+                  ? copy.mapPresence.disable
+                  : copy.mapPresence.enable}
+              </Text>
+            </Pressable>
+          </View>
+
           <MapView
             ref={mapRef}
             provider={PROVIDER_GOOGLE}
@@ -1365,16 +1517,43 @@ navigation }) {
             {userLocation ? (
               <Marker
                 coordinate={userLocation}
-                anchor={{ x: 0.5, y: 0.5 }}
-                zIndex={1000}
+                anchor={{ x: 0.5, y: 0.72 }}
+                zIndex={1200}
               >
-                <View style={styles.userLocationMarker}>
-                  <View style={styles.userLocationPulse}>
-                    <View style={styles.userLocationCore} />
+                <View style={styles.memberMarkerWrap}>
+                  <View style={styles.memberMarkerAvatarRing}>
+                    <Image
+                      source={getAvatarPreset(profile?.avatar_preset).source}
+                      style={styles.memberMarkerAvatar}
+                    />
                   </View>
+                  <View style={styles.memberMarkerTip} />
                 </View>
               </Marker>
             ) : null}
+
+            {visibleMapUsers.map((member) => (
+              <Marker
+                key={member.user_id}
+                coordinate={{
+                  latitude: Number(member.latitude),
+                  longitude: Number(member.longitude),
+                }}
+                anchor={{ x: 0.5, y: 0.72 }}
+                zIndex={1100}
+                onPress={() => setSelectedMember(member)}
+              >
+                <View style={styles.otherMemberMarkerWrap}>
+                  <View style={styles.otherMemberAvatarRing}>
+                    <Image
+                      source={getAvatarPreset(member.avatar_preset).source}
+                      style={styles.otherMemberAvatar}
+                    />
+                  </View>
+                  <View style={styles.otherMemberMarkerTip} />
+                </View>
+              </Marker>
+            ))}
 
             {filteredPlaces.map((place) => (
               <Marker
@@ -1385,77 +1564,14 @@ navigation }) {
                 }}
                 title={place.name}
                 description={`${copy.categories[place.category]} · ${place.city}`}
+                onPress={() => setSelectedPlaceId(place.id)}
                 onCalloutPress={() => openDetails(place)}
               >
-                <View
-                  style={{
-                    width: 52,
-                    height: 66,
-                    alignItems: 'center',
-                  }}
-                >
-                  <View
-                    style={{
-                      width: 46,
-                      height: 46,
-                      borderRadius: 23,
-                      backgroundColor: '#070708',
-                      borderWidth: 3,
-                      borderColor: '#d4af37',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      shadowColor: '#d4af37',
-                      shadowOpacity: 0.55,
-                      shadowRadius: 9,
-                      elevation: 9,
-                    }}
-                  >
-                    {place.category === 'pet_shop' ? (
-                      <View style={{ width: 24, height: 24, position: 'relative' }}>
-                        <View style={{ position: 'absolute', left: 7, top: 9, width: 11, height: 10, borderRadius: 7, backgroundColor: '#d4af37' }} />
-                        <View style={{ position: 'absolute', left: 2, top: 5, width: 6, height: 7, borderRadius: 4, backgroundColor: '#d4af37' }} />
-                        <View style={{ position: 'absolute', left: 7, top: 1, width: 6, height: 7, borderRadius: 4, backgroundColor: '#d4af37' }} />
-                        <View style={{ position: 'absolute', right: 5, top: 1, width: 6, height: 7, borderRadius: 4, backgroundColor: '#d4af37' }} />
-                        <View style={{ position: 'absolute', right: 0, top: 5, width: 6, height: 7, borderRadius: 4, backgroundColor: '#d4af37' }} />
-                      </View>
-                    ) : (
-                      <Text
-                        style={{
-                          color: '#d4af37',
-                          fontSize: 19,
-                          fontWeight: '900',
-                        }}
-                      >
-                        {getPlaceMarkerSymbol(place.category)}
-                      </Text>
-                    )}
-                  </View>
-                  <View
-                    style={{
-                      width: 18,
-                      height: 18,
-                      marginTop: -8,
-                      backgroundColor: '#070708',
-                      borderRightWidth: 3,
-                      borderBottomWidth: 3,
-                      borderColor: '#d4af37',
-                      transform: [{ rotate: '45deg' }],
-                    }}
-                  />
-                  <View
-                    style={{
-                      width: 8,
-                      height: 8,
-                      marginTop: 1,
-                      borderRadius: 4,
-                      backgroundColor: '#d4af37',
-                      shadowColor: '#d4af37',
-                      shadowOpacity: 0.9,
-                      shadowRadius: 5,
-                      elevation: 6,
-                    }}
-                  />
-                </View>
+                <USGMapMarker
+                  category={place.category}
+                  selected={selectedPlaceId === place.id}
+                  verified={place.verified}
+                />
 
                 <Callout tooltip>
                   <View
@@ -1538,6 +1654,53 @@ navigation }) {
               </Marker>
             ))}
           </MapView>
+
+          {selectedMember ? (
+            <View style={styles.memberOverlayCard}>
+              <Pressable
+                onPress={() => setSelectedMember(null)}
+                style={styles.memberOverlayClose}
+              >
+                <Text style={styles.memberOverlayCloseText}>×</Text>
+              </Pressable>
+
+              <View style={styles.memberOverlayHeader}>
+                <Image
+                  source={getAvatarPreset(selectedMember.avatar_preset).source}
+                  style={styles.memberOverlayAvatar}
+                />
+
+                <View style={styles.memberOverlayIdentity}>
+                  <Text style={styles.memberOverlayName}>
+                    {selectedMember.display_name ||
+                      (selectedMember.username
+                        ? `@${selectedMember.username}`
+                        : 'USG Member')}
+                  </Text>
+
+                  {selectedMember.display_name && selectedMember.username ? (
+                    <Text style={styles.memberOverlayUsername}>
+                      @{selectedMember.username}
+                    </Text>
+                  ) : null}
+                </View>
+              </View>
+
+              {selectedMember.city || selectedMember.country ? (
+                <Text style={styles.memberOverlayLocation}>
+                  {[selectedMember.city, selectedMember.country]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </Text>
+              ) : null}
+
+              {selectedMember.bio ? (
+                <Text numberOfLines={4} style={styles.memberOverlayBio}>
+                  {selectedMember.bio}
+                </Text>
+              ) : null}
+            </View>
+          ) : null}
 
           <Image
             source={require('../../assets/icons/usg-map-crest.png')}
@@ -1781,6 +1944,177 @@ function createStyles(colors) {
       width: 54,
       height: 54,
       opacity: 0.18,
+    },
+    presenceControlWrap: {
+      position: 'absolute',
+      right: 14,
+      bottom: 14,
+      zIndex: 20,
+    },
+    presenceControl: {
+      minHeight: 38,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: '#d4af37',
+      backgroundColor: 'rgba(7, 7, 8, 0.94)',
+      paddingHorizontal: 14,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    presenceControlActive: {
+      backgroundColor: '#d4af37',
+    },
+    presenceControlText: {
+      color: '#d4af37',
+      fontSize: 10,
+      fontWeight: '900',
+      letterSpacing: 0.3,
+    },
+    presenceControlTextActive: {
+      color: '#070708',
+    },
+    memberMarkerWrap: {
+      width: 58,
+      height: 70,
+      alignItems: 'center',
+    },
+    memberMarkerAvatarRing: {
+      width: 50,
+      height: 50,
+      borderRadius: 25,
+      borderWidth: 3,
+      borderColor: '#f1cf64',
+      backgroundColor: '#070708',
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: '#d4af37',
+      shadowOpacity: 0.9,
+      shadowRadius: 11,
+      elevation: 12,
+      overflow: 'hidden',
+    },
+    memberMarkerAvatar: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+    },
+    memberMarkerTip: {
+      width: 16,
+      height: 16,
+      marginTop: -7,
+      backgroundColor: '#070708',
+      borderRightWidth: 3,
+      borderBottomWidth: 3,
+      borderColor: '#f1cf64',
+      transform: [{ rotate: '45deg' }],
+    },
+    otherMemberMarkerWrap: {
+      width: 48,
+      height: 60,
+      alignItems: 'center',
+    },
+    otherMemberAvatarRing: {
+      width: 42,
+      height: 42,
+      borderRadius: 21,
+      borderWidth: 2,
+      borderColor: '#d4af37',
+      backgroundColor: '#070708',
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'hidden',
+    },
+    otherMemberAvatar: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+    },
+    otherMemberMarkerTip: {
+      width: 13,
+      height: 13,
+      marginTop: -6,
+      backgroundColor: '#070708',
+      borderRightWidth: 2,
+      borderBottomWidth: 2,
+      borderColor: '#d4af37',
+      transform: [{ rotate: '45deg' }],
+    },
+    memberOverlayCard: {
+      position: 'absolute',
+      left: 18,
+      right: 18,
+      top: 130,
+      zIndex: 30,
+      borderRadius: 22,
+      borderWidth: 1.5,
+      borderColor: '#d4af37',
+      backgroundColor: 'rgba(6, 7, 8, 0.97)',
+      paddingHorizontal: 18,
+      paddingVertical: 18,
+      shadowColor: '#000',
+      shadowOpacity: 0.55,
+      shadowRadius: 14,
+      elevation: 16,
+    },
+    memberOverlayClose: {
+      position: 'absolute',
+      top: 8,
+      right: 10,
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 2,
+    },
+    memberOverlayCloseText: {
+      color: '#d4af37',
+      fontSize: 26,
+      lineHeight: 28,
+      fontWeight: '700',
+    },
+    memberOverlayHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingRight: 28,
+      gap: 14,
+    },
+    memberOverlayAvatar: {
+      width: 66,
+      height: 66,
+      borderRadius: 33,
+      borderWidth: 2.5,
+      borderColor: '#d4af37',
+    },
+    memberOverlayIdentity: {
+      flex: 1,
+    },
+    memberOverlayName: {
+      color: '#f7f3e9',
+      fontSize: 22,
+      lineHeight: 27,
+      fontWeight: '900',
+    },
+    memberOverlayUsername: {
+      marginTop: 4,
+      color: '#d4af37',
+      fontSize: 16,
+      lineHeight: 20,
+      fontWeight: '800',
+    },
+    memberOverlayLocation: {
+      marginTop: 14,
+      color: '#d4af37',
+      fontSize: 15,
+      lineHeight: 20,
+      fontWeight: '800',
+    },
+    memberOverlayBio: {
+      marginTop: 12,
+      color: '#eee8dc',
+      fontSize: 15,
+      lineHeight: 22,
+      fontWeight: '500',
     },
     userLocationMarker: {
       width: 50,

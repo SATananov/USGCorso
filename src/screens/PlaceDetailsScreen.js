@@ -17,6 +17,7 @@ import { getMyRole } from '../admin/adminService';
 import { useAuth } from '../auth/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
 import { placeCategories, placeCopy } from '../places/placeCopy';
+import PlacePhotoSection from '../places/PlacePhotoSection';
 import {
   addPlaceFavorite,
   addPlaceReviewHelpful,
@@ -391,6 +392,8 @@ export default function PlaceDetailsScreen({ route }) {
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.kicker}>{copy.categories[place.category]}</Text>
         <Text style={styles.title}>{place.name}</Text>
+
+        <PlacePhotoSection place={place} role={role} />
 
         <Pressable
           style={[styles.favoriteButton, favorite && styles.favoriteButtonActive]}

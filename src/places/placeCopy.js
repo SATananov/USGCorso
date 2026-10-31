@@ -6,6 +6,15 @@ export const placeCopy = {
     list: 'СПИСЪК',
     add: 'ДОБАВИ МЯСТО',
     nearMe: 'БЛИЗО ДО МЕН',
+    mapPresence: {
+      visibleOnMap: 'ВИДИМ НА КАРТАТА',
+      hiddenOnMap: 'СКРИТ НА КАРТАТА',
+      enable: 'ПОКАЖИ МЕ',
+      disable: 'СКРИЙ МЕ',
+      active: 'Споделяш местоположението си само докато картата е активна.',
+      privacy: 'Другите членове се виждат само ако изрично са включили споделянето.',
+      error: 'Местоположението не можа да се сподели.',
+    },
     refresh: 'ОБНОВИ',
     ratingSummary: {
       reviews: 'мнения',
@@ -129,6 +138,15 @@ export const placeCopy = {
     list: 'LIST',
     add: 'ADD PLACE',
     nearMe: 'NEAR ME',
+    mapPresence: {
+      visibleOnMap: 'VISIBLE ON MAP',
+      hiddenOnMap: 'HIDDEN ON MAP',
+      enable: 'SHOW ME',
+      disable: 'HIDE ME',
+      active: 'Your location is shared only while the map presence is active.',
+      privacy: 'Other members appear only when they explicitly enable sharing.',
+      error: 'Location sharing could not be updated.',
+    },
     refresh: 'REFRESH',
     ratingSummary: {
       reviews: 'reviews',
@@ -252,6 +270,15 @@ export const placeCopy = {
     list: 'ELENCO',
     add: 'AGGIUNGI LUOGO',
     nearMe: 'VICINO A ME',
+    mapPresence: {
+      visibleOnMap: 'VISIBILE SULLA MAPPA',
+      hiddenOnMap: 'NASCOSTO SULLA MAPPA',
+      enable: 'MOSTRAMI',
+      disable: 'NASCONDIMI',
+      active: 'La posizione viene condivisa solo mentre la presenza sulla mappa è attiva.',
+      privacy: 'Gli altri membri appaiono solo se attivano esplicitamente la condivisione.',
+      error: 'Impossibile aggiornare la condivisione della posizione.',
+    },
     refresh: 'AGGIORNA',
     ratingSummary: {
       reviews: 'recensioni',
