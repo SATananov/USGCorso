@@ -1,5 +1,9 @@
 import { supabase } from '../lib/supabase';
 
+export async function getIsAdmin() {
+  return supabase.rpc('is_admin');
+}
+
 export async function createContentItem(values) {
   return supabase.rpc('create_content_item', {
     target_section: values.section,
@@ -24,6 +28,44 @@ export async function deleteMyContentItem(itemId) {
   return supabase.rpc('delete_my_content_item', {
     target_item_id: itemId,
   });
+}
+
+export async function deleteMyContentItemWithAssets(itemId) {
+  const assetsResult = await getMyContentAssets(itemId);
+
+  if (assetsResult.error) {
+    return assetsResult;
+  }
+
+  const paths = (assetsResult.data ?? [])
+    .map((asset) => asset.storage_path)
+    .filter(Boolean);
+
+  const deleteResult = await deleteMyContentItem(itemId);
+
+  if (deleteResult.error) {
+    return deleteResult;
+  }
+
+  if (paths.length > 0) {
+    const storageResult = await supabase.storage
+      .from('usg-content')
+      .remove(paths);
+
+    if (storageResult.error) {
+      return {
+        data: deleteResult.data,
+        error: storageResult.error,
+        deleted: true,
+      };
+    }
+  }
+
+  return {
+    data: deleteResult.data,
+    error: null,
+    deleted: true,
+  };
 }
 
 export async function getMyContentItems(section = null) {

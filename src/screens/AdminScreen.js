@@ -21,6 +21,7 @@ import { radius, spacing } from '../styles/usgTheme';
 import { getAdminContentItems } from '../governance/contentGovernanceService';
 import { useTheme } from '../theme/ThemeContext';
 import AdminContentGovernance from '../components/AdminContentGovernance';
+import AdminDogModeration from '../components/AdminDogModeration';
 import AdminDogsManagement from '../components/AdminDogsManagement';
 import AdminPlaceMediaModeration from '../components/AdminPlaceMediaModeration';
 import AdminPlacesModeration from '../components/AdminPlacesModeration';
@@ -477,7 +478,10 @@ export default function AdminScreen() {
                       </>
                     ) : (
                         key === 'myCorso' ? (
-                          <AdminDogsManagement />
+                          <>
+                            <AdminDogModeration onChanged={loadDashboard} />
+                            <AdminDogsManagement />
+                          </>
                         ) : (
 
                       <AdminContentGovernance

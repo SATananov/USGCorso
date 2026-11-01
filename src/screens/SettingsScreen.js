@@ -1,7 +1,8 @@
+import USGDialog from '../components/USGDialog';
+import { useState as useUSGDialogState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useMemo } from 'react';
 import {
-  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -73,42 +74,62 @@ export default function SettingsScreen({ navigation }) {
     },
   ];
 
-  function confirmReset() {
-    Alert.alert(
-      t('settings.resetTitle'),
-      t('settings.resetConfirm'),
-      [
-        {
-          text: t('settings.cancel'),
-          style: 'cancel',
-        },
-        {
-          text: t('settings.resetAction'),
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await AsyncStorage.multiRemove(RESET_KEYS);
-              setLanguage('en');
-              setThemeName('dark');
-              Alert.alert(
-                t('settings.resetDoneTitle'),
-                t('settings.resetDone')
-              );
-            } catch (error) {
-              console.warn('Reset preferences failed:', error);
-              Alert.alert(
-                t('settings.resetFailedTitle'),
-                t('settings.resetFailed')
-              );
-            }
-          },
-        },
-      ]
-    );
+    const [usgDialog, setUsgDialog] = useUSGDialogState(null);
+  const [usgDialogBusy, setUsgDialogBusy] = useUSGDialogState(false);
+
+  async function handleUSGDialogConfirm() {
+    const action = usgDialog?.onConfirm;
+
+    if (!action || usgDialogBusy) {
+      return;
+    }
+
+    setUsgDialogBusy(true);
+
+    try {
+      setUsgDialog(null);
+      await action();
+    } finally {
+      setUsgDialogBusy(false);
+    }
+  }
+
+  function closeUSGDialog() {
+    if (!usgDialogBusy) {
+      setUsgDialog(null);
+    }
+  }
+
+function confirmReset() {
+    setUsgDialog({
+      title: t('settings.resetTitle'),
+      message: t('settings.resetConfirm'),
+      cancelText: t('settings.cancel'),
+      confirmText: t('settings.resetAction'),
+      onConfirm: async () => {
+        try {
+          await AsyncStorage.multiRemove(RESET_KEYS);
+          setLanguage('en');
+          setThemeName('dark');
+          setUsgDialog({
+            title: t('settings.resetDoneTitle'),
+            message: t('settings.resetDone'),
+          });
+        } catch (error) {
+          console.warn('Reset preferences failed:', error);
+          setUsgDialog({
+            title: t('settings.resetFailedTitle'),
+            message: t('settings.resetFailed'),
+          });
+        }
+      },
+    });
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
+    (
+        <>
+          <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.headerCard}>
           <Text style={styles.kicker}>USG CORSO</Text>
@@ -255,6 +276,19 @@ export default function SettingsScreen({ navigation }) {
         <Text style={styles.footer}>USG — Unico Suo Genere™</Text>
       </ScrollView>
     </SafeAreaView>
+          <USGDialog
+          visible={Boolean(usgDialog)}
+          title={usgDialog?.title || ''}
+          message={usgDialog?.message || ''}
+          cancelText={usgDialog?.cancelText}
+          confirmText={usgDialog?.confirmText}
+          onCancel={closeUSGDialog}
+          onConfirm={handleUSGDialogConfirm}
+          onSingleAction={closeUSGDialog}
+          busy={usgDialogBusy}
+        />
+        </>
+      )
   );
 }
 

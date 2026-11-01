@@ -1,7 +1,8 @@
+import USGDialog from './USGDialog';
+import { useState as useUSGDialogState } from 'react';
 ﻿import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
   Image,
   Modal,
   Pressable,
@@ -231,31 +232,55 @@ function SettingsPanel({ navigation, onClose }) {
     navigation.getParent()?.navigate(route);
   }
 
-  function confirmReset() {
-    Alert.alert(
-      labels.resetTitle,
-      labels.resetMessage,
-      [
-        {
-          text: labels.cancel,
-          style: 'cancel',
-        },
-        {
-          text: labels.resetAction,
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await AsyncStorage.multiRemove(RESET_KEYS);
-              await setLanguage('en');
-              await setThemeName('dark');
-              Alert.alert(labels.resetAction, labels.resetDone);
-            } catch {
-              Alert.alert(labels.resetAction, labels.resetError);
-            }
-          },
-        },
-      ]
-    );
+    const [usgDialog, setUsgDialog] = useUSGDialogState(null);
+  const [usgDialogBusy, setUsgDialogBusy] = useUSGDialogState(false);
+
+  async function handleUSGDialogConfirm() {
+    const action = usgDialog?.onConfirm;
+
+    if (!action || usgDialogBusy) {
+      return;
+    }
+
+    setUsgDialogBusy(true);
+
+    try {
+      setUsgDialog(null);
+      await action();
+    } finally {
+      setUsgDialogBusy(false);
+    }
+  }
+
+  function closeUSGDialog() {
+    if (!usgDialogBusy) {
+      setUsgDialog(null);
+    }
+  }
+
+function confirmReset() {
+    setUsgDialog({
+      title: labels.resetTitle,
+      message: labels.resetMessage,
+      cancelText: labels.cancel,
+      confirmText: labels.resetAction,
+      onConfirm: async () => {
+        try {
+          await AsyncStorage.multiRemove(RESET_KEYS);
+          await setLanguage('en');
+          await setThemeName('dark');
+          setUsgDialog({
+            title: labels.resetAction,
+            message: labels.resetDone,
+          });
+        } catch {
+          setUsgDialog({
+            title: labels.resetAction,
+            message: labels.resetError,
+          });
+        }
+      },
+    });
   }
 
   function runIntro() {
@@ -264,7 +289,9 @@ function SettingsPanel({ navigation, onClose }) {
   }
 
   return (
-    <PanelShell title={labels.settingsTitle} onClose={onClose}>
+    (
+        <>
+          <PanelShell title={labels.settingsTitle} onClose={onClose}>
       <AccordionRow
         title={labels.theme}
         open={openKey === 'theme'}
@@ -375,6 +402,19 @@ function SettingsPanel({ navigation, onClose }) {
         <ActionButton label={labels.resetAction} onPress={confirmReset} danger />
       </AccordionRow>
     </PanelShell>
+          <USGDialog
+          visible={Boolean(usgDialog)}
+          title={usgDialog?.title || ''}
+          message={usgDialog?.message || ''}
+          cancelText={usgDialog?.cancelText}
+          confirmText={usgDialog?.confirmText}
+          onCancel={closeUSGDialog}
+          onConfirm={handleUSGDialogConfirm}
+          onSingleAction={closeUSGDialog}
+          busy={usgDialogBusy}
+        />
+        </>
+      )
   );
 }
 

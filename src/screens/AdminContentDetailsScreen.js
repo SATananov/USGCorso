@@ -1,6 +1,7 @@
+import USGDialog from '../components/USGDialog';
+import { useState as useUSGDialogState } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
   Image,
   Linking,
   Pressable,
@@ -156,6 +157,33 @@ const copy = {
 };
 
 export default function AdminContentDetailsScreen({ route, navigation }) {
+  const [usgDialog, setUsgDialog] = useUSGDialogState(null);
+  const [usgDialogBusy, setUsgDialogBusy] = useUSGDialogState(false);
+
+  async function handleUSGDialogConfirm() {
+    const action = usgDialog?.onConfirm;
+
+    if (!action || usgDialogBusy) {
+      return;
+    }
+
+    setUsgDialogBusy(true);
+
+    try {
+      setUsgDialog(null);
+      await action();
+    } finally {
+      setUsgDialogBusy(false);
+    }
+  }
+
+  function closeUSGDialog() {
+    if (!usgDialogBusy) {
+      setUsgDialog(null);
+    }
+  }
+
+
   const { itemId, sectionKey } = route.params;
   const { language } = useLanguage();
   const { colors } = useTheme();
@@ -261,48 +289,46 @@ export default function AdminContentDetailsScreen({ route, navigation }) {
       return;
     }
 
-    Alert.alert(labels.removeTitle, labels.removeMessage, [
-      { text: labels.cancel, style: 'cancel' },
-      {
-        text: labels.remove,
-        style: 'destructive',
-        onPress: async () => {
-          setWorking(true);
-          const result = await adminDeleteSharedContentItem(item.id);
+    setUsgDialog({
+      title: labels.removeTitle,
+      message: labels.removeMessage,
+      cancelText: labels.cancel,
+      confirmText: labels.remove,
+      onConfirm: async () => {
+        setWorking(true);
+                  const result = await adminDeleteSharedContentItem(item.id);
 
-          if (result.error) {
-            setError(labels.actionError);
-            setWorking(false);
-            return;
-          }
+                  if (result.error) {
+                    setError(labels.actionError);
+                    setWorking(false);
+                    return;
+                  }
 
-          navigation.goBack();
-        },
+                  navigation.goBack();
       },
-    ]);
+    });
   }
 
   function confirmAssetDelete(asset) {
-    Alert.alert(labels.removeAssetTitle, labels.removeAssetMessage, [
-      { text: labels.cancel, style: 'cancel' },
-      {
-        text: labels.removeAsset,
-        style: 'destructive',
-        onPress: async () => {
-          setWorking(true);
-          const result = await adminDeleteSharedContentAsset(asset.id);
+    setUsgDialog({
+      title: labels.removeAssetTitle,
+      message: labels.removeAssetMessage,
+      cancelText: labels.cancel,
+      confirmText: labels.removeAsset,
+      onConfirm: async () => {
+        setWorking(true);
+                  const result = await adminDeleteSharedContentAsset(asset.id);
 
-          if (result.error) {
-            setError(labels.actionError);
-            setWorking(false);
-            return;
-          }
+                  if (result.error) {
+                    setError(labels.actionError);
+                    setWorking(false);
+                    return;
+                  }
 
-          await load();
-          setWorking(false);
-        },
+                  await load();
+                  setWorking(false);
       },
-    ]);
+    });
   }
 
   if (loading) {
@@ -326,7 +352,9 @@ export default function AdminContentDetailsScreen({ route, navigation }) {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
+    (
+        <>
+          <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -541,6 +569,19 @@ export default function AdminContentDetailsScreen({ route, navigation }) {
         </View>
       </ScrollView>
     </SafeAreaView>
+          <USGDialog
+          visible={Boolean(usgDialog)}
+          title={usgDialog?.title || ''}
+          message={usgDialog?.message || ''}
+          cancelText={usgDialog?.cancelText}
+          confirmText={usgDialog?.confirmText}
+          onCancel={closeUSGDialog}
+          onConfirm={handleUSGDialogConfirm}
+          onSingleAction={closeUSGDialog}
+          busy={usgDialogBusy}
+        />
+        </>
+      )
   );
 }
 

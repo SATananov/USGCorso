@@ -46,3 +46,4 @@ yarn-error.*
 supabase/.temp/
 
 .usg-patch-backups/
+modules/*/android/build/

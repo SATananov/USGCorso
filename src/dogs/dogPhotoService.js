@@ -20,8 +20,30 @@ export async function getDogPhotoUrl(path) {
   };
 }
 
-export async function uploadDogPhoto(userId, dogId, uri, contentType) {
-  const path = `${userId}/${dogId}/main`;
+export async function uploadDogPhoto(
+  userId,
+  dogId,
+  uri,
+  contentType
+) {
+  const mimeType = normalizeImageMimeType(contentType);
+  const extension = mimeType === 'image/png'
+    ? 'png'
+    : mimeType === 'image/webp'
+      ? 'webp'
+      : 'jpg';
+  const path = `${userId}/${dogId}/main-${Date.now()}.${extension}`;
+
+  const currentResult = await supabase
+    .from('dogs')
+    .select('photo_path')
+    .eq('id', dogId)
+    .eq('owner_id', userId)
+    .maybeSingle();
+
+  if (currentResult.error) {
+    return currentResult;
+  }
 
   const base64 = await FileSystem.readAsStringAsync(uri, {
     encoding: FileSystem.EncodingType.Base64,
@@ -30,15 +52,15 @@ export async function uploadDogPhoto(userId, dogId, uri, contentType) {
   const uploadResult = await supabase.storage
     .from(BUCKET)
     .upload(path, decode(base64), {
-      contentType: contentType || 'image/jpeg',
-      upsert: true,
+      contentType: mimeType,
+      upsert: false,
     });
 
   if (uploadResult.error) {
     return uploadResult;
   }
 
-  return supabase
+  const updateResult = await supabase
     .from('dogs')
     .update({
       photo_path: path,
@@ -48,6 +70,27 @@ export async function uploadDogPhoto(userId, dogId, uri, contentType) {
     .eq('owner_id', userId)
     .select('id, photo_path')
     .single();
+
+  if (updateResult.error) {
+    await supabase.storage.from(BUCKET).remove([path]);
+    return updateResult;
+  }
+
+  const previousPath = currentResult.data?.photo_path;
+
+  if (previousPath && previousPath !== path) {
+    await supabase.storage.from(BUCKET).remove([previousPath]);
+  }
+
+  return updateResult;
+}
+
+function normalizeImageMimeType(value) {
+  if (value === 'image/png' || value === 'image/webp') {
+    return value;
+  }
+
+  return 'image/jpeg';
 }
 
 export async function deleteDogPhoto(userId, dogId, photoPath) {

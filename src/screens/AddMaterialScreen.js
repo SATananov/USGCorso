@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Image,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -15,8 +15,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '../auth/AuthContext';
 import {
+  adminSetContentStatus,
   createContentItem,
   deleteMyContentItem,
+  getIsAdmin,
 } from '../governance/contentGovernanceService';
 import { uploadMyContentImage } from '../governance/userContentMediaService';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -34,10 +36,155 @@ const SECTION_TYPES = {
 
 const SECTIONS = Object.keys(SECTION_TYPES);
 
+const copy = {
+  bg: {
+    articleTitle: 'Заглавие',
+    articleTitlePlaceholder: 'Заглавие на материала',
+    articleBody: 'Текст / описание',
+    articleBodyPlaceholder: 'Напиши съдържанието или кратко описание...',
+    photoName: 'Име на снимката',
+    photoNamePlaceholder: 'Незадължително име на снимката',
+    photoDescription: 'Описание към снимката',
+    photoDescriptionPlaceholder: 'Незадължително описание към снимката...',
+    photo: 'Снимка',
+    addPhoto: 'ДОБАВИ СНИМКА',
+    addPhotoToArticle: 'ДОБАВИ СНИМКА КЪМ МАТЕРИАЛА',
+    changePhoto: 'ПРОМЕНИ СНИМКАТА',
+    remove: 'ПРЕМАХНИ',
+    clearMaterial: 'ИЗЧИСТИ МАТЕРИАЛА',
+    camera: 'НАПРАВИ СНИМКА',
+    fromPhone: 'ОТ ТЕЛЕФОНА',
+    cancel: 'ОТКАЗ',
+    sourceTitle: 'Добави снимка',
+    sourceText: 'Направи снимка сега или избери вече запазена снимка от телефона.',
+    cameraPermission: 'Разреши достъп до камерата, за да направиш снимка през USG Corso.',
+    photoPermission: 'Разреши достъп до снимките, за да избереш изображение от телефона.',
+    photoTooLarge: 'Снимката е твърде голяма. Максималният размер е 20 MB.',
+    titleRequired: 'Добави заглавие на материала.',
+    titleTooLong: 'Заглавието е твърде дълго.',
+    bodyTooLong: 'Текстът е твърде дълъг.',
+    imageRequired: 'Добави снимка, преди да изпратиш материала.',
+    saveFailed: 'Материалът не можа да бъде запазен.',
+    moderationTitle: 'Модерация',
+    moderationText: 'След подаване материалът ще бъде със статус Чакащ. Администратор може да го одобри, отхвърли или върне за преглед.',
+    adminModerationTitle: 'Директно публикуване',
+    adminModerationText: 'Влизаш като администратор. Твоят материал ще бъде публикуван директно и няма да чака собствено одобрение.',
+    submit: 'ИЗПРАТИ ЗА ПРЕГЛЕД',
+    publish: 'ПУБЛИКУВАЙ',
+    successTitle: 'Материалът е подаден',
+    successText: 'Материалът е изпратен за преглед и вече се вижда в Моите материали.',
+    publishSuccessTitle: 'Материалът е публикуван',
+    publishSuccessText: 'Материалът е публикуван директно като одобрен администраторски материал.',
+    done: 'OK',
+    scanButton: 'СКАНИРАЙ ТЕКСТ',
+    scanResultTitle: 'Разпознат текст',
+    scanResultText: 'Провери текста и го редактирай преди добавяне.',
+    append: 'ДОБАВИ',
+    replace: 'ЗАМЕНИ',
+    scanHint: 'Снимай текст сега или избери изображение от телефона. USG Corso ще го разпознае и ще ти позволи да го поправиш.',
+    optionalPhotoHint: 'По желание можеш да добавиш снимка към текста. Име и описание към допълнителната снимка ще бъдат добавени в следващата стъпка.',
+  },
+  en: {
+    articleTitle: 'Title',
+    articleTitlePlaceholder: 'Material title',
+    articleBody: 'Text / description',
+    articleBodyPlaceholder: 'Write the content or a short description...',
+    photoName: 'Photo name',
+    photoNamePlaceholder: 'Optional photo name',
+    photoDescription: 'Photo description',
+    photoDescriptionPlaceholder: 'Optional photo description...',
+    photo: 'Photo',
+    addPhoto: 'ADD PHOTO',
+    addPhotoToArticle: 'ADD PHOTO TO MATERIAL',
+    changePhoto: 'CHANGE PHOTO',
+    remove: 'REMOVE',
+    clearMaterial: 'CLEAR MATERIAL',
+    camera: 'TAKE PHOTO',
+    fromPhone: 'FROM PHONE',
+    cancel: 'CANCEL',
+    sourceTitle: 'Add photo',
+    sourceText: 'Take a photo now or choose one already saved on your phone.',
+    cameraPermission: 'Allow camera access to take a photo in USG Corso.',
+    photoPermission: 'Allow photo access to choose an image from your phone.',
+    photoTooLarge: 'The photo is too large. Maximum size is 20 MB.',
+    titleRequired: 'Add a material title.',
+    titleTooLong: 'The title is too long.',
+    bodyTooLong: 'The text is too long.',
+    imageRequired: 'Add a photo before submitting the material.',
+    saveFailed: 'The material could not be saved.',
+    moderationTitle: 'Moderation',
+    moderationText: 'After submission the material will be Pending. An administrator can approve, reject, or return it for review.',
+    adminModerationTitle: 'Direct publishing',
+    adminModerationText: 'You are signed in as an administrator. Your material will be published directly without requiring your own approval.',
+    submit: 'SUBMIT FOR REVIEW',
+    publish: 'PUBLISH',
+    successTitle: 'Material submitted',
+    successText: 'The material was sent for review and is now visible in My Materials.',
+    publishSuccessTitle: 'Material published',
+    publishSuccessText: 'The material was published directly as approved administrator content.',
+    done: 'OK',
+    scanButton: 'SCAN TEXT',
+    scanResultTitle: 'Recognized text',
+    scanResultText: 'Review and edit the text before adding it.',
+    append: 'ADD',
+    replace: 'REPLACE',
+    scanHint: 'Take a photo of text now or choose an image from your phone. USG Corso will recognize it and let you edit it.',
+    optionalPhotoHint: 'You can optionally add a photo to the text. Per-photo name and caption will be added in the next step.',
+  },
+  it: {
+    articleTitle: 'Titolo',
+    articleTitlePlaceholder: 'Titolo del materiale',
+    articleBody: 'Testo / descrizione',
+    articleBodyPlaceholder: 'Scrivi il contenuto o una breve descrizione...',
+    photoName: 'Nome della foto',
+    photoNamePlaceholder: 'Nome facoltativo della foto',
+    photoDescription: 'Descrizione della foto',
+    photoDescriptionPlaceholder: 'Descrizione facoltativa della foto...',
+    photo: 'Foto',
+    addPhoto: 'AGGIUNGI FOTO',
+    addPhotoToArticle: 'AGGIUNGI FOTO AL MATERIALE',
+    changePhoto: 'CAMBIA FOTO',
+    remove: 'RIMUOVI',
+    clearMaterial: 'CANCELLA MATERIALE',
+    camera: 'SCATTA FOTO',
+    fromPhone: 'DAL TELEFONO',
+    cancel: 'ANNULLA',
+    sourceTitle: 'Aggiungi foto',
+    sourceText: 'Scatta una foto ora oppure scegline una già salvata sul telefono.',
+    cameraPermission: 'Consenti l’accesso alla fotocamera per scattare una foto in USG Corso.',
+    photoPermission: 'Consenti l’accesso alle foto per scegliere un’immagine dal telefono.',
+    photoTooLarge: 'La foto è troppo grande. La dimensione massima è 20 MB.',
+    titleRequired: 'Aggiungi un titolo al materiale.',
+    titleTooLong: 'Il titolo è troppo lungo.',
+    bodyTooLong: 'Il testo è troppo lungo.',
+    imageRequired: 'Aggiungi una foto prima di inviare il materiale.',
+    saveFailed: 'Impossibile salvare il materiale.',
+    moderationTitle: 'Moderazione',
+    moderationText: 'Dopo l’invio il materiale avrà stato In attesa. Un amministratore potrà approvarlo, rifiutarlo o rimandarlo in revisione.',
+    adminModerationTitle: 'Pubblicazione diretta',
+    adminModerationText: 'Hai effettuato l’accesso come amministratore. Il tuo materiale sarà pubblicato direttamente senza richiedere la tua approvazione.',
+    submit: 'INVIA PER REVISIONE',
+    publish: 'PUBBLICA',
+    successTitle: 'Materiale inviato',
+    successText: 'Il materiale è stato inviato per la revisione ed è ora visibile in I miei materiali.',
+    publishSuccessTitle: 'Materiale pubblicato',
+    publishSuccessText: 'Il materiale è stato pubblicato direttamente come contenuto amministrativo approvato.',
+    done: 'OK',
+    scanButton: 'SCANSIONA TESTO',
+    scanResultTitle: 'Testo riconosciuto',
+    scanResultText: 'Controlla e modifica il testo prima di aggiungerlo.',
+    append: 'AGGIUNGI',
+    replace: 'SOSTITUISCI',
+    scanHint: 'Fotografa il testo ora oppure scegli un’immagine dal telefono. USG Corso lo riconoscerà e potrai modificarlo.',
+    optionalPhotoHint: 'Puoi aggiungere facoltativamente una foto al testo. Nome e descrizione della singola foto saranno aggiunti nel passaggio successivo.',
+  },
+};
+
 export default function AddMaterialScreen({ navigation }) {
   const { session } = useAuth();
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const { colors } = useTheme();
+  const labels = copy[language] ?? copy.en;
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const [section, setSection] = useState('knowledge');
@@ -47,17 +194,63 @@ export default function AddMaterialScreen({ navigation }) {
   const [imageAsset, setImageAsset] = useState(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [successVisible, setSuccessVisible] = useState(false);
+  const [photoSourceVisible, setPhotoSourceVisible] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [publishedDirectly, setPublishedDirectly] = useState(false);
+
+  const isImageType = contentType === 'image';
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadAdminCapability() {
+      const result = await getIsAdmin();
+
+      if (active) {
+        setIsAdmin(Boolean(result.data) && !result.error);
+      }
+    }
+
+    loadAdminCapability();
+
+    return () => {
+      active = false;
+    };
+  }, [session?.user?.id]);
 
   function changeSection(nextSection) {
     setSection(nextSection);
     setContentType(SECTION_TYPES[nextSection][0]);
+    setError('');
   }
 
-  async function chooseImage() {
+  function changeContentType(nextType) {
+    setContentType(nextType);
+    setError('');
+  }
+
+  function chooseImage() {
+    setPhotoSourceVisible(true);
+  }
+
+  function acceptSelectedImage(selected) {
+    if (selected.fileSize && selected.fileSize > 20 * 1024 * 1024) {
+      setError(labels.photoTooLarge);
+      return;
+    }
+
+    setImageAsset(selected);
+    setError('');
+  }
+
+  async function chooseImageFromLibrary() {
+    setPhotoSourceVisible(false);
+
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (!permission.granted) {
-      setError(t('addMaterial.photoPermission'));
+      setError(labels.photoPermission);
       return;
     }
 
@@ -71,14 +264,35 @@ export default function AddMaterialScreen({ navigation }) {
       return;
     }
 
-    const selected = result.assets[0];
+    acceptSelectedImage(result.assets[0]);
+  }
 
-    if (selected.fileSize && selected.fileSize > 20 * 1024 * 1024) {
-      setError(t('addMaterial.photoTooLarge'));
+  async function takeImageWithCamera() {
+    setPhotoSourceVisible(false);
+
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+
+    if (!permission.granted) {
+      setError(labels.cameraPermission);
       return;
     }
 
-    setImageAsset(selected);
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ['images'],
+      allowsEditing: false,
+      quality: 0.9,
+    });
+
+    if (result.canceled || !result.assets?.length) {
+      return;
+    }
+
+    acceptSelectedImage(result.assets[0]);
+  }
+
+  function clearMaterial() {
+    setTitle('');
+    setBody('');
     setError('');
   }
 
@@ -90,23 +304,23 @@ export default function AddMaterialScreen({ navigation }) {
     const cleanTitle = title.trim();
     const cleanBody = body.trim();
 
-    if (!cleanTitle) {
-      setError(t('addMaterial.titleRequired'));
+    if (!isImageType && !cleanTitle) {
+      setError(labels.titleRequired);
       return;
     }
 
     if (cleanTitle.length > 180) {
-      setError(t('addMaterial.titleTooLong'));
+      setError(labels.titleTooLong);
       return;
     }
 
     if (cleanBody.length > 20000) {
-      setError(t('addMaterial.bodyTooLong'));
+      setError(labels.bodyTooLong);
       return;
     }
 
-    if (contentType === 'image' && !imageAsset) {
-      setError(t('addMaterial.imageRequired'));
+    if (isImageType && !imageAsset) {
+      setError(labels.imageRequired);
       return;
     }
 
@@ -147,39 +361,49 @@ export default function AddMaterialScreen({ navigation }) {
         }
       }
 
-      Alert.alert(
-        t('addMaterial.successTitle'),
-        t('addMaterial.successText'),
-        [
-          {
-            text: t('addMaterial.done'),
-            onPress: () => navigation.replace('MyMaterials'),
-          },
-        ]
-      );
+      if (isAdmin) {
+        const published = await adminSetContentStatus(
+          createdItem.id,
+          'approved'
+        );
+
+        if (published.error) {
+          throw published.error;
+        }
+
+        setPublishedDirectly(true);
+      } else {
+        setPublishedDirectly(false);
+      }
+
+      setSuccessVisible(true);
     } catch {
       if (createdItem?.id) {
         await deleteMyContentItem(createdItem.id);
       }
 
-      setError(t('addMaterial.saveFailed'));
+      setError(labels.saveFailed);
     } finally {
       setSaving(false);
     }
   }
 
   const availableTypes = SECTION_TYPES[section];
+  const hasTextContent = Boolean(title.trim() || body.trim());
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.hero}>
           <Text style={styles.kicker}>USG CORSO</Text>
           <Text style={styles.title}>{t('addMaterial.title')}</Text>
           <Text style={styles.subtitle}>{t('addMaterial.subtitle')}</Text>
         </View>
 
-        <Text style={styles.label}>{t('addMaterial.section')}</Text>
+        <Text style={styles.sectionLabel}>{t('addMaterial.section')}</Text>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -210,7 +434,7 @@ export default function AddMaterialScreen({ navigation }) {
           })}
         </ScrollView>
 
-        <Text style={styles.label}>{t('addMaterial.type')}</Text>
+        <Text style={styles.sectionLabel}>{t('addMaterial.type')}</Text>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -222,7 +446,7 @@ export default function AddMaterialScreen({ navigation }) {
             return (
               <Pressable
                 key={value}
-                onPress={() => setContentType(value)}
+                onPress={() => changeContentType(value)}
                 style={[
                   styles.chip,
                   active && styles.chipActive,
@@ -241,85 +465,167 @@ export default function AddMaterialScreen({ navigation }) {
           })}
         </ScrollView>
 
-        <View style={styles.formCard}>
-          <Text style={styles.fieldLabel}>{t('addMaterial.materialTitle')}</Text>
-          <TextInput
-            value={title}
-            onChangeText={setTitle}
-            placeholder={t('addMaterial.titlePlaceholder')}
-            placeholderTextColor={colors.textMuted}
-            maxLength={180}
-            style={styles.input}
-          />
+        {isImageType ? (
+          <View style={styles.formCard}>
+            <Text style={styles.fieldLabel}>{labels.photoName}</Text>
+            <TextInput
+              value={title}
+              onChangeText={setTitle}
+              placeholder={labels.photoNamePlaceholder}
+              placeholderTextColor={colors.textMuted}
+              maxLength={180}
+              style={styles.input}
+            />
 
-          <Text style={styles.fieldLabel}>{t('addMaterial.body')}</Text>
-          <TextInput
-            value={body}
-            onChangeText={setBody}
-            placeholder={t('addMaterial.bodyPlaceholder')}
-            placeholderTextColor={colors.textMuted}
-            multiline
-            maxLength={20000}
-            style={[styles.input, styles.bodyInput]}
-          />
+            <Text style={styles.fieldLabel}>{labels.photoDescription}</Text>
+            <TextInput
+              value={body}
+              onChangeText={setBody}
+              placeholder={labels.photoDescriptionPlaceholder}
+              placeholderTextColor={colors.textMuted}
+              multiline
+              textAlignVertical="top"
+              maxLength={20000}
+              style={[styles.input, styles.bodyInput]}
+            />
 
-          <View style={styles.scanBlock}>
+            {hasTextContent ? (
+              <Pressable
+                onPress={clearMaterial}
+                style={({ pressed }) => [
+                  styles.clearButton,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Text style={styles.clearButtonText}>
+                  {labels.clearMaterial}
+                </Text>
+              </Pressable>
+            ) : null}
+
+            <Text style={styles.fieldLabel}>{labels.photo}</Text>
+            {imageAsset ? (
+              <PhotoPreview
+                asset={imageAsset}
+                labels={labels}
+                styles={styles}
+                onChange={chooseImage}
+                onRemove={() => setImageAsset(null)}
+              />
+            ) : (
+              <Pressable
+                onPress={chooseImage}
+                style={({ pressed }) => [
+                  styles.photoAddButton,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Text style={styles.photoAddButtonText}>
+                  {labels.addPhoto}
+                </Text>
+              </Pressable>
+            )}
+          </View>
+        ) : (
+          <View style={styles.formCard}>
+            <Text style={styles.fieldLabel}>{labels.articleTitle}</Text>
+            <TextInput
+              value={title}
+              onChangeText={setTitle}
+              placeholder={labels.articleTitlePlaceholder}
+              placeholderTextColor={colors.textMuted}
+              maxLength={180}
+              style={styles.input}
+            />
+
+            <Text style={styles.fieldLabel}>{labels.articleBody}</Text>
+            <TextInput
+              value={body}
+              onChangeText={setBody}
+              placeholder={labels.articleBodyPlaceholder}
+              placeholderTextColor={colors.textMuted}
+              multiline
+              textAlignVertical="top"
+              maxLength={20000}
+              style={[styles.input, styles.bodyInput]}
+            />
+
             <ScanTextButton
               colors={colors}
+              labels={{
+                button: labels.scanButton,
+                resultTitle: labels.scanResultTitle,
+                resultText: labels.scanResultText,
+                append: labels.append,
+                replace: labels.replace,
+                cancel: labels.cancel,
+              }}
               currentText={body}
               onTextChange={setBody}
               disabled={saving}
-              labels={{
-                button: t('ocr.scanText'),
-                permissionTitle: t('ocr.permissionTitle'),
-                permissionText: t('ocr.permissionText'),
-                noTextTitle: t('ocr.noTextTitle'),
-                noTextText: t('ocr.noTextText'),
-                resultTitle: t('ocr.resultTitle'),
-                resultText: t('ocr.resultText'),
-                cancel: t('ocr.cancel'),
-                replace: t('ocr.replace'),
-                append: t('ocr.append'),
-                failedTitle: t('ocr.failedTitle'),
-                failedText: t('ocr.failedText'),
-              }}
             />
-            <Text style={styles.scanHint}>{t('ocr.scanHint')}</Text>
-          </View>
 
-          <Text style={styles.fieldLabel}>{t('addMaterial.photo')}</Text>
+            <Text style={styles.helperText}>{labels.scanHint}</Text>
 
-          {imageAsset ? (
-            <View style={styles.previewCard}>
-              <Image
-                source={{ uri: imageAsset.uri }}
-                style={styles.preview}
-                resizeMode="cover"
-              />
+            {hasTextContent ? (
               <Pressable
-                onPress={() => setImageAsset(null)}
-                style={styles.removeButton}
+                onPress={clearMaterial}
+                style={({ pressed }) => [
+                  styles.clearButton,
+                  pressed && styles.pressed,
+                ]}
               >
-                <Text style={styles.removeText}>
-                  {t('addMaterial.removePhoto')}
+                <Text style={styles.clearButtonText}>
+                  {labels.clearMaterial}
                 </Text>
               </Pressable>
-            </View>
-          ) : (
-            <Pressable onPress={chooseImage} style={styles.photoButton}>
-              <Text style={styles.photoButtonText}>
-                {t('addMaterial.choosePhoto')}
-              </Text>
-            </Pressable>
-          )}
-        </View>
+            ) : null}
 
-        <View style={styles.infoCard}>
-          <Text style={styles.infoTitle}>{t('addMaterial.moderationTitle')}</Text>
-          <Text style={styles.infoText}>{t('addMaterial.moderationText')}</Text>
-        </View>
+            <View style={styles.attachmentDivider} />
+
+            <Text style={styles.attachmentTitle}>{labels.photo}</Text>
+            <Text style={styles.attachmentHint}>
+              {labels.optionalPhotoHint}
+            </Text>
+
+            {imageAsset ? (
+              <PhotoPreview
+                asset={imageAsset}
+                labels={labels}
+                styles={styles}
+                onChange={chooseImage}
+                onRemove={() => setImageAsset(null)}
+              />
+            ) : (
+              <Pressable
+                onPress={chooseImage}
+                style={({ pressed }) => [
+                  styles.photoAddSecondary,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Text style={styles.photoAddSecondaryText}>
+                  {labels.addPhotoToArticle}
+                </Text>
+              </Pressable>
+            )}
+          </View>
+        )}
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
+
+        <View style={styles.moderationCard}>
+          <Text style={styles.moderationTitle}>
+            {isAdmin
+              ? labels.adminModerationTitle
+              : labels.moderationTitle}
+          </Text>
+          <Text style={styles.moderationText}>
+            {isAdmin
+              ? labels.adminModerationText
+              : labels.moderationText}
+          </Text>
+        </View>
 
         <Pressable
           disabled={saving}
@@ -332,11 +638,138 @@ export default function AddMaterialScreen({ navigation }) {
           {saving ? (
             <ActivityIndicator color="#070708" />
           ) : (
-            <Text style={styles.submitText}>{t('addMaterial.submit')}</Text>
+            <Text style={styles.submitText}>
+              {isAdmin ? labels.publish : labels.submit}
+            </Text>
           )}
         </Pressable>
       </ScrollView>
+
+      <Modal
+        animationType="fade"
+        transparent
+        visible={photoSourceVisible}
+        onRequestClose={() => setPhotoSourceVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>{labels.sourceTitle}</Text>
+            <Text style={styles.modalText}>{labels.sourceText}</Text>
+
+            <Pressable
+              onPress={takeImageWithCamera}
+              style={({ pressed }) => [
+                styles.modalPrimary,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text style={styles.modalPrimaryText}>{labels.camera}</Text>
+            </Pressable>
+
+            <Pressable
+              onPress={chooseImageFromLibrary}
+              style={({ pressed }) => [
+                styles.modalSecondary,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text style={styles.modalSecondaryText}>
+                {labels.fromPhone}
+              </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => setPhotoSourceVisible(false)}
+              style={({ pressed }) => [
+                styles.modalCancel,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text style={styles.modalCancelText}>{labels.cancel}</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        animationType="fade"
+        transparent
+        visible={successVisible}
+        onRequestClose={() => {}}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>
+              {publishedDirectly
+                ? labels.publishSuccessTitle
+                : labels.successTitle}
+            </Text>
+            <Text style={styles.modalText}>
+              {publishedDirectly
+                ? labels.publishSuccessText
+                : labels.successText}
+            </Text>
+
+            <Pressable
+              onPress={() => {
+                setSuccessVisible(false);
+                navigation.replace('MyMaterials');
+              }}
+              style={({ pressed }) => [
+                styles.modalPrimary,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text style={styles.modalPrimaryText}>{labels.done}</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
+  );
+}
+
+function PhotoPreview({
+  asset,
+  labels,
+  styles,
+  onChange,
+  onRemove,
+}) {
+  return (
+    <View style={styles.photoCard}>
+      <Image
+        source={{ uri: asset.uri }}
+        style={styles.photoPreview}
+        resizeMode="cover"
+      />
+
+      <View style={styles.photoActionRow}>
+        <Pressable
+          onPress={onChange}
+          style={({ pressed }) => [
+            styles.photoActionPrimary,
+            pressed && styles.pressed,
+          ]}
+        >
+          <Text style={styles.photoActionPrimaryText}>
+            {labels.changePhoto}
+          </Text>
+        </Pressable>
+
+        <Pressable
+          onPress={onRemove}
+          style={({ pressed }) => [
+            styles.photoActionSecondary,
+            pressed && styles.pressed,
+          ]}
+        >
+          <Text style={styles.photoActionSecondaryText}>
+            {labels.remove}
+          </Text>
+        </Pressable>
+      </View>
+    </View>
   );
 }
 
@@ -348,7 +781,7 @@ function createStyles(colors) {
     },
     content: {
       padding: spacing.md,
-      paddingBottom: 36,
+      paddingBottom: 40,
     },
     hero: {
       borderRadius: radius.lg,
@@ -356,47 +789,47 @@ function createStyles(colors) {
       borderColor: colors.border,
       backgroundColor: colors.surface,
       padding: 20,
-      marginBottom: 18,
+      marginBottom: 20,
     },
     kicker: {
-      color: colors.goldSoft,
-      fontSize: 9,
-      fontWeight: '800',
-      letterSpacing: 2.4,
-      marginBottom: 7,
+      color: colors.gold,
+      fontSize: 10,
+      fontWeight: '900',
+      letterSpacing: 1.2,
     },
     title: {
       color: colors.text,
-      fontSize: 25,
+      fontSize: 28,
       fontWeight: '900',
+      marginTop: 8,
     },
     subtitle: {
       color: colors.textSoft,
-      fontSize: 12,
-      lineHeight: 19,
-      marginTop: 6,
+      fontSize: 13,
+      lineHeight: 20,
+      marginTop: 8,
     },
-    label: {
+    sectionLabel: {
       color: colors.textSoft,
-      fontSize: 10,
+      fontSize: 14,
       fontWeight: '900',
-      letterSpacing: 1,
-      textTransform: 'uppercase',
-      marginBottom: 7,
+      letterSpacing: 0.8,
+      marginBottom: 10,
+      marginTop: 4,
     },
     chipRow: {
-      gap: 8,
-      paddingBottom: 16,
+      gap: 10,
+      paddingBottom: 18,
     },
     chip: {
-      minHeight: 36,
+      minHeight: 44,
       borderRadius: 999,
       borderWidth: 1,
       borderColor: colors.border,
-      backgroundColor: colors.surfaceSoft,
+      backgroundColor: colors.surface,
       alignItems: 'center',
       justifyContent: 'center',
-      paddingHorizontal: 14,
+      paddingHorizontal: 18,
     },
     chipActive: {
       borderColor: colors.gold,
@@ -404,109 +837,183 @@ function createStyles(colors) {
     },
     chipText: {
       color: colors.textSoft,
-      fontSize: 10,
+      fontSize: 13,
       fontWeight: '800',
     },
     chipTextActive: {
       color: colors.gold,
     },
     formCard: {
-      borderRadius: radius.md,
+      borderRadius: radius.lg,
       borderWidth: 1,
       borderColor: colors.border,
-      backgroundColor: colors.surfaceSoft,
-      padding: 16,
-      marginBottom: 12,
+      backgroundColor: colors.surface,
+      padding: 18,
+      marginBottom: 16,
     },
     fieldLabel: {
-      color: colors.textSoft,
-      fontSize: 10,
+      color: colors.text,
+      fontSize: 14,
       fontWeight: '800',
-      marginBottom: 7,
-      marginTop: 3,
+      marginBottom: 9,
+      marginTop: 4,
     },
     input: {
-      minHeight: 46,
-      borderRadius: 14,
+      minHeight: 52,
+      borderRadius: 16,
       borderWidth: 1,
       borderColor: colors.border,
       backgroundColor: colors.background,
       color: colors.text,
-      fontSize: 13,
-      paddingHorizontal: 13,
-      paddingVertical: 11,
-      marginBottom: 15,
+      fontSize: 15,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      marginBottom: 18,
     },
     bodyInput: {
-      minHeight: 150,
-      textAlignVertical: 'top',
+      minHeight: 160,
+      lineHeight: 22,
     },
-    scanBlock: {
-      marginTop: -3,
-      marginBottom: 15,
-    },
-    scanHint: {
+    helperText: {
       color: colors.textMuted,
-      fontSize: 10,
-      lineHeight: 16,
+      fontSize: 12,
+      lineHeight: 19,
       textAlign: 'center',
-      marginTop: 7,
-      paddingHorizontal: 8,
+      marginTop: 12,
     },
-    photoButton: {
-      minHeight: 46,
+    clearButton: {
+      minHeight: 44,
       borderRadius: 999,
       borderWidth: 1,
       borderColor: colors.gold,
       alignItems: 'center',
       justifyContent: 'center',
+      marginTop: 14,
+      paddingHorizontal: 16,
     },
-    photoButtonText: {
+    clearButtonText: {
+      color: colors.gold,
+      fontSize: 11,
+      fontWeight: '900',
+      letterSpacing: 0.7,
+    },
+    attachmentDivider: {
+      height: 1,
+      backgroundColor: colors.border,
+      marginVertical: 22,
+    },
+    attachmentTitle: {
+      color: colors.text,
+      fontSize: 15,
+      fontWeight: '900',
+    },
+    attachmentHint: {
+      color: colors.textMuted,
+      fontSize: 12,
+      lineHeight: 19,
+      marginTop: 6,
+      marginBottom: 14,
+    },
+    photoAddButton: {
+      minHeight: 50,
+      borderRadius: 999,
+      backgroundColor: colors.gold,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 18,
+    },
+    photoAddButtonText: {
+      color: '#070708',
+      fontSize: 12,
+      fontWeight: '900',
+      letterSpacing: 0.7,
+    },
+    photoAddSecondary: {
+      minHeight: 48,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: colors.gold,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 18,
+    },
+    photoAddSecondaryText: {
+      color: colors.gold,
+      fontSize: 11,
+      fontWeight: '900',
+      letterSpacing: 0.6,
+      textAlign: 'center',
+    },
+    photoCard: {
+      overflow: 'hidden',
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.background,
+    },
+    photoPreview: {
+      width: '100%',
+      aspectRatio: 1.18,
+      backgroundColor: colors.background,
+    },
+    photoActionRow: {
+      flexDirection: 'row',
+      gap: 10,
+      padding: 14,
+      backgroundColor: colors.surface,
+    },
+    photoActionPrimary: {
+      flex: 1,
+      minHeight: 46,
+      borderRadius: 999,
+      backgroundColor: colors.gold,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 14,
+    },
+    photoActionPrimaryText: {
+      color: '#070708',
+      fontSize: 10,
+      fontWeight: '900',
+      letterSpacing: 0.6,
+      textAlign: 'center',
+    },
+    photoActionSecondary: {
+      minWidth: 110,
+      minHeight: 46,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: colors.gold,
+      backgroundColor: colors.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 14,
+    },
+    photoActionSecondaryText: {
       color: colors.gold,
       fontSize: 10,
       fontWeight: '900',
-      letterSpacing: 0.5,
+      letterSpacing: 0.6,
+      textAlign: 'center',
     },
-    previewCard: {
-      borderRadius: 16,
-      overflow: 'hidden',
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    preview: {
-      width: '100%',
-      height: 220,
-      backgroundColor: colors.background,
-    },
-    removeButton: {
-      minHeight: 42,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: colors.background,
-    },
-    removeText: {
-      color: colors.textSoft,
-      fontSize: 10,
-      fontWeight: '800',
-    },
-    infoCard: {
-      borderRadius: radius.md,
+    moderationCard: {
+      borderRadius: radius.lg,
       borderWidth: 1,
       borderColor: colors.goldSoft,
       backgroundColor: colors.activeSurface,
-      padding: 15,
-      marginBottom: 12,
+      padding: 18,
+      marginBottom: 16,
     },
-    infoTitle: {
+    moderationTitle: {
       color: colors.gold,
-      fontSize: 11,
+      fontSize: 16,
       fontWeight: '900',
     },
-    infoText: {
+    moderationText: {
       color: colors.textSoft,
-      fontSize: 11,
-      lineHeight: 18,
-      marginTop: 5,
+      fontSize: 13,
+      lineHeight: 21,
+      marginTop: 9,
     },
     error: {
       color: colors.danger || '#d66',
@@ -515,7 +1022,7 @@ function createStyles(colors) {
       marginBottom: 12,
     },
     submitButton: {
-      minHeight: 50,
+      minHeight: 52,
       borderRadius: 999,
       backgroundColor: colors.gold,
       alignItems: 'center',
@@ -529,6 +1036,80 @@ function createStyles(colors) {
       fontSize: 11,
       fontWeight: '900',
       letterSpacing: 0.7,
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.84)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 24,
+    },
+    modalCard: {
+      width: '100%',
+      maxWidth: 520,
+      borderRadius: 24,
+      borderWidth: 1,
+      borderColor: colors.gold,
+      backgroundColor: colors.surface,
+      padding: 24,
+    },
+    modalTitle: {
+      color: colors.text,
+      fontSize: 24,
+      fontWeight: '900',
+      lineHeight: 30,
+    },
+    modalText: {
+      color: colors.textSoft,
+      fontSize: 14,
+      lineHeight: 22,
+      marginTop: 10,
+      marginBottom: 20,
+    },
+    modalPrimary: {
+      minHeight: 50,
+      borderRadius: 999,
+      backgroundColor: colors.gold,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 18,
+    },
+    modalPrimaryText: {
+      color: '#070708',
+      fontSize: 12,
+      fontWeight: '900',
+      letterSpacing: 0.7,
+    },
+    modalSecondary: {
+      minHeight: 48,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: colors.gold,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 10,
+      paddingHorizontal: 18,
+    },
+    modalSecondaryText: {
+      color: colors.gold,
+      fontSize: 12,
+      fontWeight: '900',
+      letterSpacing: 0.7,
+    },
+    modalCancel: {
+      minHeight: 42,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 6,
+    },
+    modalCancelText: {
+      color: colors.textSoft,
+      fontSize: 11,
+      fontWeight: '800',
+      letterSpacing: 0.5,
+    },
+    pressed: {
+      opacity: 0.72,
     },
   });
 }

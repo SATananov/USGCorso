@@ -1,7 +1,8 @@
+import USGDialog from './USGDialog';
+import { useState as useUSGDialogState } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import {
-  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -143,6 +144,33 @@ function editState(place) {
 }
 
 export default function AdminPlacesModeration() {
+  const [usgDialog, setUsgDialog] = useUSGDialogState(null);
+  const [usgDialogBusy, setUsgDialogBusy] = useUSGDialogState(false);
+
+  async function handleUSGDialogConfirm() {
+    const action = usgDialog?.onConfirm;
+
+    if (!action || usgDialogBusy) {
+      return;
+    }
+
+    setUsgDialogBusy(true);
+
+    try {
+      setUsgDialog(null);
+      await action();
+    } finally {
+      setUsgDialogBusy(false);
+    }
+  }
+
+  function closeUSGDialog() {
+    if (!usgDialogBusy) {
+      setUsgDialog(null);
+    }
+  }
+
+
   const navigation = useNavigation();
   const { language } = useLanguage();
   const { colors } = useTheme();
@@ -235,30 +263,29 @@ export default function AdminPlacesModeration() {
   }
 
   function confirmDelete(place) {
-    Alert.alert(labels.removeTitle, labels.removeMessage, [
-      { text: labels.cancel, style: 'cancel' },
-      {
-        text: labels.remove,
-        style: 'destructive',
-        onPress: async () => {
-          setWorkingId(place.id);
-          setError('');
+    setUsgDialog({
+      title: labels.removeTitle,
+      message: labels.removeMessage,
+      cancelText: labels.cancel,
+      confirmText: labels.remove,
+      onConfirm: async () => {
+        setWorkingId(place.id);
+                  setError('');
 
-          const result = await deleteAdminPlace(place.id);
+                  const result = await deleteAdminPlace(place.id);
 
-          if (result.error) {
-            setError(labels.actionError);
-            setWorkingId('');
-            return;
-          }
+                  if (result.error) {
+                    setError(labels.actionError);
+                    setWorkingId('');
+                    return;
+                  }
 
-          setPlaces((current) =>
-            current.filter((item) => item.id !== place.id)
-          );
-          setWorkingId('');
-        },
+                  setPlaces((current) =>
+                    current.filter((item) => item.id !== place.id)
+                  );
+                  setWorkingId('');
       },
-    ]);
+    });
   }
 
   function field(key, value) {
@@ -268,7 +295,9 @@ export default function AdminPlacesModeration() {
   }
 
   return (
-    <View style={styles.section}>
+    (
+        <>
+          <View style={styles.section}>
       <View style={styles.header}>
         <Text style={styles.title}>{labels.title}</Text>
         <Pressable style={styles.refresh} onPress={loadPlaces}>
@@ -516,6 +545,19 @@ export default function AdminPlacesModeration() {
         );
       })}
     </View>
+          <USGDialog
+          visible={Boolean(usgDialog)}
+          title={usgDialog?.title || ''}
+          message={usgDialog?.message || ''}
+          cancelText={usgDialog?.cancelText}
+          confirmText={usgDialog?.confirmText}
+          onCancel={closeUSGDialog}
+          onConfirm={handleUSGDialogConfirm}
+          onSingleAction={closeUSGDialog}
+          busy={usgDialogBusy}
+        />
+        </>
+      )
   );
 }
 

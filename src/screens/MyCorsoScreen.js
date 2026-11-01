@@ -1,6 +1,7 @@
+import USGDialog from '../components/USGDialog';
+import { useState as useUSGDialogState } from 'react';
 ﻿import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import {
-  Alert,
   Image,
   KeyboardAvoidingView,
   Modal,
@@ -102,8 +103,91 @@ const COLOR_OPTIONS = [
   'brindle',
 ];
 
+const draftPhotoCopy = {
+  bg: {
+    section: 'СНИМКА НА КОРСО',
+    camera: 'КАМЕРА',
+    gallery: 'ОТ ТЕЛЕФОНА',
+    remove: 'ПРЕМАХНИ',
+    empty: 'Добави профилна снимка на своето Кане Корсо.',
+    cameraPermission: 'Нужно е разрешение за камерата.',
+    libraryPermission: 'Нужно е разрешение за снимките.',
+    uploadError: 'Корсото е запазено, но снимката не можа да се качи.',
+  },
+  en: {
+    section: 'CORSO PHOTO',
+    camera: 'CAMERA',
+    gallery: 'FROM PHONE',
+    remove: 'REMOVE',
+    empty: 'Add a profile photo of your Cane Corso.',
+    cameraPermission: 'Camera permission is required.',
+    libraryPermission: 'Photo library permission is required.',
+    uploadError: 'The Corso was saved, but the photo could not be uploaded.',
+  },
+  it: {
+    section: 'FOTO DEL CORSO',
+    camera: 'FOTOCAMERA',
+    gallery: 'DAL TELEFONO',
+    remove: 'RIMUOVI',
+    empty: 'Aggiungi una foto profilo del tuo Cane Corso.',
+    cameraPermission: 'È necessaria l’autorizzazione per la fotocamera.',
+    libraryPermission: 'È necessaria l’autorizzazione per le foto.',
+    uploadError: 'Il Corso è stato salvato, ma non è stato possibile caricare la foto.',
+  },
+};
+
+const dogModerationCopy = {
+  bg: {
+    pending: 'ЧАКА ОДОБРЕНИЕ',
+    approved: 'ОДОБРЕНО',
+    rejected: 'ОТХВЪРЛЕНО',
+    needs_changes: 'ЗА КОРЕКЦИЯ',
+  },
+  en: {
+    pending: 'PENDING APPROVAL',
+    approved: 'APPROVED',
+    rejected: 'REJECTED',
+    needs_changes: 'NEEDS CHANGES',
+  },
+  it: {
+    pending: 'IN ATTESA',
+    approved: 'APPROVATO',
+    rejected: 'RIFIUTATO',
+    needs_changes: 'DA CORREGGERE',
+  },
+};
+
 export default function MyCorsoScreen({
 route, navigation }) {
+  const [draftPhoto, setDraftPhoto] = useState(null);
+
+  const [usgDialog, setUsgDialog] = useUSGDialogState(null);
+  const [usgDialogBusy, setUsgDialogBusy] = useUSGDialogState(false);
+
+  async function handleUSGDialogConfirm() {
+    const action = usgDialog?.onConfirm;
+
+    if (!action || usgDialogBusy) {
+      return;
+    }
+
+    setUsgDialogBusy(true);
+
+    try {
+      setUsgDialog(null);
+      await action();
+    } finally {
+      setUsgDialogBusy(false);
+    }
+  }
+
+  function closeUSGDialog() {
+    if (!usgDialogBusy) {
+      setUsgDialog(null);
+    }
+  }
+
+
   const scrollRef = useRef(null);
 
   useFocusEffect(
@@ -196,6 +280,7 @@ route, navigation }) {
   );
 
   function openNewDog() {
+    setDraftPhoto(null);
     setEditingId(null);
     setForm(EMPTY_FORM);
     setCities([]);
@@ -241,6 +326,7 @@ route, navigation }) {
   }
 
   function openEditDog(dog) {
+    setDraftPhoto(null);
     const birth = splitBirthDate(dog.birth_date);
 
     setEditingId(dog.id);
@@ -270,6 +356,7 @@ route, navigation }) {
   }
 
   function closeForm() {
+    setDraftPhoto(null);
     setEditingId(null);
     setForm(EMPTY_FORM);
     setCities([]);
@@ -308,6 +395,54 @@ route, navigation }) {
     return '';
   }
 
+
+  async function chooseDraftPhoto(source) {
+    if (saving) {
+      return;
+    }
+
+    const labels = draftPhotoCopy[language] ?? draftPhotoCopy.en;
+
+    if (source === 'camera') {
+      const permission = await ImagePicker.requestCameraPermissionsAsync();
+
+      if (!permission.granted) {
+        setError(labels.cameraPermission);
+        return;
+      }
+    } else {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (!permission.granted) {
+        setError(labels.libraryPermission);
+        return;
+      }
+    }
+
+    const result =
+      source === 'camera'
+        ? await ImagePicker.launchCameraAsync({
+            mediaTypes: ['images'],
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 0.85,
+          })
+        : await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 0.85,
+          });
+
+    if (result.canceled || !result.assets?.length) {
+      return;
+    }
+
+    setDraftPhoto(result.assets[0]);
+    setError('');
+    setMessage('');
+  }
+
   async function handleSave() {
     if (!user || saving) {
       return;
@@ -342,8 +477,31 @@ route, navigation }) {
       return;
     }
 
+    const savedDogId = editingId || result.data?.id;
+
+    if (draftPhoto && savedDogId) {
+      const photoResult = await uploadDogPhoto(
+        user.id,
+        savedDogId,
+        draftPhoto.uri,
+        draftPhoto.mimeType || 'image/jpeg'
+      );
+
+      if (photoResult.error) {
+        const labels = draftPhotoCopy[language] ?? draftPhotoCopy.en;
+        setEditingId(savedDogId);
+        setError(
+          `${labels.uploadError} ${photoResult.error.message ?? ''}`.trim()
+        );
+        setSaving(false);
+        await loadDogs();
+        return;
+      }
+    }
+
     setMessage(copy.saved);
     setSaving(false);
+    setDraftPhoto(null);
     setEditingId(null);
     setForm(EMPTY_FORM);
     setCities([]);
@@ -403,71 +561,63 @@ route, navigation }) {
   function handlePhotoDelete(dog) {
     const text = photoCopy[language] ?? photoCopy.en;
 
-    Alert.alert(text.removePhoto, text.removePhotoConfirm, [
-      {
-        text: copy.no,
-        style: 'cancel',
+    setUsgDialog({
+      title: text.removePhoto,
+      message: text.removePhotoConfirm,
+      cancelText: copy.no,
+      confirmText: text.removePhoto,
+      onConfirm: async () => {
+        if (!user || photoBusyId) {
+                    return;
+                  }
+
+                  setPhotoBusyId(dog.id);
+                  setError('');
+                  setMessage('');
+
+                  try {
+                    const result = await deleteDogPhoto(
+                      user.id,
+                      dog.id,
+                      dog.photo_path
+                    );
+
+                    if (result.error) {
+                      setError(text.removeError);
+                      return;
+                    }
+
+                    setMessage(text.removed);
+                    await loadDogs();
+                  } finally {
+                    setPhotoBusyId(null);
+                  }
       },
-      {
-        text: text.removePhoto,
-        style: 'destructive',
-        onPress: async () => {
-          if (!user || photoBusyId) {
-            return;
-          }
-
-          setPhotoBusyId(dog.id);
-          setError('');
-          setMessage('');
-
-          try {
-            const result = await deleteDogPhoto(
-              user.id,
-              dog.id,
-              dog.photo_path
-            );
-
-            if (result.error) {
-              setError(text.removeError);
-              return;
-            }
-
-            setMessage(text.removed);
-            await loadDogs();
-          } finally {
-            setPhotoBusyId(null);
-          }
-        },
-      },
-    ]);
+    });
   }
 
   function handleDelete(dog) {
-    Alert.alert(copy.confirmDelete, copy.confirmDeleteText, [
-      {
-        text: copy.no,
-        style: 'cancel',
+    setUsgDialog({
+      title: copy.confirmDelete,
+      message: copy.confirmDeleteText,
+      cancelText: copy.no,
+      confirmText: copy.yesDelete,
+      onConfirm: async () => {
+        if (!user) {
+                    return;
+                  }
+
+                  const { error: deleteError } = await deleteDog(user.id, dog.id);
+
+                  if (deleteError) {
+                    setError(copy.deleteError);
+                    return;
+                  }
+
+                  setMessage(copy.deleted);
+                  await loadDogs();
       },
-      {
-        text: copy.yesDelete,
-        style: 'destructive',
-        onPress: async () => {
-          if (!user) {
-            return;
-          }
-
-          const { error: deleteError } = await deleteDog(user.id, dog.id);
-
-          if (deleteError) {
-            setError(copy.deleteError);
-            return;
-          }
-
-          setMessage(copy.deleted);
-          await loadDogs();
-        },
-      },
-    ]);
+    });
   }
 
   if (!user) {
@@ -481,7 +631,9 @@ route, navigation }) {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
+    (
+        <>
+          <SafeAreaView style={styles.container} edges={['bottom']}>
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -525,6 +677,8 @@ route, navigation }) {
               form={form}
               editing={Boolean(editingId)}
               saving={saving}
+              draftPhoto={draftPhoto}
+              draftPhotoText={draftPhotoCopy[language] ?? draftPhotoCopy.en}
               countries={countries}
               cities={cities}
               countriesLoading={countriesLoading}
@@ -539,6 +693,9 @@ route, navigation }) {
               onCountry={selectCountry}
               onLoadCountries={loadCountries}
               onLoadCities={loadCities}
+              onCameraPhoto={() => chooseDraftPhoto('camera')}
+              onLibraryPhoto={() => chooseDraftPhoto('library')}
+              onRemoveDraftPhoto={() => setDraftPhoto(null)}
               onSave={handleSave}
               onCancel={closeForm}
             />
@@ -561,6 +718,7 @@ route, navigation }) {
                   <DogCard
                     dog={dog}
                     copy={copy}
+                    language={language}
                     styles={styles}
                     onEdit={() => openEditDog(dog)}
                     onDelete={() => handleDelete(dog)}
@@ -582,6 +740,19 @@ route, navigation }) {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+          <USGDialog
+          visible={Boolean(usgDialog)}
+          title={usgDialog?.title || ''}
+          message={usgDialog?.message || ''}
+          cancelText={usgDialog?.cancelText}
+          confirmText={usgDialog?.confirmText}
+          onCancel={closeUSGDialog}
+          onConfirm={handleUSGDialogConfirm}
+          onSingleAction={closeUSGDialog}
+          busy={usgDialogBusy}
+        />
+        </>
+      )
   );
 }
 
@@ -592,6 +763,8 @@ function DogForm({
   form,
   editing,
   saving,
+  draftPhoto,
+  draftPhotoText,
   countries,
   cities,
   countriesLoading,
@@ -602,6 +775,9 @@ function DogForm({
   onCountry,
   onLoadCountries,
   onLoadCities,
+  onCameraPhoto,
+  onLibraryPhoto,
+  onRemoveDraftPhoto,
   onSave,
   onCancel,
 }) {
@@ -806,6 +982,72 @@ function DogForm({
         </View>
       </AccordionSection>
 
+
+      <AccordionSection
+        title={draftPhotoText.section}
+        open={openSection === 'photo'}
+        onPress={() => onToggleSection('photo')}
+        styles={styles}
+      >
+        <View style={styles.photoPanel}>
+          <View style={styles.photoFrame}>
+            {draftPhoto?.uri ? (
+              <Image
+                source={{ uri: draftPhoto.uri }}
+                style={styles.dogPhoto}
+                resizeMode="contain"
+              />
+            ) : (
+              <View style={styles.photoFallback}>
+                <Text style={styles.photoFallbackText}>
+                  {(form.name || 'C').slice(0, 1).toUpperCase()}
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {!draftPhoto?.uri ? (
+            <Text style={styles.note}>{draftPhotoText.empty}</Text>
+          ) : null}
+
+          <View style={styles.photoActions}>
+            <Pressable
+              style={styles.photoPrimaryButton}
+              onPress={onCameraPhoto}
+              disabled={saving}
+            >
+              <Text style={styles.photoPrimaryText}>
+                {draftPhotoText.camera}
+              </Text>
+            </Pressable>
+
+            <Pressable
+              style={styles.photoSecondaryButton}
+              onPress={onLibraryPhoto}
+              disabled={saving}
+            >
+              <Text style={styles.photoSecondaryText}>
+                {draftPhotoText.gallery}
+              </Text>
+            </Pressable>
+          </View>
+
+          {draftPhoto?.uri ? (
+            <View style={styles.photoActions}>
+              <Pressable
+                style={styles.photoSecondaryButton}
+                onPress={onRemoveDraftPhoto}
+                disabled={saving}
+              >
+                <Text style={styles.photoSecondaryText}>
+                  {draftPhotoText.remove}
+                </Text>
+              </Pressable>
+            </View>
+          ) : null}
+        </View>
+      </AccordionSection>
+
       <View style={styles.formActions}>
         <Pressable style={styles.secondaryButton} onPress={onCancel}>
           <Text style={styles.secondaryButtonText}>{copy.cancel}</Text>
@@ -948,7 +1190,12 @@ function DogPhotoPanel({
   );
 }
 
-function DogCard({ dog, copy, styles, onEdit, onDelete }) {
+function DogCard({ dog, copy, language, styles, onEdit, onDelete }) {
+  const moderation = dogModerationCopy[language] ?? dogModerationCopy.en;
+  const moderationLabel =
+    dog.community_visible && dog.moderation_status
+      ? moderation[dog.moderation_status] ?? dog.moderation_status
+      : '';
   const location = [dog.city, dog.country].filter(Boolean).join(', ');
   const colorLabel = dog.color ? copy[dog.color] : '';
 
@@ -975,6 +1222,13 @@ function DogCard({ dog, copy, styles, onEdit, onDelete }) {
           </Text>
         </View>
       </View>
+
+      {moderationLabel ? (
+        <Text style={styles.moderationStatus}>{moderationLabel}</Text>
+      ) : null}
+      {dog.moderation_note ? (
+        <Text style={styles.moderationNote}>{dog.moderation_note}</Text>
+      ) : null}
 
       {location ? <Text style={styles.dogInfo}>{location}</Text> : null}
       {dog.kennel ? <Text style={styles.dogInfo}>{dog.kennel}</Text> : null}
@@ -1512,6 +1766,18 @@ function createStyles(colors) {
       color: colors.textSoft,
       fontSize: 9,
       fontWeight: '800',
+    },
+    moderationStatus: {
+      color: colors.gold,
+      fontSize: 9,
+      fontWeight: '900',
+      marginTop: 10,
+    },
+    moderationNote: {
+      color: colors.textSoft,
+      fontSize: 10,
+      lineHeight: 15,
+      marginTop: 5,
     },
     dogCard: {
       borderRadius: radius.lg,

@@ -19,6 +19,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { profileCopy } from '../profile/profileCopy';
 import { getMyProfile, isLocalProfileReady } from '../profile/profileService';
 import { useTheme } from '../theme/ThemeContext';
+import HomeSectionActions from '../components/HomeSectionActions';
 
 const sectionConfig = [
   { id: 'myCorso', icon: require('../../assets/icons/my-corso.png') },
@@ -236,6 +237,15 @@ navigation }) {
                       </Text>
                     </Pressable>
                   </View>
+                ) : null}
+
+                {user &&
+                section.id !== 'myCorso' &&
+                section.id !== 'about' ? (
+                  <HomeSectionActions
+                    sectionId={section.id}
+                    navigation={navigation}
+                  />
                 ) : null}
 
                 {isOpen ? (

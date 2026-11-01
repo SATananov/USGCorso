@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase';
 
 const DOG_FIELDS =
-  'id, owner_id, name, sex, color, birth_date, country, city, kennel, breeder, registration_number, description, community_visible, photo_path, created_at, updated_at';
+  'id, owner_id, name, sex, color, birth_date, country, city, kennel, breeder, registration_number, description, community_visible, photo_path, moderation_status, moderation_note, moderated_at, moderated_by, created_at, updated_at';
 
 export async function getMyDogs(userId) {
   if (!userId) {

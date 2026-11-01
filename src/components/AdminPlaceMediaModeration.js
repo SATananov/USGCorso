@@ -1,6 +1,7 @@
+import USGDialog from './USGDialog';
+import { useState as useUSGDialogState } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
   Image,
   Pressable,
   ScrollView,
@@ -99,6 +100,33 @@ const copy = {
 const STATUSES = ['pending', 'approved', 'rejected'];
 
 export default function AdminPlaceMediaModeration({ onChanged }) {
+  const [usgDialog, setUsgDialog] = useUSGDialogState(null);
+  const [usgDialogBusy, setUsgDialogBusy] = useUSGDialogState(false);
+
+  async function handleUSGDialogConfirm() {
+    const action = usgDialog?.onConfirm;
+
+    if (!action || usgDialogBusy) {
+      return;
+    }
+
+    setUsgDialogBusy(true);
+
+    try {
+      setUsgDialog(null);
+      await action();
+    } finally {
+      setUsgDialogBusy(false);
+    }
+  }
+
+  function closeUSGDialog() {
+    if (!usgDialogBusy) {
+      setUsgDialog(null);
+    }
+  }
+
+
   const { language } = useLanguage();
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -206,29 +234,28 @@ export default function AdminPlaceMediaModeration({ onChanged }) {
   }
 
   function confirmDelete(item) {
-    Alert.alert(labels.removeTitle, labels.removeMessage, [
-      { text: labels.cancel, style: 'cancel' },
-      {
-        text: labels.remove,
-        style: 'destructive',
-        onPress: async () => {
-          setWorkingId(item.id);
-          setError('');
+    setUsgDialog({
+      title: labels.removeTitle,
+      message: labels.removeMessage,
+      cancelText: labels.cancel,
+      confirmText: labels.remove,
+      onConfirm: async () => {
+        setWorkingId(item.id);
+                  setError('');
 
-          const result = await deleteAdminPlaceMedia(item.id);
+                  const result = await deleteAdminPlaceMedia(item.id);
 
-          if (result.error) {
-            setError(labels.actionError);
-            setWorkingId(null);
-            return;
-          }
+                  if (result.error) {
+                    setError(labels.actionError);
+                    setWorkingId(null);
+                    return;
+                  }
 
-          await loadItems();
-          setWorkingId(null);
-          onChanged?.();
-        },
+                  await loadItems();
+                  setWorkingId(null);
+                  onChanged?.();
       },
-    ]);
+    });
   }
 
   const items = itemsByStatus[activeStatus] ?? [];
@@ -240,7 +267,9 @@ export default function AdminPlaceMediaModeration({ onChanged }) {
         : labels.emptyRejected;
 
   return (
-    <View style={styles.section}>
+    (
+        <>
+          <View style={styles.section}>
       <View style={styles.header}>
         <Text style={styles.title}>{labels.title}</Text>
 
@@ -430,6 +459,19 @@ export default function AdminPlaceMediaModeration({ onChanged }) {
         ))}
       </ScrollView>
     </View>
+          <USGDialog
+          visible={Boolean(usgDialog)}
+          title={usgDialog?.title || ''}
+          message={usgDialog?.message || ''}
+          cancelText={usgDialog?.cancelText}
+          confirmText={usgDialog?.confirmText}
+          onCancel={closeUSGDialog}
+          onConfirm={handleUSGDialogConfirm}
+          onSingleAction={closeUSGDialog}
+          busy={usgDialogBusy}
+        />
+        </>
+      )
   );
 }
 
