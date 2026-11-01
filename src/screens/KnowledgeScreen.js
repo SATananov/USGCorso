@@ -1,3 +1,4 @@
+import KnowledgePublicList from '../components/KnowledgePublicList';
 import USGSectionScreen from '../components/USGSectionScreen';
 import { useLanguage } from '../i18n/LanguageContext';
 
@@ -11,6 +12,8 @@ export default function KnowledgeScreen() {
       title={t('sections.knowledge.title')}
       subtitle={t('sections.knowledge.subtitle')}
       body={t('sections.knowledge.body')}
-    />
+    >
+      <KnowledgePublicList />
+    </USGSectionScreen>
   );
 }

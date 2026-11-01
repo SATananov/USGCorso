@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+﻿import { useMemo } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -134,7 +134,6 @@ function createGuestTabScreen(sectionKey) {
 
 const GuestMyCorsoScreen = createGuestTabScreen('myCorso');
 const GuestCorsoFriendlyScreen = createGuestTabScreen('corsoFriendly');
-const GuestKnowledgeScreen = createGuestTabScreen('knowledge');
 const GuestCommunityScreen = createGuestTabScreen('community');
 const GuestServicesScreen = createGuestTabScreen('services');
 const GuestEventsScreen = createGuestTabScreen('events');
@@ -168,7 +167,7 @@ function MainTabs() {
       <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarLabel: t('nav.home') }} />
       <Tab.Screen name="My Corso" component={session ? MyCorsoScreen : GuestMyCorsoScreen} options={{ tabBarLabel: t('nav.myCorso') }} />
       <Tab.Screen name="Corso Friendly" component={session ? CorsoFriendlyScreen : GuestCorsoFriendlyScreen} options={{ tabBarLabel: t('nav.corsoFriendly') }} />
-      <Tab.Screen name="Knowledge" component={session ? KnowledgeScreen : GuestKnowledgeScreen} options={{ tabBarLabel: t('nav.knowledge') }} />
+      <Tab.Screen name="Knowledge" component={KnowledgeScreen} options={{ tabBarLabel: t('nav.knowledge') }} />
       <Tab.Screen name="Community" component={session ? CommunityScreen : GuestCommunityScreen} options={{ tabBarLabel: t('nav.community') }} />
       <Tab.Screen name="Services" component={session ? ServicesScreen : GuestServicesScreen} options={{ tabBarLabel: t('nav.services') }} />
       <Tab.Screen name="Events" component={session ? EventsScreen : GuestEventsScreen} options={{ tabBarLabel: t('nav.events') }} />
