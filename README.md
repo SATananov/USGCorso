@@ -4,6 +4,10 @@
 
 **Stefan Tananov**
 
+**SoftUni Username:** `tanashi`
+
+**Course:** React Native Regular Exam Project
+
 **The Global Cane Corso Mobile Ecosystem**
 
 USG Corso is a React Native mobile application for Cane Corso owners, enthusiasts and people who want to learn more about the breed.
@@ -17,11 +21,28 @@ https://usg-cane-corso-platform.com/
 
 ## Jump to
 
+### Exam Project
+
+- [Exam Status](#exam-status)
+- [Functional Guide](#functional-guide)
+- [Project Overview](#project-overview)
+- [User Access & Permissions](#user-access--permissions)
+- [Authentication & Session Handling](#authentication--session-handling)
+- [Navigation Structure](#navigation-structure)
+- [List → Details Flow](#list--details-flow)
+- [Data Source & Backend](#data-source--backend)
+- [CRUD Operations](#crud-operations)
+- [Forms & Validation](#forms--validation)
+- [Native Device Features](#native-device-features)
+- [Typical User Flow](#typical-user-flow)
+- [Error & Edge Case Handling](#error--edge-case-handling)
+- [APK / Build](#apk--build)
+- [Run Instructions](#run-instructions)
+
+### Additional USG Features
+
 - [Current Implementation](#current-implementation)
 - [Application Areas](#application-areas)
-- [Functional Guide](#functional-guide)
-- [Authentication and Account Recovery](#authentication-and-account-recovery)
-- [Profile and Account](#profile-and-account)
 - [My Corso](#my-corso)
 - [Community Corso](#community-corso)
 - [User Content and Materials](#user-content-and-materials)
@@ -33,11 +54,210 @@ https://usg-cane-corso-platform.com/
 - [Technology](#technology)
 - [Project Structure](#project-structure)
 - [Environment Configuration](#environment-configuration)
-- [Run Instructions](#run-instructions)
 - [Development Build](#development-build)
 - [Current Development Status](#current-development-status)
 - [Future Integration](#future-integration-with-usg-cane-corso-platform)
 - [About USG](#about-usg)
+
+---
+
+## Exam Status
+
+This project is being prepared for the SoftUni React Native Regular Exam.
+
+- Navigation: implemented
+- Authentication: implemented
+- Session persistence: implemented
+- Real backend with Supabase: implemented
+- CRUD operations: implemented
+- Pull-to-refresh: implemented
+- Forms and validation: implemented
+- Native mobile features: implemented
+- Functional Guide: included below
+- APK link: will be added with the final exam build
+
+---
+
+## Functional Guide
+
+### Project Overview
+
+**Application Name:** USG Corso
+
+**Category:** Cane Corso / Community / Education / Mobile Utility
+
+USG Corso is a mobile application for Cane Corso owners and people interested in the breed.
+
+The app combines dog profiles, useful places, community content, educational materials and mobile tools in one place.
+
+### User Access & Permissions
+
+**Guest user**
+
+A guest can open the application, see the Home screen and preview the main sections.
+
+Actions that need personal data or user content require login.
+
+**Authenticated user**
+
+A logged-in user can use the main application areas and personal features.
+
+The user can create, view, edit and delete supported personal content such as dog profiles and submitted materials.
+
+### Authentication & Session Handling
+
+The application uses Supabase Auth.
+
+The user can:
+
+- register
+- log in
+- log out
+- confirm email
+- recover a forgotten password
+- set a new password
+
+The session is saved by Supabase.
+
+If the user closes and opens the application again, the session can be restored automatically.
+
+### Navigation Structure
+
+The application uses two main navigator types:
+
+- Bottom Tab Navigator
+- Native Stack Navigator
+
+The bottom tabs provide access to the main sections.
+
+The Stack Navigator is used for details screens, settings, admin screens and other screens opened from the main areas.
+
+The project has more than five screens.
+
+It also has dynamic details screens that receive data through route parameters.
+
+### List → Details Flow
+
+The application has list-to-details flows.
+
+Examples:
+
+- places list → place details
+- user materials list → material details
+- admin moderation list → moderation details
+
+The details screens receive an ID or object through route parameters.
+
+### Data Source & Backend
+
+USG Corso uses Supabase as a real backend.
+
+Supabase is used for:
+
+- authentication
+- database data
+- file storage
+- Edge Functions
+- moderation data
+- application counters
+
+The main application data is not loaded from hardcoded JSON files.
+
+### CRUD Operations
+
+The application includes real CRUD operations.
+
+**Read**
+
+Data is loaded from Supabase and shown in lists and details screens.
+
+**Create**
+
+Users can create supported content such as:
+
+- Cane Corso profiles
+- place proposals
+- user materials
+
+**Update**
+
+Users can edit supported content that belongs to them.
+
+Admins can also update supported moderation data.
+
+**Delete**
+
+Supported user content can be deleted where the application flow allows it.
+
+### Forms & Validation
+
+The application contains forms for:
+
+- registration
+- login
+- password recovery
+- profile data
+- My Corso
+- place proposals
+- user materials
+
+The forms use validation for required and invalid values.
+
+Examples include:
+
+- required name or title
+- valid email
+- password rules
+- required content fields
+
+The application also uses controls other than normal text inputs, including switches, selectors, image selection, date-related input and map-based coordinate selection.
+
+### Native Device Features
+
+The project uses several mobile-specific features:
+
+- Camera
+- Image Picker
+- Location
+- Google Maps
+- OCR from images
+- QR detection
+
+The camera and image picker can be used when working with photos and materials.
+
+Location and Maps are used for Corso places.
+
+OCR can help extract text from an image.
+
+### Typical User Flow
+
+A normal flow can be:
+
+1. Open the application.
+2. Log in or register.
+3. Open one of the main sections.
+4. View existing data or create personal content.
+5. Open a details screen.
+6. Edit, delete or submit content where available.
+
+### Error & Edge Case Handling
+
+The application handles common states such as:
+
+- authentication errors
+- network errors
+- missing data
+- empty lists
+- loading states
+- invalid form values
+
+Normal application feedback uses the USG visual style.
+
+### APK / Build
+
+The project uses an Android Development Build during development.
+
+The final exam APK link will be added here before submission.
 
 ---
 
