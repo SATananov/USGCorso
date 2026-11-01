@@ -24,6 +24,9 @@ https://usg-cane-corso-platform.com/
 - [Profile and Account](#profile-and-account)
 - [My Corso](#my-corso)
 - [Community Corso](#community-corso)
+- [User Content and Materials](#user-content-and-materials)
+- [OCR and QR Assisted Capture](#ocr-and-qr-assisted-capture)
+- [Moderation and Governance](#moderation-and-governance)
 - [Corso Map](#corso-map)
 - [Place Proposals](#place-proposals)
 - [Admin Places Moderation](#admin-places-moderation)
@@ -40,7 +43,7 @@ https://usg-cane-corso-platform.com/
 
 ## Current Implementation
 
-USG Corso already includes a working visual system, navigation, authentication, Supabase-backed user data, Cane Corso profiles, community sharing, location features and an Android native map workflow.
+USG Corso already includes a working visual system, navigation, authentication, Supabase-backed user data, Cane Corso profiles, moderated community sharing, user-submitted content, OCR/QR-assisted capture, location features and an Android native map workflow.
 
 Implemented so far:
 
@@ -51,6 +54,8 @@ Implemented so far:
 - saved language preference
 - saved theme preference
 - home screen with eight main sections
+- direct Home quick actions for the most important section tasks
+- live Home counters backed by Supabase for approved places, Community Corso and approved content
 - separate screen for each main section
 - hero image for each main section
 - fullscreen hero image preview
@@ -77,7 +82,18 @@ Implemented so far:
 - My Corso dog profiles
 - dog photo upload with Supabase Storage
 - community sharing controls
-- Community Corso public gallery
+- public Cane Corso moderation states
+- admin dog moderation
+- Community Corso public gallery limited to approved public profiles
+- user content and material submission flow
+- article and photo-oriented material forms
+- user material editing, deletion and resubmission
+- admin content moderation
+- branded USG dialogs for application feedback and confirmations
+- camera capture and image selection
+- OCR-assisted text extraction
+- Bulgarian, English and Italian OCR language support
+- QR detection workflow
 - account deletion flow
 - Corso Map on native Android with Google Maps
 - foreground location permission and current position
@@ -234,8 +250,21 @@ The home screen contains:
 - the application title
 - eight main sections
 - access to Settings
+- direct quick actions under the main sections
+- live counters for supported public data
 
-The main groups can be opened and closed.
+Examples of direct Home actions include:
+
+- My Corso and Add Corso
+- Corso Map and Add Place
+- Knowledge Library and Add Material
+- Public Corsos and Gallery
+- Services and Add Service
+- Upcoming Events and Add Event
+
+The main groups can still be opened and closed for secondary navigation options.
+
+The live counters are loaded from Supabase and are not hardcoded.
 
 ### Main Sections
 
@@ -359,9 +388,13 @@ Users can:
 - delete dog profiles
 - upload Cane Corso photos
 - replace or remove photos
-- control whether a dog is visible in Community Corso
+- control whether a dog is private or submitted for Community visibility
 
 Dog images use Supabase Storage.
+
+Private owner content remains available to the owner without public moderation.
+
+When a dog is shared publicly, its public visibility is governed by moderation states such as pending, approved, rejected or needs changes. Public profile or photo changes can return the item to moderation before it is shown again in Community.
 
 ---
 
@@ -384,6 +417,78 @@ Shared profiles can display available information such as:
 - owner display information
 
 Only profiles intentionally shared through the application's community visibility flow are intended for this area.
+
+Community Corso is moderation-aware: public profiles are intended to appear only after approval.
+
+---
+
+## User Content and Materials
+
+USG Corso includes a Supabase-backed user content workflow for authenticated users.
+
+Current functionality includes:
+
+- creating user-submitted materials
+- article/text-oriented submissions
+- photo-oriented submissions
+- attaching supported media
+- viewing the user's own materials
+- editing submitted content
+- deleting owned content
+- resubmitting content after changes
+- moderation states and moderation notes
+- admin review of submitted content
+- approved-content counting for Home discovery
+
+The content architecture uses section keys so submissions can be associated with areas such as Knowledge, Services and Events.
+
+The public browsing experience for every content category is still being expanded. The current implementation provides the submission, ownership and moderation foundation without claiming that every section is already a complete public directory.
+
+---
+
+## OCR and QR Assisted Capture
+
+The material workflow includes camera and image-assisted tools intended to reduce manual text entry.
+
+Current functionality includes:
+
+- direct camera capture
+- image selection
+- OCR-assisted extraction from images
+- Bulgarian OCR
+- English OCR
+- Italian OCR
+- language-aware OCR provider selection
+- local native Android OCR module
+- QR detection support
+- extraction results that can be used in the material workflow
+
+The OCR implementation includes local Android module code and bundled language data for Bulgarian, English and Italian.
+
+OCR is an assistance feature. Extracted text should still be reviewed by the user before submission.
+
+---
+
+## Moderation and Governance
+
+Public user-generated content is governed separately from private owner data.
+
+The current moderation model includes:
+
+- private owner content
+- pending public submissions
+- approved public content
+- rejected content
+- needs-changes workflows where supported
+- moderation notes
+- admin review screens
+- dog profile moderation
+- place moderation
+- user content moderation
+
+The goal is to keep public USG content relevant to Cane Corso and the purpose of each section.
+
+The application uses branded USG dialogs for ordinary confirmations, warnings and success feedback instead of standard React Native alert dialogs.
 
 ---
 
@@ -485,6 +590,11 @@ The project currently uses:
 - React Native Maps
 - Google Maps for native Android
 - Expo Image Picker
+- Expo Camera
+- Expo File System
+- Expo OCR Kit
+- local Expo Android OCR module
+- bundled Tesseract language data for Bulgarian, English and Italian
 - Expo Linking
 - Expo Dev Client
 - EAS Build
@@ -522,14 +632,21 @@ USGCorso/
 │   ├── community/
 │   ├── components/
 │   ├── dogs/
+│   ├── governance/
+│   ├── home/
 │   ├── i18n/
 │   ├── lib/
 │   ├── navigation/
+│   ├── ocr/
 │   ├── places/
 │   ├── profile/
+│   ├── qr/
 │   ├── screens/
 │   ├── styles/
 │   └── theme/
+├── modules/
+│   └── usg-ocr/
+│       └── Android native OCR module and tessdata
 ├── supabase/
 │   ├── functions/
 │   │   ├── delete-account/
@@ -635,7 +752,16 @@ A final production/exam release APK is not claimed by this README yet.
 - user profiles
 - My Corso CRUD
 - dog photo storage
-- Community Corso data
+- My Corso public moderation
+- Community Corso approved public data
+- user content and materials flow
+- user material edit/delete/resubmit flow
+- admin content moderation
+- camera capture
+- OCR-assisted extraction in Bulgarian, English and Italian
+- QR detection foundation
+- branded USG feedback dialogs
+- Home quick actions and Supabase-backed counters
 - account deletion flow
 - native Android Corso Map
 - device location
@@ -649,9 +775,9 @@ A final production/exam release APK is not claimed by this README yet.
 - real push notifications
 - backend-driven privacy controls
 - Favorites and Reviews for places
-- deeper Knowledge content and data
-- live Professionals & Services directory
-- live Events backend
+- deeper public Knowledge library browsing
+- live Professionals & Services directory browsing
+- live Events directory and calendar browsing
 - full Corso Match questionnaire and logic
 - wider community interaction modules
 - final production/exam release APK
