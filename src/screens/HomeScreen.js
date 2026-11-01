@@ -219,7 +219,7 @@ navigation }) {
                   </Text>
                 </Pressable>
 
-                {section.id === 'myCorso' ? (
+                {user && section.id === 'myCorso' ? (
                   <View style={styles.myCorsoActions}>
                     <Pressable style={styles.myCorsoOpenButton} onPress={openMyCorso}>
                       <Text style={styles.myCorsoOpenButtonText}>
