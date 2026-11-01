@@ -20,6 +20,7 @@ import { profileCopy } from '../profile/profileCopy';
 import { getMyProfile, isLocalProfileReady } from '../profile/profileService';
 import { useTheme } from '../theme/ThemeContext';
 import HomeSectionActions from '../components/HomeSectionActions';
+import { KNOWLEDGE_CATEGORY_KEYS } from '../knowledge/knowledgeCategories';
 
 const sectionConfig = [
   { id: 'myCorso', icon: require('../../assets/icons/my-corso.png') },
@@ -95,7 +96,18 @@ navigation }) {
     setOpenSection(openSection === sectionId ? null : sectionId);
   }
 
-  function openItem(item, sectionId) {
+  function openItem(item, sectionId, itemIndex) {
+    if (sectionId === 'knowledge') {
+      const categoryKey = KNOWLEDGE_CATEGORY_KEYS[itemIndex];
+
+      if (categoryKey) {
+        navigation.navigate('Knowledge', {
+          categoryKey,
+        });
+        return;
+      }
+    }
+
     if (!user) {
       const guestSectionRoutes = {
         myCorso: 'My Corso',
@@ -259,7 +271,7 @@ navigation }) {
                         </Text>
                       </>
                     ) : (
-                      items.map((item) => (
+                      items.map((item, itemIndex) => (
                         <Pressable
                           key={item}
                           style={styles.menuItem}
@@ -269,7 +281,7 @@ navigation }) {
                               ? navigation.navigate('Community')
                               : section.id === 'corsoFriendly'
                                 ? navigation.navigate('Corso Friendly')
-                                : openItem(item, section.id)
+                                : openItem(item, section.id, itemIndex)
                           }
                         >
                           <Text style={styles.menuItemText}>{item}</Text>

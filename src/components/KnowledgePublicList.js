@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -6,7 +6,9 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { getPublicKnowledgeItems } from '../knowledge/knowledgePublicService';
+import { getKnowledgeCategoryLabel } from '../knowledge/knowledgeCategories';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useTheme } from '../theme/ThemeContext';
 import { radius, spacing } from '../styles/usgTheme';
@@ -23,6 +25,7 @@ const copy = {
     retry: 'TRY AGAIN',
     untitled: 'Untitled material',
     updated: 'Updated',
+    open: 'OPEN',
   },
   bg: {
     heading: 'Одобрени материали',
@@ -35,6 +38,7 @@ const copy = {
     retry: 'ОПИТАЙ ОТНОВО',
     untitled: 'Материал без заглавие',
     updated: 'Обновено',
+    open: 'ОТВОРИ',
   },
   it: {
     heading: 'Contenuti approvati',
@@ -47,8 +51,28 @@ const copy = {
     retry: 'RIPROVA',
     untitled: 'Contenuto senza titolo',
     updated: 'Aggiornato',
+    open: 'APRI',
   },
 };
+
+function getContentTypeLabel(type, language) {
+  const labels = {
+    en: {
+      article: 'ARTICLE',
+      image: 'IMAGE',
+    },
+    bg: {
+      article: 'СТАТИЯ',
+      image: 'ИЗОБРАЖЕНИЕ',
+    },
+    it: {
+      article: 'ARTICOLO',
+      image: 'IMMAGINE',
+    },
+  };
+
+  return labels[language]?.[type] ?? labels.en[type] ?? type ?? labels.en.article;
+}
 
 function formatDate(value, language) {
   if (!value) {
@@ -65,7 +89,8 @@ function formatDate(value, language) {
   }
 }
 
-export default function KnowledgePublicList() {
+export default function KnowledgePublicList({ categoryKey = null }) {
+  const navigation = useNavigation();
   const { language } = useLanguage();
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -76,7 +101,7 @@ export default function KnowledgePublicList() {
   const load = useCallback(async () => {
     setState('loading');
 
-    const result = await getPublicKnowledgeItems();
+    const result = await getPublicKnowledgeItems(categoryKey, language);
 
     if (result.error) {
       setItems([]);
@@ -86,16 +111,18 @@ export default function KnowledgePublicList() {
 
     setItems(Array.isArray(result.data) ? result.data : []);
     setState('ready');
-  }, []);
+  }, [categoryKey, language]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load])
+  );
 
   return (
     <View style={styles.root}>
       <View style={styles.headingWrap}>
-        <Text style={styles.heading}>{labels.heading}</Text>
+        <Text style={styles.heading}>{categoryKey ? getKnowledgeCategoryLabel(categoryKey, language) : labels.heading}</Text>
         <Text style={styles.intro}>{labels.intro}</Text>
       </View>
 
@@ -134,20 +161,37 @@ export default function KnowledgePublicList() {
           const updated = formatDate(item.updated_at, language);
 
           return (
-            <View key={item.id} style={styles.card}>
+            <Pressable
+              key={item.id}
+              onPress={() =>
+                navigation.navigate('KnowledgePublicDetails', { item })
+              }
+              style={({ pressed }) => [
+                styles.card,
+                pressed && styles.cardPressed,
+              ]}
+            >
               <View style={styles.metaRow}>
-                <Text style={styles.type}>{item.content_type || 'article'}</Text>
+                <Text style={styles.type}>{getContentTypeLabel(item.content_type, language)}</Text>
                 {updated ? (
-                  <Text style={styles.date}>{labels.updated}: {updated}</Text>
+                  <Text style={styles.date}>
+                    {labels.updated}: {updated}
+                  </Text>
                 ) : null}
               </View>
-              <Text style={styles.title}>{item.title || labels.untitled}</Text>
+
+              <Text style={styles.title}>
+                {item.title || labels.untitled}
+              </Text>
+
               {item.body ? (
                 <Text style={styles.body} numberOfLines={5}>
                   {item.body}
                 </Text>
               ) : null}
-            </View>
+
+              <Text style={styles.openLabel}>{labels.open} ›</Text>
+            </Pressable>
           );
         })}
     </View>
@@ -222,6 +266,9 @@ function createStyles(colors) {
       padding: spacing.md,
       gap: 8,
     },
+    cardPressed: {
+      opacity: 0.82,
+    },
     metaRow: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -251,6 +298,14 @@ function createStyles(colors) {
       color: colors.textSoft,
       fontSize: 12,
       lineHeight: 19,
+    },
+    openLabel: {
+      marginTop: 4,
+      color: colors.gold,
+      fontSize: 10,
+      fontWeight: '900',
+      letterSpacing: 1,
+      textAlign: 'right',
     },
   });
 }

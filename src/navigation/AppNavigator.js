@@ -18,6 +18,7 @@ import DetailsScreen from '../screens/DetailsScreen';
 import EventsScreen from '../screens/EventsScreen';
 import HomeScreen from '../screens/HomeScreen';
 import KnowledgeScreen from '../screens/KnowledgeScreen';
+import KnowledgePublicDetailsScreen from '../screens/KnowledgePublicDetailsScreen';
 import MyCorsoScreen from '../screens/MyCorsoScreen';
 import PlaceDetailsScreen from '../screens/PlaceDetailsScreen';
 import ServicesScreen from '../screens/ServicesScreen';
@@ -206,6 +207,12 @@ export default function AppNavigator() {
         component={MainTabs}
         options={{ headerShown: false }}
       />
+      <Stack.Screen
+        name="KnowledgePublicDetails"
+        component={KnowledgePublicDetailsScreen}
+        options={{ title: t('nav.knowledge') }}
+      />
+
       <Stack.Screen
         name="Details"
         component={DetailsScreen}

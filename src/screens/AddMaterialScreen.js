@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -25,6 +25,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { radius, spacing } from '../styles/usgTheme';
 import { useTheme } from '../theme/ThemeContext';
 import ScanTextButton from '../components/ScanTextButton';
+import { KNOWLEDGE_CATEGORY_KEYS, getKnowledgeCategoryHeading, getKnowledgeCategoryLabel } from '../knowledge/knowledgeCategories';
 
 const SECTION_TYPES = {
   knowledge: ['article', 'image'],
@@ -189,6 +190,7 @@ export default function AddMaterialScreen({ navigation }) {
 
   const [section, setSection] = useState('knowledge');
   const [contentType, setContentType] = useState('article');
+  const [knowledgeCategory, setKnowledgeCategory] = useState('basics');
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [imageAsset, setImageAsset] = useState(null);
@@ -222,6 +224,11 @@ export default function AddMaterialScreen({ navigation }) {
   function changeSection(nextSection) {
     setSection(nextSection);
     setContentType(SECTION_TYPES[nextSection][0]);
+
+    if (nextSection === 'knowledge') {
+      setKnowledgeCategory('basics');
+    }
+
     setError('');
   }
 
@@ -330,11 +337,16 @@ export default function AddMaterialScreen({ navigation }) {
     let createdItem = null;
 
     try {
+      const adminCheck = await getIsAdmin();
+      const shouldPublishDirectly = Boolean(adminCheck.data) && !adminCheck.error;
+      setIsAdmin(shouldPublishDirectly);
+
       const created = await createContentItem({
         section,
         contentType,
         title: cleanTitle,
         body: cleanBody,
+        contextType: section === 'knowledge' ? knowledgeCategory : null,
       });
 
       if (created.error) {
@@ -361,7 +373,9 @@ export default function AddMaterialScreen({ navigation }) {
         }
       }
 
-      if (isAdmin) {
+      const alreadyApproved = createdItem.status === 'approved';
+
+      if (shouldPublishDirectly && !alreadyApproved) {
         const published = await adminSetContentStatus(
           createdItem.id,
           'approved'
@@ -370,11 +384,9 @@ export default function AddMaterialScreen({ navigation }) {
         if (published.error) {
           throw published.error;
         }
-
-        setPublishedDirectly(true);
-      } else {
-        setPublishedDirectly(false);
       }
+
+      setPublishedDirectly(shouldPublishDirectly || alreadyApproved);
 
       setSuccessVisible(true);
     } catch {
@@ -434,6 +446,40 @@ export default function AddMaterialScreen({ navigation }) {
           })}
         </ScrollView>
 
+        {section === 'knowledge' ? (
+          <>
+            <Text style={styles.sectionLabel}>{getKnowledgeCategoryHeading(language)}</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.chipRow}
+            >
+              {KNOWLEDGE_CATEGORY_KEYS.map((value) => {
+                const active = knowledgeCategory === value;
+
+                return (
+                  <Pressable
+                    key={value}
+                    onPress={() => setKnowledgeCategory(value)}
+                    style={[
+                      styles.chip,
+                      active && styles.chipActive,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.chipText,
+                        active && styles.chipTextActive,
+                      ]}
+                    >
+                      {getKnowledgeCategoryLabel(value, language)}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </>
+        ) : null}
         <Text style={styles.sectionLabel}>{t('addMaterial.type')}</Text>
         <ScrollView
           horizontal
