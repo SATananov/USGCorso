@@ -123,7 +123,6 @@ export default function KnowledgePublicList({ categoryKey = null }) {
     <View style={styles.root}>
       <View style={styles.headingWrap}>
         <Text style={styles.heading}>{categoryKey ? getKnowledgeCategoryLabel(categoryKey, language) : labels.heading}</Text>
-        <Text style={styles.intro}>{labels.intro}</Text>
       </View>
 
       {state === 'loading' && (
@@ -213,12 +212,7 @@ function createStyles(colors) {
       fontWeight: '700',
       textAlign: 'left',
     },
-    intro: {
-      color: colors.textSoft,
-      fontSize: 12,
-      lineHeight: 18,
-      textAlign: 'left',
-    },
+
     stateWrap: {
       borderWidth: 1,
       borderColor: colors.border,

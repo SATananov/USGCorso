@@ -79,7 +79,7 @@
         body: 'This section will focus on genuinely suitable locations, useful details, community verification and location-based discovery.',
       },
       knowledge: {
-        kicker: 'BREED KNOWLEDGE',
+        kicker: 'USG — UNICO SUO GENERE™',
         title: 'Knowledge',
         subtitle: 'History, function, development, care and responsible ownership.',
         body: 'USG Corso gathers, analyzes and presents knowledge about the Cane Corso through its own editorial perspective — from the breed\'s historical heritage to modern care and responsible stewardship. The materials are educational. USG Corso does not claim absolute authority, does not replace professional advice, and does not provide veterinary diagnoses. For any health concern, doubt, or emergency, consult a qualified veterinarian.',
@@ -393,7 +393,7 @@
         body: 'Тази секция ще се фокусира върху действително подходящи места, полезни детайли, проверка от общността и откриване според местоположението.',
       },
       knowledge: {
-        kicker: 'ЗНАНИЕ ЗА ПОРОДАТА',
+        kicker: 'USG — UNICO SUO GENERE™',
         title: 'Знание',
         subtitle: 'История, функция, развитие, грижи и отговорно стопанство.',
         body: 'USG Corso събира, анализира и представя знанието за Cane Corso чрез собствен авторски прочит — от историческото наследство до съвременната грижа и отговорното отношение към породата. Материалите имат образователен характер. USG Corso не претендира за абсолютна истина, не замества професионален съвет и не поставя ветеринарни диагнози. При здравословен проблем, съмнение или спешно състояние се консултирайте с квалифициран ветеринарен лекар.',
@@ -707,7 +707,7 @@
         body: 'Questa sezione si concentrerà su luoghi realmente adatti, dettagli utili, verifica della comunità e scoperta basata sulla posizione.',
       },
       knowledge: {
-        kicker: 'CONOSCENZA DELLA RAZZA',
+        kicker: 'USG — UNICO SUO GENERE™',
         title: 'Conoscenza',
         subtitle: 'Storia, funzione, sviluppo, cura e proprietà responsabile.',
         body: 'USG Corso raccoglie, analizza e presenta la conoscenza sul Cane Corso attraverso una propria prospettiva editoriale — dal patrimonio storico della razza alla cura moderna e alla gestione responsabile. I materiali hanno finalità educative. USG Corso non pretende di rappresentare una verità assoluta, non sostituisce il parere professionale e non formula diagnosi veterinarie. In caso di problema di salute, dubbio o emergenza, consultare un medico veterinario qualificato.',

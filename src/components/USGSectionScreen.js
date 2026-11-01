@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   BackHandler,
   Image,
@@ -10,9 +10,12 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import AuthWelcomeCarousel from '../auth/AuthWelcomeCarousel';
 import { radius, spacing } from '../styles/usgTheme';
 import { useTheme } from '../theme/ThemeContext';
+import USGScrollHint from './USGScrollHint';
 
 export default function USGSectionScreen({
   kicker,
@@ -21,11 +24,33 @@ export default function USGSectionScreen({
   body,
   children,
   heroImage,
+  heroCarousel = false,
+  showScrollHint = false,
 }) {
+  const scrollRef = useRef(null);
   const [isHeroOpen, setIsHeroOpen] = useState(false);
+  const [isScrollHintVisible, setIsScrollHintVisible] = useState(showScrollHint);
+  const [carouselResetKey, setCarouselResetKey] = useState(0);
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  useFocusEffect(
+    useCallback(() => {
+      if (!heroCarousel) {
+        return undefined;
+      }
+
+      scrollRef.current?.scrollTo({
+        y: 0,
+        animated: false,
+      });
+      setIsScrollHintVisible(showScrollHint);
+      setCarouselResetKey((value) => value + 1);
+
+      return undefined;
+    }, [heroCarousel, showScrollHint])
+  );
 
   const closeHero = () => {
     setIsHeroOpen(false);
@@ -68,8 +93,23 @@ export default function USGSectionScreen({
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.content}>
-        {heroImage && (
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        onScroll={(event) => {
+          if (
+            event.nativeEvent.contentOffset.y > 24 &&
+            isScrollHintVisible
+          ) {
+            setIsScrollHintVisible(false);
+          }
+        }}
+        scrollEventThrottle={16}
+      >
+        {heroCarousel ? (
+          <AuthWelcomeCarousel key={`section-carousel-${carouselResetKey}`} colors={colors} />
+        ) : heroImage ? (
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Open ${title} image fullscreen`}
@@ -85,7 +125,7 @@ export default function USGSectionScreen({
               resizeMode="cover"
             />
           </Pressable>
-        )}
+        ) : null}
 
         <View style={styles.hero}>
           <Image
@@ -114,7 +154,12 @@ export default function USGSectionScreen({
         <Text style={styles.footer}>USG — Unico Suo Genere™</Text>
       </ScrollView>
 
-      {heroImage && (
+      <USGScrollHint
+        visible={showScrollHint && isScrollHintVisible}
+        bottom={Math.max(insets.bottom, 16) + 8}
+      />
+
+      {!heroCarousel && heroImage && (
         <Modal
           visible={isHeroOpen}
           transparent
@@ -229,6 +274,8 @@ function createStyles(colors) {
       letterSpacing: 3.2,
       textTransform: 'uppercase',
       marginBottom: 12,
+      width: '100%',
+      textAlign: 'center',
     },
     title: {
       color: colors.text,
