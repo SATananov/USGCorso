@@ -1,4 +1,4 @@
-const appJson = require('./app.json');
+﻿const appJson = require('./app.json');
 
 module.exports = () => {
   const base = appJson.expo;
@@ -15,6 +15,8 @@ module.exports = () => {
 
     return Array.isArray(plugin) && plugin[0] !== 'react-native-maps';
   });
+
+  plugins.push('./plugins/withAndroidWorkManagerR8Fix');
 
   plugins.push([
     'react-native-maps',

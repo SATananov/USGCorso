@@ -1,14 +1,22 @@
-{
-  "cli": {
-    "version": ">= 16.0.0"
-  },
-  "build": {
-    "development": {
-      "developmentClient": true,
-      "distribution": "internal",
-      "android": {
-        "buildType": "apk"
-      }
-    }
-  }
+﻿{
+    "cli":  {
+                "version":  "\u003e= 16.0.0"
+            },
+    "build":  {
+                  "development":  {
+                                      "developmentClient":  true,
+                                      "distribution":  "internal",
+                                      "android":  {
+                                                      "buildType":  "apk"
+                                                  }
+                                  },
+                  "preview":  {
+                                  "developmentClient":  false,
+                                  "distribution":  "internal",
+                                  "environment":  "development",
+                                  "android":  {
+                                                  "buildType":  "apk"
+                                              }
+                              }
+              }
 }
