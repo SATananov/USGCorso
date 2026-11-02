@@ -15,3 +15,39 @@ export function isPasswordValid(password) {
 export function isEmailValid(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }
+
+export function validateRegister(email, password, confirmPassword) {
+  const errors = {};
+
+  if (!email.trim()) {
+    errors.email = 'emailRequired';
+  } else if (!isEmailValid(email)) {
+    errors.email = 'emailInvalid';
+  }
+
+  if (!password) {
+    errors.password = 'passwordRequired';
+  } else {
+    const rules = getPasswordRules(password);
+
+    if (!rules.length) {
+      errors.password = 'passwordLength';
+    } else if (!rules.uppercase) {
+      errors.password = 'passwordUppercase';
+    } else if (!rules.lowercase) {
+      errors.password = 'passwordLowercase';
+    } else if (!rules.number) {
+      errors.password = 'passwordNumber';
+    } else if (!rules.special) {
+      errors.password = 'passwordSpecial';
+    }
+  }
+
+  if (!confirmPassword) {
+    errors.confirmPassword = 'confirmRequired';
+  } else if (password !== confirmPassword) {
+    errors.confirmPassword = 'passwordMismatch';
+  }
+
+  return errors;
+}
