@@ -16,6 +16,21 @@ export function isEmailValid(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }
 
+export function validateLogin(email, password) {
+  const errors = {};
+
+  if (!email.trim()) {
+    errors.email = 'emailRequired';
+  } else if (!isEmailValid(email)) {
+    errors.email = 'emailInvalid';
+  }
+
+  if (!password) {
+    errors.password = 'passwordRequired';
+  }
+
+  return errors;
+}
 export function validateRegister(email, password, confirmPassword) {
   const errors = {};
 
