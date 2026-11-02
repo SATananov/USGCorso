@@ -1,418 +1,483 @@
 # USG Corso
 
-**Regular Exam Course Project for React Native at SoftUni**
+**[React Native](https://reactnative.dev/) Regular Exam Project at [SoftUni](https://softuni.bg/)**
 
-**Stefan Tananov**
-
+**Author:** Stefan Tananov  
 **SoftUni Username:** `tanashi`
 
-**Course:** React Native Regular Exam Project
+USG Corso is a mobile application for Cane Corso owners, enthusiasts and people who want useful information about the breed in one place.
 
-**The Global Cane Corso Mobile Ecosystem**
+The app combines personal dog profiles, community content, useful places, educational materials and mobile tools.
 
-USG Corso is a React Native mobile application for Cane Corso owners, enthusiasts and people who want to learn more about the breed.
+The project is developed for the [React Native](https://reactnative.dev/) Regular Exam at [SoftUni](https://softuni.bg/). After the exam, it is planned to become part of the wider **USG Cane Corso Platform**.
 
-The project is being developed for the React Native Regular Exam at SoftUni. It is currently a standalone mobile project and is planned to become part of the wider **USG Cane Corso Platform** after the exam.
-
-USG Cane Corso Platform:  
+**USG Cane Corso Platform:**  
 https://usg-cane-corso-platform.com/
 
 ---
 
 ## Jump to
 
-### Exam Project
-
+- [APK](#apk)
 - [Exam Status](#exam-status)
+- [Visual Project Scheme](#visual-project-scheme)
 - [Functional Guide](#functional-guide)
-- [Project Overview](#project-overview)
-- [User Access & Permissions](#user-access--permissions)
-- [Authentication & Session Handling](#authentication--session-handling)
-- [Navigation Structure](#navigation-structure)
-- [List → Details Flow](#list--details-flow)
-- [Data Source & Backend](#data-source--backend)
-- [CRUD Operations](#crud-operations)
-- [Forms & Validation](#forms--validation)
-- [Native Device Features](#native-device-features)
-- [Typical User Flow](#typical-user-flow)
-- [Error & Edge Case Handling](#error--edge-case-handling)
-- [APK / Build](#apk--build)
-- [Run Instructions](#run-instructions)
-
-### Additional USG Features
-
-- [Current Implementation](#current-implementation)
-- [Application Areas](#application-areas)
-- [My Corso](#my-corso)
-- [Community Corso](#community-corso)
-- [User Content and Materials](#user-content-and-materials)
-- [OCR and QR Assisted Capture](#ocr-and-qr-assisted-capture)
-- [Moderation and Governance](#moderation-and-governance)
-- [Corso Map](#corso-map)
-- [Place Proposals](#place-proposals)
-- [Admin Places Moderation](#admin-places-moderation)
 - [Technology](#technology)
-- [Project Structure](#project-structure)
-- [Environment Configuration](#environment-configuration)
-- [Development Build](#development-build)
-- [Current Development Status](#current-development-status)
-- [Future Integration](#future-integration-with-usg-cane-corso-platform)
-- [About USG](#about-usg)
+- [Run Instructions](#run-instructions)
+- [Development Status](#development-status)
+
+---
+
+## APK
+
+**Final Exam APK:**  
+The final APK download link will be added here before submission.
+
+The SoftUni requirements state that the project must include a working APK link in the README.
+
+The project will not be submitted without this link.
 
 ---
 
 ## Exam Status
 
-This project is being prepared for the SoftUni React Native Regular Exam.
+Current status:
 
 - Navigation: implemented
 - Authentication: implemented
 - Session persistence: implemented
-- Real backend with Supabase: implemented
+- Supabase backend: implemented
 - CRUD operations: implemented
 - Pull-to-refresh: implemented
 - Forms and validation: implemented
 - Native mobile features: implemented
 - Functional Guide: included below
-- APK link: will be added with the final exam build
+- Final exam APK: pending final build
 
 ---
 
-## Functional Guide
+# Visual Project Scheme
 
-### Project Overview
+```mermaid
+flowchart TD
+    A[USG Corso App] --> B[App Navigator]
+    B --> C[Bottom Tab Navigator]
+    B --> D[Stack Navigator]
+
+    C --> H[Home]
+    C --> K[Knowledge]
+    C --> G[Guest Preview Areas]
+    C --> U[Authenticated Areas]
+
+    K --> KD[Knowledge Details]
+
+    G --> GM[My Corso Preview]
+    G --> GF[Corso Friendly Preview]
+    G --> GC[Community Preview]
+    G --> GS[Services Preview]
+    G --> GE[Events Preview]
+    G --> GX[Corso Match Preview]
+    G --> GA[About Preview]
+
+    U --> MC[My Corso]
+    U --> CF[Corso Friendly]
+    U --> CO[Community]
+    U --> SV[Services]
+    U --> EV[Events]
+    U --> CM[Corso Match]
+    U --> AB[About USG]
+
+    D --> PD[Place Details]
+    D --> MD[Materials and Details]
+    D --> ST[Settings and Account]
+    D --> AD[Admin Moderation]
+
+    MC --> SB[Supabase]
+    CF --> SB
+    CO --> SB
+    MD --> SB
+    AD --> SB
+
+    CF --> MAP[Google Maps and Location]
+    MD --> MEDIA[Camera, Image Picker, OCR and QR]
+
+    SB --> AUTH[Auth and Session]
+    SB --> DB[Database]
+    SB --> STORAGE[Storage]
+    SB --> EDGE[Edge Functions]
+```
+
+The application uses a Bottom Tab Navigator for the main areas and a Stack Navigator for details, settings, materials and admin screens.
+
+Knowledge is public educational content. Other public tabs can show limited guest previews, while personal actions and user-owned data require authentication.
+
+Supabase provides authentication, database data, storage and Edge Functions. Native mobile features include Google Maps, device location, camera, image selection, OCR and QR support.
+
+---
+
+# Functional Guide
+
+## 1. Project Overview
 
 **Application Name:** USG Corso
 
 **Category:** Cane Corso / Community / Education / Mobile Utility
 
-USG Corso is a mobile application for Cane Corso owners and people interested in the breed.
+USG Corso gives Cane Corso owners and enthusiasts one mobile place for useful information and everyday breed-related tools.
 
-The app combines dog profiles, useful places, community content, educational materials and mobile tools in one place.
+The app includes dog profiles, useful places, educational content, community features and user materials.
 
-### User Access & Permissions
+The project uses a real backend and native mobile features.
 
-**Guest user**
+---
 
-A guest can open the application, see the Home screen and preview the main sections.
+## 2. User Access & Permissions
 
-Actions that need personal data or user content require login.
+### Guest
 
-**Authenticated user**
+USG Corso is designed with a production-oriented access model.
 
-A logged-in user can use the main application areas and personal features.
+A guest can access limited public content without creating an account.
 
-The user can create, view, edit and delete supported personal content such as dog profiles and submitted materials.
+The main public area is **Knowledge**, because educational information about the breed should remain easy to access.
 
-### Authentication & Session Handling
+Personal data and account-based actions stay protected.
 
-The application uses Supabase Auth.
+A guest cannot manage personal dog profiles, private user data, submissions or moderation tools.
 
-The user can:
+### Authenticated User
 
-- register
-- log in
-- log out
-- confirm email
-- recover a forgotten password
-- set a new password
+A logged-in user can use the personal and community features of the application.
 
-The session is saved by Supabase.
+Depending on the section, the user can:
 
-If the user closes and opens the application again, the session can be restored automatically.
+- create, view, edit and delete Cane Corso profiles
+- upload and manage dog photos
+- submit materials
+- propose Cane Corso Friendly places
+- open list and details screens
+- use location, map, camera and image tools
 
-### Navigation Structure
+Admin users have additional moderation screens for supported public content.
 
-The application uses two main navigator types:
+---
+
+## 3. Authentication & Session Handling
+
+USG Corso uses **Supabase Auth**.
+
+The authentication flow includes:
+
+- registration
+- login
+- logout
+- email confirmation
+- forgotten password recovery
+- setting a new password
+
+Supabase manages the authenticated session.
+
+When the application is restarted, an existing valid session can be restored automatically.
+
+Protected personal actions require authentication.
+
+---
+
+## 4. Navigation Structure
+
+The application uses two main React Navigation navigator types:
 
 - Bottom Tab Navigator
 - Native Stack Navigator
 
-The bottom tabs provide access to the main sections.
+The bottom tabs give access to the main application areas.
 
-The Stack Navigator is used for details screens, settings, admin screens and other screens opened from the main areas.
+The Stack Navigator is used for details screens, settings, materials, administration and other screens opened from the main areas.
 
-The project has more than five screens.
+The project contains more than five screens.
 
-It also has dynamic details screens that receive data through route parameters.
+It also contains several dynamic details screens.
 
-### List → Details Flow
+---
 
-The application has list-to-details flows.
+## 5. List → Details Flow
+
+USG Corso has several list-to-details flows.
 
 Examples:
 
 - places list → place details
-- user materials list → material details
+- materials list → material details
+- Knowledge list → Knowledge details
 - admin moderation list → moderation details
 
-The details screens receive an ID or object through route parameters.
+Details screens receive an ID or object through route parameters.
 
-### Data Source & Backend
+---
 
-USG Corso uses Supabase as a real backend.
+## 6. Data Source & Backend
+
+USG Corso uses **Supabase** as a real backend.
 
 Supabase is used for:
 
 - authentication
-- database data
+- database records
 - file storage
-- Edge Functions
 - moderation data
 - application counters
+- Edge Functions
 
-The main application data is not loaded from hardcoded JSON files.
+Main application data is fetched from the backend.
 
-### CRUD Operations
+The project does not use hardcoded JSON as the main source of application data.
 
-The application includes real CRUD operations.
+---
 
-**Read**
+## 7. Data Operations
 
-Data is loaded from Supabase and shown in lists and details screens.
+The application contains real CRUD operations.
 
-**Create**
+### Read
 
-Users can create supported content such as:
+Data is fetched from Supabase and displayed in lists and details screens.
+
+### Create
+
+Authenticated users can create supported content such as:
 
 - Cane Corso profiles
 - place proposals
 - user materials
 
-**Update**
+### Update
 
 Users can edit supported content that belongs to them.
 
-Admins can also update supported moderation data.
+Admin users can update supported moderation data.
 
-**Delete**
+### Delete
 
-Supported user content can be deleted where the application flow allows it.
+Users can delete supported content that belongs to them where the application flow allows it.
 
-### Forms & Validation
+Admin users can also delete supported moderated content.
 
-The application contains forms for:
+### Pull-to-Refresh
+
+Server-backed list screens use pull-to-refresh where appropriate.
+
+This allows the user to load fresh data from the backend.
+
+---
+
+## 8. Forms & Validation
+
+The project includes forms for:
 
 - registration
 - login
 - password recovery
-- profile data
+- user profile
 - My Corso
 - place proposals
 - user materials
 
-The forms use validation for required and invalid values.
+The forms validate different types of fields.
 
-Examples include:
+Examples:
 
-- required name or title
-- valid email
-- password rules
-- required content fields
+- email must have a valid format
+- required fields cannot be empty
+- password uses several rules
 
-The application also uses controls other than normal text inputs, including switches, selectors, image selection, date-related input and map-based coordinate selection.
+Password validation includes:
 
-### Native Device Features
+- required value
+- minimum length
+- uppercase letter
+- lowercase letter
+- number
+- special character
 
-The project uses several mobile-specific features:
+The application also uses controls beyond normal text inputs, including:
+
+- switches
+- selectors
+- image selection
+- date-related input
+- map-based coordinate selection
+
+Forms are designed for mobile use.
+
+They use safe-area and keyboard-aware layouts where needed.
+
+---
+
+## 9. Native Device Features
+
+USG Corso uses several mobile-specific features:
 
 - Camera
 - Image Picker
-- Location
+- Device Location
 - Google Maps
 - OCR from images
 - QR detection
 
-The camera and image picker can be used when working with photos and materials.
+Camera and Image Picker are used for photos and materials.
 
-Location and Maps are used for Corso places.
+Location and Google Maps are used in the Corso Friendly place workflow.
 
-OCR can help extract text from an image.
+OCR can extract text from selected images.
 
-### Typical User Flow
+The OCR workflow supports Bulgarian, English and Italian.
 
-A normal flow can be:
+---
+
+## 10. Typical User Flow
+
+A normal user journey can be:
 
 1. Open the application.
-2. Log in or register.
-3. Open one of the main sections.
-4. View existing data or create personal content.
+2. Browse public Knowledge content or log in.
+3. Open a main section.
+4. Load existing data or create new content.
 5. Open a details screen.
-6. Edit, delete or submit content where available.
+6. Edit, delete or submit content where the current flow allows it.
 
-### Error & Edge Case Handling
+---
+
+## 11. Error & Edge Case Handling
 
 The application handles common states such as:
 
 - authentication errors
-- network errors
-- missing data
-- empty lists
+- network and backend errors
 - loading states
+- empty lists
+- missing data
 - invalid form values
+- confirmations
+- success messages
 
 Normal application feedback uses the USG visual style.
 
-### APK / Build
+---
 
-The project uses an Android Development Build during development.
+## 12. APK / Build
 
-The final exam APK link will be added here before submission.
+The project is tested with an Android Development Build during development.
+
+A standalone Android preview build profile is also configured.
+
+The final exam APK link will be added at the top of this README before submission.
+
+The project will not be submitted without the APK link.
 
 ---
 
-## Current Implementation
+# Current Implementation
 
-USG Corso already includes a working visual system, navigation, authentication, Supabase-backed user data, Cane Corso profiles, moderated community sharing, user-submitted content, OCR/QR-assisted capture, location features and an Android native map workflow.
-
-Implemented so far:
+The current version includes:
 
 - 3D USG intro
-- USG dark and gold visual identity
 - dark and light themes
-- English, Bulgarian and Italian language support
+- Bulgarian, English and Italian UI
 - saved language preference
 - saved theme preference
-- home screen with eight main sections
-- direct Home quick actions for the most important section tasks
-- live Home counters backed by Supabase for approved places, Community Corso and approved content
-- separate screen for each main section
-- hero image for each main section
-- fullscreen hero image preview
-- bottom navigation
-- stack navigation
-- global back button
-- dynamic details screen
-- Settings area
-- Notifications settings
-- Privacy settings
-- Help & Support
+- Home screen with main USG sections
+- Bottom Tab navigation
+- Stack navigation
+- Settings
+- Help
 - Legal information
-- Replay USG Intro
-- Reset Preferences
-- Supabase backend connection
 - Supabase Auth
-- sign up, sign in and sign out
-- email confirmation flow
-- persisted authentication session
-- Forgot Password and Reset Password flow
-- recovery deep-link handling
-- password recovery email resend
+- persisted sessions
+- email confirmation
+- password recovery
 - user profile data
-- My Corso dog profiles
+- My Corso CRUD
 - dog photo upload with Supabase Storage
-- community sharing controls
-- public Cane Corso moderation states
-- admin dog moderation
-- Community Corso public gallery limited to approved public profiles
-- user content and material submission flow
-- article and photo-oriented material forms
-- user material editing, deletion and resubmission
+- Community Corso sharing and moderation
+- user materials
+- material editing and deletion
 - admin content moderation
-- branded USG dialogs for application feedback and confirmations
-- camera capture and image selection
-- OCR-assisted text extraction
-- Bulgarian, English and Italian OCR language support
-- QR detection workflow
-- account deletion flow
-- Corso Map on native Android with Google Maps
-- foreground location permission and current position
-- approved place markers and place details
-- place category filtering
-- reverse geocoding through a Supabase Edge Function
-- place proposal flow
-- admin place moderation
-- admin place editing and change requests
-- internal Android Development Build configuration
-- custom USG application icon and Android adaptive icon
-- keyboard-safe mobile forms
-
-The application is still in active development. Some sections remain informational or prepared for future backend functionality, and a final production release build is not claimed yet.
-
----
-
-## Application Areas
-
-The app has eight main areas.
-
-### My Corso
-
-My Corso is the owner's personal Cane Corso area and already uses real Supabase data.
-
-Current functionality includes:
-
-- creating a dog profile
-- editing a dog profile
-- deleting a dog profile
-- dog name, sex, color and birth date
-- country and city
-- kennel and breeder information
-- registration number
-- description
-- dog photo upload
-- photo replacement and removal
-- community visibility control
-
-### Corso Friendly
-
-Corso Friendly contains the location and place discovery functionality.
-
-Current functionality includes:
-
+- camera and image selection
+- OCR-assisted text capture
+- QR detection
 - native Android Google Map
 - current device location
 - approved place markers
-- place details
 - category filtering
-- Add a Place proposal flow
-- GPS-assisted coordinates
+- place proposal workflow
+- reverse geocoding through Supabase Edge Function
+- admin place moderation
+- account deletion flow
+- Supabase-backed Home counters
+- branded USG dialogs
+- Android Development Build support
+- standalone Android preview build support
+
+Some areas are still being expanded.
+
+They are not presented as finished backend directories when the backend functionality is not complete.
+
+---
+
+# Main Application Areas
+
+## My Corso
+
+My Corso is the personal Cane Corso area.
+
+Users can create, view, edit and delete dog profiles.
+
+Dog photos are stored with Supabase Storage.
+
+Users can also choose whether a dog can be shared with the community.
+
+---
+
+## Corso Friendly
+
+Corso Friendly is the place discovery area.
+
+It includes:
+
+- Google Maps
+- current device location
+- approved place markers
+- place categories
+- place details
+- place proposals
 - reverse geocoding
-- admin moderation for submitted places
+- admin moderation
 
-Favorites and reviews are planned for later development.
+---
 
-### Knowledge
+## Knowledge
 
-Knowledge is the educational area for Cane Corso information.
+Knowledge is the public educational area.
 
-Current topics include:
+It contains Cane Corso information and uses a list-to-details flow.
 
-- Cane Corso Basics
-- History & Heritage
-- Function & Type
-- Growth & Development
-- Nutrition
-- Training
-- Behavior
-- Health & Care
+This section is intentionally accessible without login because it contains public educational content.
 
-The section currently provides the application structure for educational content and can be expanded with deeper content and backend data later.
+---
 
-### Community
+## Community
 
-Community includes the Community Corso experience and the planned wider community areas.
+Community contains approved public Cane Corso profiles shared by owners.
 
-Current functionality includes:
+Public content follows moderation rules before it is shown.
 
-- public Cane Corso profiles shared by owners
-- dog photos
-- owner display information
-- location information
-- dog profile details
-- fullscreen dog photo preview
+---
 
-Additional community areas remain planned:
+## Professionals & Services
 
-- Lost & Found
-- New Home
-- Breeding Match
-- broader community interaction
+This area is prepared for useful Cane Corso services.
 
-### Professionals & Services
-
-This area is planned for useful Cane Corso services.
-
-Current topics:
+Current categories include:
 
 - Breeders
 - Trainers
@@ -421,472 +486,74 @@ Current topics:
 - Transport
 - Pet Shops
 
-Backend service directories will be added later.
+A full backend directory is planned for later development.
 
-### Events
+---
 
-This area is planned for dog and Cane Corso events.
+## Events
 
-Current topics:
+This area is prepared for:
 
-- Upcoming
 - Dog Shows
 - Seminars
 - Lectures
 - Training Events
 - Breed Meetings
 
-A live events backend is not connected yet.
+A full live events backend is planned for later development.
 
-### Corso Match
+---
 
-Corso Match is planned as an educational feature that helps a person understand whether the Cane Corso is suitable for their lifestyle.
+## Corso Match
+
+Corso Match is planned as an educational feature.
+
+Its purpose is to help a person understand whether the Cane Corso is suitable for their lifestyle.
 
 It is not a breeding or mating feature.
 
-### About USG
+---
 
-This section explains the idea and philosophy behind USG.
+## About USG
+
+This area explains the idea and philosophy behind USG.
 
 ---
 
-## Functional Guide
-
-### Application Start
-
-When the app starts:
-
-1. the 3D USG intro is shown;
-2. the user sees the USG identity and 3D coin;
-3. the user enters the application through the Explore action.
-
-The intro can be opened again from Settings.
-
-### Home Screen
-
-The home screen contains:
-
-- the USG ecosystem image
-- the application title
-- eight main sections
-- access to Settings
-- direct quick actions under the main sections
-- live counters for supported public data
-
-Examples of direct Home actions include:
-
-- My Corso and Add Corso
-- Corso Map and Add Place
-- Knowledge Library and Add Material
-- Public Corsos and Gallery
-- Services and Add Service
-- Upcoming Events and Add Event
-
-The main groups can still be opened and closed for secondary navigation options.
-
-The live counters are loaded from Supabase and are not hardcoded.
-
-### Main Sections
-
-Each of the eight main areas has its own screen with a shared USG visual system.
-
-Section screens can include:
-
-- hero imagery
-- titles and descriptions
-- section actions
-- navigation to detailed functionality
-
-Hero images can be opened in fullscreen mode.
-
-### Languages
-
-The app supports:
-
-- English
-- Bulgarian
-- Italian
-
-The selected language is saved on the device.
-
-### Themes
-
-The app supports:
-
-- Dark theme
-- Light theme
-
-The selected theme is saved on the device.
-
-### Settings
-
-Settings includes access to:
-
-- language selection
-- theme selection
-- Notifications
-- Privacy
-- Account
-- Help & Support
-- Legal information
-- Replay USG Intro
-- Reset Preferences
-
-### Notifications
-
-The user can save local preferences for:
-
-- Events
-- Community
-- Lost & Found
-
-These are currently local preferences. Real push notifications are not connected yet.
-
-### Privacy
-
-The app currently provides local privacy preparation settings such as Public Profile and Location Discovery.
-
-These settings are not yet a complete backend privacy policy system.
-
-### Reset Preferences
-
-Reset Preferences returns local settings to their defaults, including language, theme, notification preferences and local privacy preferences.
-
----
-
-## Authentication and Account Recovery
-
-USG Corso uses Supabase Auth for real user authentication.
-
-Current authentication functionality includes:
-
-- account registration
-- email and password sign in
-- sign out
-- persisted sessions
-- authentication state handling
-- email confirmation flow
-- guest access where supported by the application flow
-- Forgot Password
-- password recovery email
-- recovery deep link handling
-- setting a new password
-- resending the recovery email
-
-Password recovery email delivery is configured through Supabase Auth. The project does not store SMTP credentials in the repository.
-
----
-
-## Profile and Account
-
-Authenticated users can maintain profile information stored through Supabase.
-
-Current profile fields and tools include:
-
-- display name
-- username
-- biography
-- country
-- city
-- Cane Corso avatar presets
-- profile completion state
-- location readiness
-
-The Account area also includes an account deletion flow backed by a Supabase Edge Function.
-
----
-
-## My Corso
-
-My Corso uses Supabase-backed CRUD functionality for the signed-in owner's dogs.
-
-Users can:
-
-- create dog profiles
-- view their dogs
-- edit dog information
-- delete dog profiles
-- upload Cane Corso photos
-- replace or remove photos
-- control whether a dog is private or submitted for Community visibility
-
-Dog images use Supabase Storage.
-
-Private owner content remains available to the owner without public moderation.
-
-When a dog is shared publicly, its public visibility is governed by moderation states such as pending, approved, rejected or needs changes. Public profile or photo changes can return the item to moderation before it is shown again in Community.
-
----
-
-## Community Corso
-
-Community Corso loads public Cane Corso profiles through the Supabase backend.
-
-Shared profiles can display available information such as:
-
-- dog photo
-- dog name
-- sex
-- color
-- birth date
-- country and city
-- kennel
-- breeder
-- registration number
-- description
-- owner display information
-
-Only profiles intentionally shared through the application's community visibility flow are intended for this area.
-
-Community Corso is moderation-aware: public profiles are intended to appear only after approval.
-
----
-
-## User Content and Materials
-
-USG Corso includes a Supabase-backed user content workflow for authenticated users.
-
-Current functionality includes:
-
-- creating user-submitted materials
-- article/text-oriented submissions
-- photo-oriented submissions
-- attaching supported media
-- viewing the user's own materials
-- editing submitted content
-- deleting owned content
-- resubmitting content after changes
-- moderation states and moderation notes
-- admin review of submitted content
-- approved-content counting for Home discovery
-
-The content architecture uses section keys so submissions can be associated with areas such as Knowledge, Services and Events.
-
-The public browsing experience for every content category is still being expanded. The current implementation provides the submission, ownership and moderation foundation without claiming that every section is already a complete public directory.
-
----
-
-## OCR and QR Assisted Capture
-
-The material workflow includes camera and image-assisted tools intended to reduce manual text entry.
-
-Current functionality includes:
-
-- direct camera capture
-- image selection
-- OCR-assisted extraction from images
-- Bulgarian OCR
-- English OCR
-- Italian OCR
-- language-aware OCR provider selection
-- local native Android OCR module
-- QR detection support
-- extraction results that can be used in the material workflow
-
-The OCR implementation includes local Android module code and bundled language data for Bulgarian, English and Italian.
-
-OCR is an assistance feature. Extracted text should still be reviewed by the user before submission.
-
----
-
-## Moderation and Governance
-
-Public user-generated content is governed separately from private owner data.
-
-The current moderation model includes:
-
-- private owner content
-- pending public submissions
-- approved public content
-- rejected content
-- needs-changes workflows where supported
-- moderation notes
-- admin review screens
-- dog profile moderation
-- place moderation
-- user content moderation
-
-The goal is to keep public USG content relevant to Cane Corso and the purpose of each section.
-
-The application uses branded USG dialogs for ordinary confirmations, warnings and success feedback instead of standard React Native alert dialogs.
-
----
-
-## Corso Map
-
-Corso Map is implemented for native Android with React Native Maps and Google Maps.
-
-Current map functionality includes:
-
-- Google Maps native Android rendering
-- foreground location permission
-- current device location
-- approved USG place markers
-- category filtering
-- place details
-- map-based coordinate selection
-
-The Google Maps Android API key is provided through environment configuration and is not stored directly in the source code.
-
----
-
-## Place Proposals
-
-Signed-in users can propose useful locations through the Add a Place flow.
-
-A proposal can include:
-
-- place name
-- category
-- country
-- city
-- address
-- phone
-- website
-- description
-- Cane Corso Friendly flag
-- latitude and longitude
-
-Coordinates can be selected from the map or assisted by the device location and reverse-geocoding workflow.
-
-New proposals enter moderation before becoming approved public places.
-
-### Reverse Geocoding
-
-Reverse geocoding is handled through the Supabase Edge Function:
-
-`reverse-geocode`
-
-The mobile application sends coordinates to the function and uses the returned location data in the place workflow.
-
----
-
-## Admin Places Moderation
-
-The application contains a role-based Admin area for place moderation.
-
-Current admin place functionality includes:
-
-- listing pending place proposals
-- reviewing submitted place information
-- approving proposals
-- rejecting proposals
-- editing pending place data
-- requesting changes from the submitter
-- using a map during moderation
-
-The admin service also includes member listing support for the Admin area.
-
----
-
-## Account Deletion
-
-Account deletion is handled through the Supabase Edge Function:
-
-`delete-account`
-
-The flow is designed to perform server-side account cleanup rather than exposing privileged credentials in the mobile application.
-
-Administrative safety checks are also included in the deletion flow.
-
----
-
-## Technology
+# Technology
 
 The project currently uses:
 
-- React Native
-- Expo SDK 58
-- React 19
+- [React Native](https://reactnative.dev/)
+- Expo
+- React
 - JavaScript
 - React Navigation
-- AsyncStorage
 - Supabase
 - Supabase Auth
 - Supabase Database
 - Supabase Storage
 - Supabase Edge Functions
+- AsyncStorage
 - Expo Location
 - React Native Maps
-- Google Maps for native Android
+- Google Maps
 - Expo Image Picker
 - Expo Camera
 - Expo File System
 - Expo OCR Kit
-- local Expo Android OCR module
-- bundled Tesseract language data for Bulgarian, English and Italian
 - Expo Linking
 - Expo Dev Client
 - EAS Build
 - Expo GL
 - Three.js
-- React Native StyleSheet
 - Safe Area Context
 
-React Navigation is used for application navigation.
-
-AsyncStorage is used for local preferences such as language, theme, notifications and local privacy settings.
-
-Supabase provides authentication and the current backend data layer.
-
-Expo GL and Three.js power the 3D USG intro.
-
 ---
 
-## Project Structure
+# Environment Configuration
 
-The project is organized around feature-specific modules:
-
-```text
-USGCorso/
-├── assets/
-│   ├── auth/
-│   ├── icons/
-│   ├── profile/
-│   └── USG and section imagery
-├── src/
-│   ├── account/
-│   ├── admin/
-│   ├── app/
-│   ├── auth/
-│   ├── community/
-│   ├── components/
-│   ├── dogs/
-│   ├── governance/
-│   ├── home/
-│   ├── i18n/
-│   ├── lib/
-│   ├── navigation/
-│   ├── ocr/
-│   ├── places/
-│   ├── profile/
-│   ├── qr/
-│   ├── screens/
-│   ├── styles/
-│   └── theme/
-├── modules/
-│   └── usg-ocr/
-│       └── Android native OCR module and tessdata
-├── supabase/
-│   ├── functions/
-│   │   ├── delete-account/
-│   │   └── reverse-geocode/
-│   └── SQL setup files
-├── .env.example
-├── App.js
-├── app.config.js
-├── app.json
-├── eas.json
-├── index.js
-├── package.json
-└── README.md
-```
-
----
-
-## Environment Configuration
-
-The repository contains `.env.example` with the required variable names but no secrets.
+The repository contains `.env.example`.
 
 Create a local `.env` file with:
 
@@ -896,13 +563,13 @@ EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 GOOGLE_MAPS_ANDROID_API_KEY=
 ```
 
-The real `.env` file must remain local and must never be committed.
+The real `.env` file must remain local.
 
-`GOOGLE_MAPS_ANDROID_API_KEY` is required when building the Android application with Google Maps support.
+It must not be committed to GitHub.
 
 ---
 
-## Run Instructions
+# Run Instructions
 
 Clone the repository:
 
@@ -910,19 +577,19 @@ Clone the repository:
 git clone https://github.com/SATananov/USGCorso.git
 ```
 
-Open the project folder:
+Open the project:
 
 ```bash
 cd USGCorso
 ```
 
-Install the packages:
+Install dependencies:
 
 ```bash
 npm install
 ```
 
-Create the local `.env` file from `.env.example` and provide the required local environment values.
+Create the local `.env` file from `.env.example`.
 
 Start Expo:
 
@@ -936,130 +603,75 @@ For a clean Metro start:
 npx expo start -c
 ```
 
-For the current native Android Corso Map workflow, use the configured Development Build rather than relying on Expo Go for full native behavior.
+Native Android functionality should be tested with the configured Android Development Build or preview build.
+
+Expo Go is not the main verification environment for the native project features.
 
 ---
 
-## Development Build
+# Development Status
 
-The project includes Expo Dev Client and an EAS development profile for an internal Android APK.
+## Working Now
 
-The current `development` build profile uses:
+The project currently has working:
 
-- `developmentClient: true`
-- internal distribution
-- Android APK output
+- navigation
+- authentication
+- persisted sessions
+- Supabase data
+- CRUD flows
+- validation
+- pull-to-refresh
+- image tools
+- location
+- maps
+- moderation
+- Android Development Build support
+- standalone preview build support
 
-A new Development APK is required when a change modifies native dependencies or native application configuration that is not already present in the installed development client.
+## Still in Development
 
-Ordinary JavaScript, UI and README-only changes do not require a new Development APK.
-
-A final production/exam release APK is not claimed by this README yet.
-
----
-
-## Current Development Status
-
-### Working now
-
-- visual identity and 3D intro
-- multilingual UI foundation
-- dark and light themes
-- navigation and Settings
-- Supabase connection
-- authentication and real user accounts
-- password recovery
-- user profiles
-- My Corso CRUD
-- dog photo storage
-- My Corso public moderation
-- Community Corso approved public data
-- user content and materials flow
-- user material edit/delete/resubmit flow
-- admin content moderation
-- camera capture
-- OCR-assisted extraction in Bulgarian, English and Italian
-- QR detection foundation
-- branded USG feedback dialogs
-- Home quick actions and Supabase-backed counters
-- account deletion flow
-- native Android Corso Map
-- device location
-- place proposal workflow
-- reverse geocoding Edge Function
-- admin place moderation
-- Development Build configuration
-
-### Still in development
+Planned or incomplete areas include:
 
 - real push notifications
-- backend-driven privacy controls
-- Favorites and Reviews for places
-- deeper public Knowledge library browsing
-- live Professionals & Services directory browsing
-- live Events directory and calendar browsing
-- full Corso Match questionnaire and logic
-- wider community interaction modules
-- final production/exam release APK
-- technical integration with the wider USG Cane Corso Platform
-
-Development continues step by step from the current stable functionality.
+- deeper backend privacy controls
+- place favorites and reviews
+- wider public services directory
+- wider events directory
+- full Corso Match logic
+- wider community interaction
+- final exam APK
+- integration with the wider USG Cane Corso Platform
 
 ---
 
-## Future Integration with USG Cane Corso Platform
-
-USG Corso is currently a separate React Native project.
-
-After the exam, the plan is to connect it with the wider **USG Cane Corso Platform**.
-
-The mobile application can extend the platform with:
-
-- owner tools
-- breed knowledge
-- community features
-- location-based features
-- events
-- professional services
-
-The mobile project is not technically connected to the platform yet.
-
----
-
-## About USG
+# About USG
 
 **USG — Unico Suo Genere™**
 
-USG is a cultural and educational Cane Corso project focused on:
+USG is a cultural and educational Cane Corso project.
 
-- knowledge
-- history
-- responsibility
-- respect for the breed
-- responsible ownership
-- community
+The idea is based on knowledge, history, responsibility and respect for the breed.
 
-The project is not designed as a dog-selling marketplace.
-
-Its philosophy is expressed through:
+It is not designed as a dog-selling marketplace.
 
 **FUNZIONE CREA IL TIPO**
 
 ---
 
-## Repository
+# Repository
 
 https://github.com/SATananov/USGCorso
 
 ---
 
-## Author
+# Author
 
 **Stefan Tananov**
 
 ---
 
-## Rights
+# Rights
 
 **USG — Unico Suo Genere™**  
 All rights reserved.
