@@ -30,6 +30,37 @@ export async function deleteMyContentItem(itemId) {
   });
 }
 
+async function queueStorageCleanup(paths) {
+  if (paths.length === 0) {
+    return { error: null };
+  }
+
+  return supabase.rpc('queue_storage_cleanup', {
+    target_paths: paths,
+  });
+}
+
+async function completeStorageCleanup(paths) {
+  if (paths.length === 0) {
+    return { error: null };
+  }
+
+  return supabase.rpc('complete_storage_cleanup', {
+    target_paths: paths,
+  });
+}
+
+async function recordStorageCleanupFailure(paths, error) {
+  if (paths.length === 0) {
+    return;
+  }
+
+  await supabase.rpc('record_storage_cleanup_failure', {
+    target_paths: paths,
+    target_error: error?.message || String(error || 'storage cleanup failed'),
+  });
+}
+
 export async function deleteMyContentItemWithAssets(itemId) {
   const assetsResult = await getMyContentAssets(itemId);
 
@@ -41,9 +72,16 @@ export async function deleteMyContentItemWithAssets(itemId) {
     .map((asset) => asset.storage_path)
     .filter(Boolean);
 
+  const queueResult = await queueStorageCleanup(paths);
+
+  if (queueResult.error) {
+    return queueResult;
+  }
+
   const deleteResult = await deleteMyContentItem(itemId);
 
   if (deleteResult.error) {
+    await completeStorageCleanup(paths);
     return deleteResult;
   }
 
@@ -53,18 +91,24 @@ export async function deleteMyContentItemWithAssets(itemId) {
       .remove(paths);
 
     if (storageResult.error) {
+      await recordStorageCleanupFailure(paths, storageResult.error);
+
       return {
         data: deleteResult.data,
         error: storageResult.error,
         deleted: true,
+        cleanupPending: true,
       };
     }
+
+    await completeStorageCleanup(paths);
   }
 
   return {
     data: deleteResult.data,
     error: null,
     deleted: true,
+    cleanupPending: false,
   };
 }
 
@@ -166,15 +210,38 @@ export async function adminDeleteContentAsset(assetId) {
 }
 
 export async function adminDeleteContentItem(itemId) {
+  const assetsResult = await getAdminContentAssets(itemId);
+
+  if (assetsResult.error) {
+    return assetsResult;
+  }
+
+  const queuedPaths = (assetsResult.data ?? [])
+    .map((asset) => asset.storage_path)
+    .filter(Boolean);
+
+  const queueResult = await queueStorageCleanup(queuedPaths);
+
+  if (queueResult.error) {
+    return queueResult;
+  }
+
   const result = await supabase.rpc('admin_delete_content_item', {
     target_item_id: itemId,
   });
 
   if (result.error) {
+    await completeStorageCleanup(queuedPaths);
     return result;
   }
 
-  const paths = Array.isArray(result.data) ? result.data : [];
+  const returnedPaths = Array.isArray(result.data) ? result.data : [];
+  const paths = [...new Set([...queuedPaths, ...returnedPaths])];
+  const extraPaths = returnedPaths.filter((path) => !queuedPaths.includes(path));
+
+  if (extraPaths.length > 0) {
+    await queueStorageCleanup(extraPaths);
+  }
 
   if (paths.length > 0) {
     const storageResult = await supabase.storage
@@ -182,11 +249,24 @@ export async function adminDeleteContentItem(itemId) {
       .remove(paths);
 
     if (storageResult.error) {
-      return { data: paths, error: storageResult.error };
+      await recordStorageCleanupFailure(paths, storageResult.error);
+      return {
+        data: paths,
+        error: storageResult.error,
+        deleted: true,
+        cleanupPending: true,
+      };
     }
+
+    await completeStorageCleanup(paths);
   }
 
-  return { data: paths, error: null };
+  return {
+    data: paths,
+    error: null,
+    deleted: true,
+    cleanupPending: false,
+  };
 }
 
 export async function getAdminSharedContentItemDetails(itemId) {
@@ -248,15 +328,38 @@ export async function adminDeleteSharedContentAsset(assetId) {
 }
 
 export async function adminDeleteSharedContentItem(itemId) {
+  const assetsResult = await getAdminSharedContentAssets(itemId);
+
+  if (assetsResult.error) {
+    return assetsResult;
+  }
+
+  const queuedPaths = (assetsResult.data ?? [])
+    .map((asset) => asset.storage_path)
+    .filter(Boolean);
+
+  const queueResult = await queueStorageCleanup(queuedPaths);
+
+  if (queueResult.error) {
+    return queueResult;
+  }
+
   const result = await supabase.rpc('admin_delete_shared_content_item', {
     target_item_id: itemId,
   });
 
   if (result.error) {
+    await completeStorageCleanup(queuedPaths);
     return result;
   }
 
-  const paths = Array.isArray(result.data) ? result.data : [];
+  const returnedPaths = Array.isArray(result.data) ? result.data : [];
+  const paths = [...new Set([...queuedPaths, ...returnedPaths])];
+  const extraPaths = returnedPaths.filter((path) => !queuedPaths.includes(path));
+
+  if (extraPaths.length > 0) {
+    await queueStorageCleanup(extraPaths);
+  }
 
   if (paths.length > 0) {
     const storageResult = await supabase.storage
@@ -264,11 +367,24 @@ export async function adminDeleteSharedContentItem(itemId) {
       .remove(paths);
 
     if (storageResult.error) {
-      return { data: paths, error: storageResult.error };
+      await recordStorageCleanupFailure(paths, storageResult.error);
+      return {
+        data: paths,
+        error: storageResult.error,
+        deleted: true,
+        cleanupPending: true,
+      };
     }
+
+    await completeStorageCleanup(paths);
   }
 
-  return { data: paths, error: null };
+  return {
+    data: paths,
+    error: null,
+    deleted: true,
+    cleanupPending: false,
+  };
 }
 
 

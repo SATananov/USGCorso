@@ -39,7 +39,40 @@ export async function getNotifications(limit = 50) {
     throw error;
   }
 
-  return data ?? [];
+  const items = data ?? [];
+  const contentIds = [
+    ...new Set(
+      items
+        .filter(
+          (item) =>
+            item.entity_type === 'content_item' &&
+            typeof item.entity_id === 'string' &&
+            item.entity_id
+        )
+        .map((item) => item.entity_id)
+    ),
+  ];
+
+  if (contentIds.length === 0) {
+    return items;
+  }
+
+  const { data: existingContent, error: contentError } = await supabase
+    .from('content_items')
+    .select('id')
+    .in('id', contentIds);
+
+  if (contentError) {
+    return items;
+  }
+
+  const existingIds = new Set((existingContent ?? []).map((item) => item.id));
+
+  return items.map((item) =>
+    item.entity_type === 'content_item' && item.entity_id
+      ? { ...item, target_exists: existingIds.has(item.entity_id) }
+      : item
+  );
 }
 
 export async function getUnreadNotificationCount() {

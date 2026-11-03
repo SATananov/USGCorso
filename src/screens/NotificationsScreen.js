@@ -37,6 +37,33 @@ function getNotificationPresentation(item, language) {
   const data = item.data ?? {};
   const label = data.title || data.profile_name || '';
 
+  if (item.entity_type === 'content_item' && item.target_exists === false) {
+    if (language === 'bg') {
+      return {
+        category: 'ИСТОРИЯ',
+        title: 'Материалът е изтрит',
+        body: 'Този материал вече не е наличен. Известието е запазено само като история.',
+        action: null,
+      };
+    }
+
+    if (language === 'it') {
+      return {
+        category: 'CRONOLOGIA',
+        title: 'Il contenuto è stato eliminato',
+        body: 'Questo contenuto non è più disponibile. La notifica viene conservata solo come cronologia.',
+        action: null,
+      };
+    }
+
+    return {
+      category: 'HISTORY',
+      title: 'The material was deleted',
+      body: 'This material is no longer available. The notification is kept only as history.',
+      action: null,
+    };
+  }
+
   if (item.event_type === 'content_pending_review') {
     if (language === 'bg') {
       return {
@@ -432,8 +459,9 @@ export default function NotificationsScreen({ navigation }) {
           items.map((item) => {
             const presentation = getNotificationPresentation(item, language);
             const hasAction =
-              item.event_type === 'content_pending_review' ||
-              item.event_type === 'professional_application_pending';
+              item.target_exists !== false &&
+              (item.event_type === 'content_pending_review' ||
+                item.event_type === 'professional_application_pending');
 
             return (
               <Pressable
