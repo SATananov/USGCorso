@@ -33,7 +33,245 @@ function formatDate(value, language) {
   }).format(new Date(value));
 }
 
-export default function NotificationsScreen() {
+function getNotificationPresentation(item, language) {
+  const data = item.data ?? {};
+  const label = data.title || data.profile_name || '';
+
+  if (item.event_type === 'content_pending_review') {
+    if (language === 'bg') {
+      return {
+        category: 'НОВ МАТЕРИАЛ',
+        title: 'Нов материал чака преглед',
+        body: label
+          ? `Потребител изпрати „${label}“ за одобрение.`
+          : 'Потребител изпрати нов материал за одобрение.',
+        action: 'ОТВОРИ МАТЕРИАЛА',
+      };
+    }
+
+    if (language === 'it') {
+      return {
+        category: 'NUOVO CONTENUTO',
+        title: 'Nuovo contenuto in attesa di revisione',
+        body: label
+          ? `Un utente ha inviato “${label}” per l’approvazione.`
+          : 'Un utente ha inviato un nuovo contenuto per l’approvazione.',
+        action: 'APRI IL CONTENUTO',
+      };
+    }
+
+    return {
+      category: 'NEW MATERIAL',
+      title: 'New material awaiting review',
+      body: label
+        ? `A user submitted “${label}” for approval.`
+        : 'A user submitted new material for approval.',
+      action: 'OPEN MATERIAL',
+    };
+  }
+
+  if (item.event_type === 'professional_application_pending') {
+    if (language === 'bg') {
+      return {
+        category: 'ПРОФЕСИОНАЛНА ЗАЯВКА',
+        title: 'Нова професионална заявка',
+        body: label
+          ? `Получена е заявка за „${label}“.`
+          : 'Получена е нова професионална заявка.',
+        action: 'ОТВОРИ ADMIN SERVICES',
+      };
+    }
+
+    if (language === 'it') {
+      return {
+        category: 'CANDIDATURA PROFESSIONALE',
+        title: 'Nuova candidatura professionale',
+        body: label
+          ? `È stata ricevuta una candidatura per “${label}”.`
+          : 'È stata ricevuta una nuova candidatura professionale.',
+        action: 'APRI ADMIN SERVICES',
+      };
+    }
+
+    return {
+      category: 'PROFESSIONAL APPLICATION',
+      title: 'New professional application',
+      body: label
+        ? `A new application was received for “${label}”.`
+        : 'A new professional application was received.',
+      action: 'OPEN ADMIN SERVICES',
+    };
+  }
+
+  if (
+    item.event_type === 'content_approved' ||
+    item.event_type === 'content_rejected' ||
+    item.event_type === 'content_returned_for_review'
+  ) {
+    const note = data.moderation_note?.trim();
+    const isApproved = item.event_type === 'content_approved';
+    const isRejected = item.event_type === 'content_rejected';
+
+    if (language === 'bg') {
+      const title = isApproved
+        ? 'Материалът ти е одобрен'
+        : isRejected
+          ? 'Материалът ти не е одобрен'
+          : 'Материалът ти е върнат за корекция';
+      let body = isApproved
+        ? `USG Admin одобри „${label || 'материала'}“.`
+        : isRejected
+          ? `USG Admin отхвърли „${label || 'материала'}“.`
+          : `USG Admin върна „${label || 'материала'}“ за преглед и корекция.`;
+
+      if (note) {
+        body += `\nСъобщение от администратор: ${note}`;
+      }
+
+      return {
+        category: 'МОИТЕ МАТЕРИАЛИ',
+        title,
+        body,
+        action: null,
+      };
+    }
+
+    if (language === 'it') {
+      const title = isApproved
+        ? 'Il tuo materiale è stato approvato'
+        : isRejected
+          ? 'Il tuo materiale non è stato approvato'
+          : 'Il tuo materiale richiede modifiche';
+      let body = isApproved
+        ? `USG Admin ha approvato “${label || 'il materiale'}”.`
+        : isRejected
+          ? `USG Admin ha rifiutato “${label || 'il materiale'}”.`
+          : `USG Admin ha restituito “${label || 'il materiale'}” per revisione e correzione.`;
+
+      if (note) {
+        body += `\nMessaggio dell’amministratore: ${note}`;
+      }
+
+      return {
+        category: 'I MIEI CONTENUTI',
+        title,
+        body,
+        action: null,
+      };
+    }
+
+    const title = isApproved
+      ? 'Your material was approved'
+      : isRejected
+        ? 'Your material was not approved'
+        : 'Your material needs changes';
+    let body = isApproved
+      ? `USG Admin approved “${label || 'your material'}”.`
+      : isRejected
+        ? `USG Admin rejected “${label || 'your material'}”.`
+        : `USG Admin returned “${label || 'your material'}” for review and correction.`;
+
+    if (note) {
+      body += `\nAdmin message: ${note}`;
+    }
+
+    return {
+      category: 'MY MATERIALS',
+      title,
+      body,
+      action: null,
+    };
+  }
+
+  if (
+    item.event_type === 'professional_application_approved' ||
+    item.event_type === 'professional_application_rejected' ||
+    item.event_type === 'professional_application_needs_changes'
+  ) {
+    const note = data.admin_note?.trim();
+    const isApproved = item.event_type === 'professional_application_approved';
+    const isRejected = item.event_type === 'professional_application_rejected';
+
+    if (language === 'bg') {
+      const title = isApproved
+        ? 'Професионалният ти профил е одобрен'
+        : isRejected
+          ? 'Професионалната ти заявка не е одобрена'
+          : 'Професионалната ти заявка изисква промени';
+      let body = isApproved
+        ? `USG Admin одобри „${label || 'професионалния профил'}“.`
+        : isRejected
+          ? `USG Admin отхвърли заявката за „${label || 'професионалния профил'}“.`
+          : `USG Admin върна заявката за „${label || 'професионалния профил'}“ за корекция.`;
+
+      if (note) {
+        body += `\nСъобщение от администратор: ${note}`;
+      }
+
+      return {
+        category: 'ПРОФЕСИОНАЛЕН ПРОФИЛ',
+        title,
+        body,
+        action: null,
+      };
+    }
+
+    if (language === 'it') {
+      const title = isApproved
+        ? 'Il tuo profilo professionale è stato approvato'
+        : isRejected
+          ? 'La tua candidatura professionale non è stata approvata'
+          : 'La tua candidatura professionale richiede modifiche';
+      let body = isApproved
+        ? `USG Admin ha approvato “${label || 'il profilo professionale'}”.`
+        : isRejected
+          ? `USG Admin ha rifiutato la candidatura per “${label || 'il profilo professionale'}”.`
+          : `USG Admin ha restituito la candidatura per “${label || 'il profilo professionale'}” per correzioni.`;
+
+      if (note) {
+        body += `\nMessaggio dell’amministratore: ${note}`;
+      }
+
+      return {
+        category: 'PROFILO PROFESSIONALE',
+        title,
+        body,
+        action: null,
+      };
+    }
+
+    const title = isApproved
+      ? 'Your professional profile was approved'
+      : isRejected
+        ? 'Your professional application was not approved'
+        : 'Your professional application needs changes';
+    let body = isApproved
+      ? `USG Admin approved “${label || 'your professional profile'}”.`
+      : isRejected
+        ? `USG Admin rejected the application for “${label || 'your professional profile'}”.`
+        : `USG Admin returned the application for “${label || 'your professional profile'}” for changes.`;
+
+    if (note) {
+      body += `\nAdmin message: ${note}`;
+    }
+
+    return {
+      category: 'PROFESSIONAL PROFILE',
+      title,
+      body,
+      action: null,
+    };
+  }
+
+  return {
+    category: null,
+    title: item.title,
+    body: item.body,
+    action: null,
+  };
+}
+
+export default function NotificationsScreen({ navigation }) {
   const { language, t } = useLanguage();
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -69,7 +307,7 @@ export default function NotificationsScreen() {
 
   async function openItem(item) {
     if (item.read_at) {
-      return;
+      return true;
     }
 
     try {
@@ -81,8 +319,34 @@ export default function NotificationsScreen() {
             : entry
         )
       );
+      return true;
     } catch {
       setError(t('settings.notificationsMarkReadFailed'));
+      return false;
+    }
+  }
+
+  async function openNotificationTarget(item) {
+    const marked = await openItem(item);
+
+    if (!marked) {
+      return;
+    }
+
+    if (
+      item.event_type === 'content_pending_review' &&
+      item.entity_id &&
+      item.data?.section_key
+    ) {
+      navigation.navigate('AdminContentDetails', {
+        itemId: item.entity_id,
+        sectionKey: item.data.section_key,
+      });
+      return;
+    }
+
+    if (item.event_type === 'professional_application_pending') {
+      navigation.navigate('AdminServices');
     }
   }
 
@@ -165,30 +429,57 @@ export default function NotificationsScreen() {
             </Text>
           </View>
         ) : (
-          items.map((item) => (
-            <Pressable
-              key={item.id}
-              onPress={() => openItem(item)}
-              style={({ pressed }) => [
-                styles.notificationCard,
-                !item.read_at && styles.notificationCardUnread,
-                pressed && styles.notificationCardPressed,
-              ]}
-            >
-              <View style={styles.cardTopRow}>
-                <Text style={styles.category}>
-                  {t(`settings.notificationCategory_${item.category}`)}
-                </Text>
-                {!item.read_at ? <View style={styles.unreadDot} /> : null}
-              </View>
+          items.map((item) => {
+            const presentation = getNotificationPresentation(item, language);
+            const hasAction =
+              item.event_type === 'content_pending_review' ||
+              item.event_type === 'professional_application_pending';
 
-              <Text style={styles.notificationTitle}>{item.title}</Text>
-              <Text style={styles.notificationBody}>{item.body}</Text>
-              <Text style={styles.date}>
-                {formatDate(item.created_at, language)}
-              </Text>
-            </Pressable>
-          ))
+            return (
+              <Pressable
+                key={item.id}
+                onPress={() => openItem(item)}
+                style={({ pressed }) => [
+                  styles.notificationCard,
+                  !item.read_at && styles.notificationCardUnread,
+                  pressed && styles.notificationCardPressed,
+                ]}
+              >
+                <View style={styles.cardTopRow}>
+                  <Text style={styles.category}>
+                    {presentation.category ||
+                      t(`settings.notificationCategory_${item.category}`)}
+                  </Text>
+                  {!item.read_at ? <View style={styles.unreadDot} /> : null}
+                </View>
+
+                <Text style={styles.notificationTitle}>
+                  {presentation.title}
+                </Text>
+                <Text style={styles.notificationBody}>
+                  {presentation.body}
+                </Text>
+
+                {hasAction ? (
+                  <Pressable
+                    onPress={() => openNotificationTarget(item)}
+                    style={({ pressed }) => [
+                      styles.actionButton,
+                      pressed && styles.actionButtonPressed,
+                    ]}
+                  >
+                    <Text style={styles.actionButtonText}>
+                      {presentation.action}
+                    </Text>
+                  </Pressable>
+                ) : null}
+
+                <Text style={styles.date}>
+                  {formatDate(item.created_at, language)}
+                </Text>
+              </Pressable>
+            );
+          })
         )}
       </ScrollView>
     </SafeAreaView>
@@ -278,9 +569,10 @@ function createStyles(colors) {
     },
     markAllText: {
       color: colors.gold,
-      fontSize: 11,
+      fontSize: 9,
       fontWeight: '900',
-      letterSpacing: 0.5,
+      letterSpacing: 0.3,
+      textAlign: 'center',
     },
     loadingBox: {
       minHeight: 150,
@@ -359,6 +651,26 @@ function createStyles(colors) {
       fontSize: 12,
       lineHeight: 19,
       marginTop: 5,
+    },
+    actionButton: {
+      minHeight: 40,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: colors.gold,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 14,
+      marginTop: 14,
+    },
+    actionButtonPressed: {
+      opacity: 0.72,
+    },
+    actionButtonText: {
+      color: colors.gold,
+      fontSize: 10,
+      fontWeight: '900',
+      letterSpacing: 0.4,
+      textAlign: 'center',
     },
     date: {
       color: colors.textMuted,

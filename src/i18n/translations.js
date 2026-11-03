@@ -1,4 +1,4 @@
-﻿export const translations = {
+export const translations = {
   en: {
     intro: {
       tagline: 'The Global Cane Corso Mobile Ecosystem',
@@ -255,8 +255,8 @@
       notificationsModeration: 'My submissions',
       notificationsModerationHint: 'Approvals, rejections and review requests for your submitted content.',
       notificationsCenter: 'Notification Center',
-      notificationsCenterHint: 'Review account notifications and moderation updates in one place.',
-      notificationsCenterSubtitle: 'Your USG Corso account notifications and moderation history.',
+      notificationsCenterHint: 'See profile, content and approval notifications in one place.',
+      notificationsCenterSubtitle: 'Notifications about your USG Corso profile, materials and approvals.',
       notificationsUnread: 'unread',
       notificationsMarkAllRead: 'MARK ALL AS READ',
       notificationsEmptyTitle: 'No notifications yet',
@@ -569,8 +569,8 @@
       notificationsModeration: 'Моите материали',
       notificationsModerationHint: 'Одобрение, отхвърляне и връщане за преглед на публикуваните от теб материали.',
       notificationsCenter: 'Център за известия',
-      notificationsCenterHint: 'Виж известията за профила и промените по модерацията на едно място.',
-      notificationsCenterSubtitle: 'Известия за твоя USG Corso профил и история на модерацията.',
+      notificationsCenterHint: 'Виж на едно място известията за профила, материалите и одобренията.',
+      notificationsCenterSubtitle: 'Известия за твоя USG Corso профил, материали и одобрения.',
       notificationsUnread: 'непрочетени',
       notificationsMarkAllRead: 'МАРКИРАЙ ВСИЧКИ КАТО ПРОЧЕТЕНИ',
       notificationsEmptyTitle: 'Все още няма известия',
@@ -883,8 +883,8 @@
       notificationsModeration: 'I miei contenuti',
       notificationsModerationHint: 'Approvazioni, rifiuti e richieste di revisione per i contenuti che hai inviato.',
       notificationsCenter: 'Centro notifiche',
-      notificationsCenterHint: 'Consulta in un unico posto le notifiche dell’account e gli aggiornamenti di moderazione.',
-      notificationsCenterSubtitle: 'Notifiche del tuo account USG Corso e cronologia della moderazione.',
+      notificationsCenterHint: 'Consulta in un unico posto le notifiche su profilo, contenuti e approvazioni.',
+      notificationsCenterSubtitle: 'Notifiche sul tuo profilo USG Corso, sui materiali e sulle approvazioni.',
       notificationsUnread: 'non lette',
       notificationsMarkAllRead: 'SEGNA TUTTE COME LETTE',
       notificationsEmptyTitle: 'Nessuna notifica',
