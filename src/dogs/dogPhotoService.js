@@ -2,6 +2,12 @@ import { decode } from 'base64-arraybuffer';
 import * as FileSystem from 'expo-file-system/legacy';
 
 import { supabase } from '../lib/supabase';
+import {
+  completeStorageCleanupForBucket,
+  queueStorageCleanupForBucket,
+  recordStorageCleanupFailureForBucket,
+  removeStoragePathsWithCleanup,
+} from '../storage/storageCleanupService';
 
 const BUCKET = 'corso-photos';
 
@@ -60,6 +66,20 @@ export async function uploadDogPhoto(
     return uploadResult;
   }
 
+  const previousPath = currentResult.data?.photo_path;
+  const previousPaths = previousPath && previousPath !== path
+    ? [previousPath]
+    : [];
+
+  if (previousPaths.length > 0) {
+    const queueResult = await queueStorageCleanupForBucket(BUCKET, previousPaths);
+
+    if (queueResult.error) {
+      await removeStoragePathsWithCleanup(BUCKET, [path]);
+      return { data: null, error: queueResult.error };
+    }
+  }
+
   const updateResult = await supabase
     .from('dogs')
     .update({
@@ -72,17 +92,36 @@ export async function uploadDogPhoto(
     .single();
 
   if (updateResult.error) {
-    await supabase.storage.from(BUCKET).remove([path]);
+    await completeStorageCleanupForBucket(BUCKET, previousPaths);
+    await removeStoragePathsWithCleanup(BUCKET, [path]);
     return updateResult;
   }
 
-  const previousPath = currentResult.data?.photo_path;
+  if (previousPaths.length > 0) {
+    const removeResult = await supabase.storage
+      .from(BUCKET)
+      .remove(previousPaths);
 
-  if (previousPath && previousPath !== path) {
-    await supabase.storage.from(BUCKET).remove([previousPath]);
+    if (removeResult.error) {
+      await recordStorageCleanupFailureForBucket(
+        BUCKET,
+        previousPaths,
+        removeResult.error
+      );
+
+      return {
+        ...updateResult,
+        cleanupPending: true,
+      };
+    }
+
+    await completeStorageCleanupForBucket(BUCKET, previousPaths);
   }
 
-  return updateResult;
+  return {
+    ...updateResult,
+    cleanupPending: false,
+  };
 }
 
 function normalizeImageMimeType(value) {
@@ -94,17 +133,17 @@ function normalizeImageMimeType(value) {
 }
 
 export async function deleteDogPhoto(userId, dogId, photoPath) {
-  if (photoPath) {
-    const removeResult = await supabase.storage
-      .from(BUCKET)
-      .remove([photoPath]);
+  const paths = photoPath ? [photoPath] : [];
 
-    if (removeResult.error) {
-      return removeResult;
+  if (paths.length > 0) {
+    const queueResult = await queueStorageCleanupForBucket(BUCKET, paths);
+
+    if (queueResult.error) {
+      return { data: null, error: queueResult.error };
     }
   }
 
-  return supabase
+  const updateResult = await supabase
     .from('dogs')
     .update({
       photo_path: null,
@@ -114,4 +153,33 @@ export async function deleteDogPhoto(userId, dogId, photoPath) {
     .eq('owner_id', userId)
     .select('id, photo_path')
     .single();
+
+  if (updateResult.error) {
+    await completeStorageCleanupForBucket(BUCKET, paths);
+    return updateResult;
+  }
+
+  if (paths.length > 0) {
+    const removeResult = await supabase.storage
+      .from(BUCKET)
+      .remove(paths);
+
+    if (removeResult.error) {
+      await recordStorageCleanupFailureForBucket(BUCKET, paths, removeResult.error);
+      return {
+        ...updateResult,
+        error: removeResult.error,
+        deleted: true,
+        cleanupPending: true,
+      };
+    }
+
+    await completeStorageCleanupForBucket(BUCKET, paths);
+  }
+
+  return {
+    ...updateResult,
+    deleted: true,
+    cleanupPending: false,
+  };
 }

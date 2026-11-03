@@ -3,6 +3,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 
 import { supabase } from '../lib/supabase';
 import { registerMyContentAsset } from './contentGovernanceService';
+import { removeStoragePathsWithCleanup } from '../storage/storageCleanupService';
 
 const BUCKET = 'usg-content';
 
@@ -47,7 +48,7 @@ export async function uploadMyContentImage(userId, itemId, asset) {
   });
 
   if (registered.error) {
-    await supabase.storage.from(BUCKET).remove([storagePath]);
+    await removeStoragePathsWithCleanup(BUCKET, [storagePath]);
     return registered;
   }
 

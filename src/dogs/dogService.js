@@ -1,4 +1,9 @@
 import { supabase } from '../lib/supabase';
+import {
+  completeStorageCleanupForBucket,
+  queueStorageCleanupForBucket,
+  recordStorageCleanupFailureForBucket,
+} from '../storage/storageCleanupService';
 
 const DOG_FIELDS =
   'id, owner_id, name, sex, color, birth_date, country, city, kennel, breeder, registration_number, description, community_visible, photo_path, moderation_status, moderation_note, moderated_at, moderated_by, created_at, updated_at';
@@ -75,21 +80,54 @@ export async function deleteDog(userId, dogId) {
     return { data: null, error: loadError };
   }
 
-  if (dog?.photo_path) {
-    const removeResult = await supabase.storage
-      .from('corso-photos')
-      .remove([dog.photo_path]);
+  const paths = dog?.photo_path ? [dog.photo_path] : [];
 
-    if (removeResult.error) {
-      return { data: null, error: removeResult.error };
+  if (paths.length > 0) {
+    const queueResult = await queueStorageCleanupForBucket('corso-photos', paths);
+
+    if (queueResult.error) {
+      return { data: null, error: queueResult.error };
     }
   }
 
-  return supabase
+  const deleteResult = await supabase
     .from('dogs')
     .delete()
     .eq('id', dogId)
     .eq('owner_id', userId);
+
+  if (deleteResult.error) {
+    await completeStorageCleanupForBucket('corso-photos', paths);
+    return deleteResult;
+  }
+
+  if (paths.length > 0) {
+    const removeResult = await supabase.storage
+      .from('corso-photos')
+      .remove(paths);
+
+    if (removeResult.error) {
+      await recordStorageCleanupFailureForBucket(
+        'corso-photos',
+        paths,
+        removeResult.error
+      );
+      return {
+        data: deleteResult.data,
+        error: removeResult.error,
+        deleted: true,
+        cleanupPending: true,
+      };
+    }
+
+    await completeStorageCleanupForBucket('corso-photos', paths);
+  }
+
+  return {
+    ...deleteResult,
+    deleted: true,
+    cleanupPending: false,
+  };
 }
 
 function nullableText(value) {

@@ -1,4 +1,9 @@
 import { supabase } from '../lib/supabase';
+import {
+  completeStorageCleanupForBucket,
+  queueStorageCleanupForBucket,
+  recordStorageCleanupFailureForBucket,
+} from '../storage/storageCleanupService';
 
 export async function getMyRole(userId) {
   if (!userId) {
@@ -79,16 +84,39 @@ export async function deleteAdminPlace(placeId) {
   const paths = Array.isArray(result.data) ? result.data : [];
 
   if (paths.length > 0) {
+    const queueResult = await queueStorageCleanupForBucket('place-media', paths);
+
+    if (queueResult.error) {
+      return { data: result.data, error: queueResult.error };
+    }
+
     const storageResult = await supabase.storage
       .from('place-media')
       .remove(paths);
 
     if (storageResult.error) {
-      return { data: result.data, error: storageResult.error };
+      await recordStorageCleanupFailureForBucket(
+        'place-media',
+        paths,
+        storageResult.error
+      );
+      return {
+        data: result.data,
+        error: storageResult.error,
+        deleted: true,
+        cleanupPending: true,
+      };
     }
+
+    await completeStorageCleanupForBucket('place-media', paths);
   }
 
-  return { data: result.data, error: null };
+  return {
+    data: result.data,
+    error: null,
+    deleted: true,
+    cleanupPending: false,
+  };
 }
 
 export async function getAdminPlaceMediaByStatus(status) {
@@ -155,16 +183,40 @@ export async function deleteAdminPlaceMedia(mediaId) {
   const storagePath = result.data;
 
   if (storagePath) {
+    const paths = [storagePath];
+    const queueResult = await queueStorageCleanupForBucket('place-media', paths);
+
+    if (queueResult.error) {
+      return { data: storagePath, error: queueResult.error };
+    }
+
     const storageResult = await supabase.storage
       .from('place-media')
-      .remove([storagePath]);
+      .remove(paths);
 
     if (storageResult.error) {
-      return { data: storagePath, error: storageResult.error };
+      await recordStorageCleanupFailureForBucket(
+        'place-media',
+        paths,
+        storageResult.error
+      );
+      return {
+        data: storagePath,
+        error: storageResult.error,
+        deleted: true,
+        cleanupPending: true,
+      };
     }
+
+    await completeStorageCleanupForBucket('place-media', paths);
   }
 
-  return { data: storagePath, error: null };
+  return {
+    data: storagePath,
+    error: null,
+    deleted: true,
+    cleanupPending: false,
+  };
 }
 
 export async function reviewAdminPlace(placeId, decision) {

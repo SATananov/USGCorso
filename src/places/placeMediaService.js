@@ -2,6 +2,12 @@ import { decode } from 'base64-arraybuffer';
 import * as FileSystem from 'expo-file-system/legacy';
 
 import { supabase } from '../lib/supabase';
+import {
+  completeStorageCleanupForBucket,
+  queueStorageCleanupForBucket,
+  recordStorageCleanupFailureForBucket,
+  removeStoragePathsWithCleanup,
+} from '../storage/storageCleanupService';
 
 const BUCKET = 'place-media';
 
@@ -58,7 +64,7 @@ export async function uploadPlaceMedia(userId, placeId, uri, contentType, captio
   });
 
   if (created.error) {
-    await supabase.storage.from(BUCKET).remove([storagePath]);
+    await removeStoragePathsWithCleanup(BUCKET, [storagePath]);
     return created;
   }
 
@@ -75,16 +81,35 @@ export async function deletePlaceMedia(mediaId) {
   }
 
   if (deleted.data?.storage_path) {
+    const paths = [deleted.data.storage_path];
+    const queueResult = await queueStorageCleanupForBucket(BUCKET, paths);
+
+    if (queueResult.error) {
+      return { data: deleted.data, error: queueResult.error };
+    }
+
     const removed = await supabase.storage
       .from(BUCKET)
-      .remove([deleted.data.storage_path]);
+      .remove(paths);
 
     if (removed.error) {
-      return { data: deleted.data, error: removed.error };
+      await recordStorageCleanupFailureForBucket(BUCKET, paths, removed.error);
+      return {
+        data: deleted.data,
+        error: removed.error,
+        deleted: true,
+        cleanupPending: true,
+      };
     }
+
+    await completeStorageCleanupForBucket(BUCKET, paths);
   }
 
-  return deleted;
+  return {
+    ...deleted,
+    deleted: true,
+    cleanupPending: false,
+  };
 }
 
 export async function moderatePlaceMedia(mediaId, status) {

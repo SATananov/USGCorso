@@ -1,4 +1,9 @@
 import { supabase } from '../lib/supabase';
+import {
+  completeStorageCleanupForBucket,
+  queueStorageCleanupForBucket,
+  recordStorageCleanupFailureForBucket,
+} from '../storage/storageCleanupService';
 
 export async function getIsAdmin() {
   return supabase.rpc('is_admin');
@@ -31,34 +36,15 @@ export async function deleteMyContentItem(itemId) {
 }
 
 async function queueStorageCleanup(paths) {
-  if (paths.length === 0) {
-    return { error: null };
-  }
-
-  return supabase.rpc('queue_storage_cleanup', {
-    target_paths: paths,
-  });
+  return queueStorageCleanupForBucket('usg-content', paths);
 }
 
 async function completeStorageCleanup(paths) {
-  if (paths.length === 0) {
-    return { error: null };
-  }
-
-  return supabase.rpc('complete_storage_cleanup', {
-    target_paths: paths,
-  });
+  return completeStorageCleanupForBucket('usg-content', paths);
 }
 
 async function recordStorageCleanupFailure(paths, error) {
-  if (paths.length === 0) {
-    return;
-  }
-
-  await supabase.rpc('record_storage_cleanup_failure', {
-    target_paths: paths,
-    target_error: error?.message || String(error || 'storage cleanup failed'),
-  });
+  return recordStorageCleanupFailureForBucket('usg-content', paths, error);
 }
 
 export async function deleteMyContentItemWithAssets(itemId) {
@@ -197,16 +183,35 @@ export async function adminDeleteContentAsset(assetId) {
   const storagePath = result.data;
 
   if (storagePath) {
+    const queueResult = await queueStorageCleanup([storagePath]);
+
+    if (queueResult.error) {
+      return { data: storagePath, error: queueResult.error };
+    }
+
     const storageResult = await supabase.storage
       .from('usg-content')
       .remove([storagePath]);
 
     if (storageResult.error) {
-      return { data: storagePath, error: storageResult.error };
+      await recordStorageCleanupFailure([storagePath], storageResult.error);
+      return {
+        data: storagePath,
+        error: storageResult.error,
+        deleted: true,
+        cleanupPending: true,
+      };
     }
+
+    await completeStorageCleanup([storagePath]);
   }
 
-  return { data: storagePath, error: null };
+  return {
+    data: storagePath,
+    error: null,
+    deleted: true,
+    cleanupPending: false,
+  };
 }
 
 export async function adminDeleteContentItem(itemId) {
@@ -315,16 +320,35 @@ export async function adminDeleteSharedContentAsset(assetId) {
   const storagePath = result.data;
 
   if (storagePath) {
+    const queueResult = await queueStorageCleanup([storagePath]);
+
+    if (queueResult.error) {
+      return { data: storagePath, error: queueResult.error };
+    }
+
     const storageResult = await supabase.storage
       .from('usg-content')
       .remove([storagePath]);
 
     if (storageResult.error) {
-      return { data: storagePath, error: storageResult.error };
+      await recordStorageCleanupFailure([storagePath], storageResult.error);
+      return {
+        data: storagePath,
+        error: storageResult.error,
+        deleted: true,
+        cleanupPending: true,
+      };
     }
+
+    await completeStorageCleanup([storagePath]);
   }
 
-  return { data: storagePath, error: null };
+  return {
+    data: storagePath,
+    error: null,
+    deleted: true,
+    cleanupPending: false,
+  };
 }
 
 export async function adminDeleteSharedContentItem(itemId) {

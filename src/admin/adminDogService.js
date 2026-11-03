@@ -1,4 +1,9 @@
 import { supabase } from '../lib/supabase';
+import {
+  completeStorageCleanupForBucket,
+  queueStorageCleanupForBucket,
+  recordStorageCleanupFailureForBucket,
+} from '../storage/storageCleanupService';
 
 export async function getAdminDogs() {
   const result = await supabase.rpc('admin_list_dogs');
@@ -88,16 +93,40 @@ export async function deleteAdminDogPhoto(dogId) {
   const storagePath = result.data;
 
   if (storagePath) {
+    const paths = [storagePath];
+    const queueResult = await queueStorageCleanupForBucket('corso-photos', paths);
+
+    if (queueResult.error) {
+      return { data: storagePath, error: queueResult.error };
+    }
+
     const storageResult = await supabase.storage
       .from('corso-photos')
-      .remove([storagePath]);
+      .remove(paths);
 
     if (storageResult.error) {
-      return { data: storagePath, error: storageResult.error };
+      await recordStorageCleanupFailureForBucket(
+        'corso-photos',
+        paths,
+        storageResult.error
+      );
+      return {
+        data: storagePath,
+        error: storageResult.error,
+        deleted: true,
+        cleanupPending: true,
+      };
     }
+
+    await completeStorageCleanupForBucket('corso-photos', paths);
   }
 
-  return { data: storagePath, error: null };
+  return {
+    data: storagePath,
+    error: null,
+    deleted: true,
+    cleanupPending: false,
+  };
 }
 
 export async function deleteAdminDog(dogId) {
@@ -112,14 +141,38 @@ export async function deleteAdminDog(dogId) {
   const storagePath = result.data;
 
   if (storagePath) {
+    const paths = [storagePath];
+    const queueResult = await queueStorageCleanupForBucket('corso-photos', paths);
+
+    if (queueResult.error) {
+      return { data: storagePath, error: queueResult.error };
+    }
+
     const storageResult = await supabase.storage
       .from('corso-photos')
-      .remove([storagePath]);
+      .remove(paths);
 
     if (storageResult.error) {
-      return { data: storagePath, error: storageResult.error };
+      await recordStorageCleanupFailureForBucket(
+        'corso-photos',
+        paths,
+        storageResult.error
+      );
+      return {
+        data: storagePath,
+        error: storageResult.error,
+        deleted: true,
+        cleanupPending: true,
+      };
     }
+
+    await completeStorageCleanupForBucket('corso-photos', paths);
   }
 
-  return { data: storagePath, error: null };
+  return {
+    data: storagePath,
+    error: null,
+    deleted: true,
+    cleanupPending: false,
+  };
 }
