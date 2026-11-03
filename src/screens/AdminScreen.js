@@ -20,6 +20,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { radius, spacing } from '../styles/usgTheme';
 import { getAdminContentItems } from '../governance/contentGovernanceService';
 import { useTheme } from '../theme/ThemeContext';
+import { getAdminProfessionalApplications } from '../services/professionalAccessService';
 import AdminContentGovernance from '../components/AdminContentGovernance';
 import AdminDogModeration from '../components/AdminDogModeration';
 import AdminDogsManagement from '../components/AdminDogsManagement';
@@ -43,6 +44,8 @@ const sectionCopy = {
     pendingPlaces: 'Чакащи места',
     pendingPhotos: 'Чакащи снимки',
     pendingContent: 'Чакащи материали',
+    pendingApplications: 'Чакащи професионални заявки',
+    openServicesAdmin: 'ОТВОРИ ADMIN SERVICES',
     noQueue: 'Няма активна модерация',
     ready: 'ГОТОВО',
     open: 'ОТВОРИ',
@@ -73,6 +76,8 @@ const sectionCopy = {
     pendingPlaces: 'Pending places',
     pendingPhotos: 'Pending photos',
     pendingContent: 'Pending content',
+    pendingApplications: 'Pending professional applications',
+    openServicesAdmin: 'OPEN ADMIN SERVICES',
     noQueue: 'No active moderation',
     ready: 'READY',
     open: 'OPEN',
@@ -103,6 +108,8 @@ const sectionCopy = {
     pendingPlaces: 'Luoghi in attesa',
     pendingPhotos: 'Foto in attesa',
     pendingContent: 'Contenuti in attesa',
+    pendingApplications: 'Candidature professionali in attesa',
+    openServicesAdmin: 'APRI ADMIN SERVICES',
     noQueue: 'Nessuna moderazione attiva',
     ready: 'PRONTO',
     open: 'APRI',
@@ -133,7 +140,7 @@ const MODULES = [
   'about',
 ];
 
-export default function AdminScreen() {
+export default function AdminScreen({ navigation }) {
   const { user } = useAuth();
   const { language } = useLanguage();
   const { colors } = useTheme();
@@ -147,6 +154,7 @@ export default function AdminScreen() {
   const [pendingPlaces, setPendingPlaces] = useState([]);
   const [pendingMedia, setPendingMedia] = useState([]);
   const [governanceItems, setGovernanceItems] = useState([]);
+  const [professionalApplications, setProfessionalApplications] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showUsers, setShowUsers] = useState(false);
@@ -157,19 +165,26 @@ export default function AdminScreen() {
     setLoading(true);
     setError('');
 
-    const [usersResult, placesResult, mediaResult, governanceResult] =
-      await Promise.all([
-        getAdminUsers(),
-        getAdminPendingPlaces(),
-        getAdminPendingPlaceMedia(),
-        getAdminContentItems(),
-      ]);
+    const [
+      usersResult,
+      placesResult,
+      mediaResult,
+      governanceResult,
+      applicationsResult,
+    ] = await Promise.all([
+      getAdminUsers(),
+      getAdminPendingPlaces(),
+      getAdminPendingPlaceMedia(),
+      getAdminContentItems(),
+      getAdminProfessionalApplications('pending'),
+    ]);
 
     if (
       usersResult.error ||
       placesResult.error ||
       mediaResult.error ||
-      governanceResult.error
+      governanceResult.error ||
+      applicationsResult.error
     ) {
       setError(labels.loadError);
     }
@@ -178,6 +193,7 @@ export default function AdminScreen() {
     setPendingPlaces(placesResult.data ?? []);
     setPendingMedia(mediaResult.data ?? []);
     setGovernanceItems(governanceResult.data ?? []);
+    setProfessionalApplications(applicationsResult.data ?? []);
     setLoading(false);
   }, [labels.loadError]);
 
@@ -221,7 +237,10 @@ export default function AdminScreen() {
   ).length;
 
   const attentionCount =
-    pendingPlaces.length + pendingMedia.length + governancePendingCount;
+    pendingPlaces.length +
+    pendingMedia.length +
+    governancePendingCount +
+    professionalApplications.length;
 
   const moduleSectionKeys = {
     home: 'home',
@@ -243,9 +262,15 @@ export default function AdminScreen() {
         item.status === 'pending'
     ).length;
 
-    return key === 'places'
-      ? governanceCount + pendingPlaces.length + pendingMedia.length
-      : governanceCount;
+    if (key === 'places') {
+      return governanceCount + pendingPlaces.length + pendingMedia.length;
+    }
+
+    if (key === 'services') {
+      return governanceCount + professionalApplications.length;
+    }
+
+    return governanceCount;
   }
 
   function toggleModule(key) {
@@ -337,6 +362,18 @@ export default function AdminScreen() {
                   {governancePendingCount}
                 </Text>
               </View>
+
+              <Pressable
+                style={styles.attentionRow}
+                onPress={() => navigation.navigate('AdminServices')}
+              >
+                <Text style={styles.attentionRowLabel}>
+                  {copy.pendingApplications}
+                </Text>
+                <Text style={styles.attentionBadge}>
+                  {professionalApplications.length}
+                </Text>
+              </Pressable>
             </View>
           ) : (
             <Text style={styles.allClear}>{copy.noAttention}</Text>
@@ -478,10 +515,20 @@ export default function AdminScreen() {
                         />
                       </>
                     ) : key === 'services' ? (
-                      <AdminServiceVisibility
-                        key={`services-${refreshToken}`}
-                        refreshToken={refreshToken}
-                      />
+                      <>
+                        <Pressable
+                          style={styles.outlineButton}
+                          onPress={() => navigation.navigate('AdminServices')}
+                        >
+                          <Text style={styles.outlineButtonText}>
+                            {copy.openServicesAdmin}
+                          </Text>
+                        </Pressable>
+                        <AdminServiceVisibility
+                          key={`services-${refreshToken}`}
+                          refreshToken={refreshToken}
+                        />
+                      </>
                     ) : key === 'myCorso' ? (
                       <>
                         <AdminDogModeration onChanged={loadDashboard} />

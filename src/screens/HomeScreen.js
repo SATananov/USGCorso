@@ -326,7 +326,7 @@ navigation }) {
         {!user ? (
           <View style={styles.guestExitRow}>
             <Pressable style={styles.guestBackButton} onPress={exitGuestHome}>
-              <Text style={styles.guestBackText}>РІвЂ С’ {language === 'bg' ? 'Р СњР С’Р —Р С’Р вЂќ' : language === 'it' ? 'INDIETRO' : 'BACK'}</Text>
+              <Text style={styles.guestBackText}>← {language === 'bg' ? 'НАЗАД' : language === 'it' ? 'INDIETRO' : 'BACK'}</Text>
             </Pressable>
 
             <Pressable style={styles.guestAuthButton} onPress={exitGuestHome}>
@@ -337,17 +337,17 @@ navigation }) {
                 minimumFontScale={0.78}
               >
                 {language === 'bg'
-                  ? 'Р вЂ™Р ТђР С›Р вЂќ / Р В Р •Р вЂњР ВР РЋР СћР В Р С’Р В¦Р ВР Р‡'
+                  ? 'ВХОД / РЕГИСТРАЦИЯ'
                   : language === 'it'
                     ? 'ACCEDI / REGISTRATI'
-                    : 'SIGN IN / REGISTER'} РІвЂ вЂ™
+                    : 'SIGN IN / REGISTER'} →
               </Text>
             </Pressable>
           </View>
         ) : null}
 
         <View style={styles.footer}>
-          <Text style={styles.footerBrand}>USG РІР‚вЂќ Unico Suo GenereРІвЂћСћ</Text>
+          <Text style={styles.footerBrand}>USG — Unico Suo Genere™</Text>
           <Text style={styles.footerRights}>{t('home.rights')}</Text>
         </View>
       </ScrollView>
@@ -358,7 +358,7 @@ navigation }) {
             style={styles.closeButton}
             onPress={() => setShowHero(false)}
           >
-            <Text style={styles.closeButtonText}>Р вЂњРІР‚вЂќ</Text>
+            <Text style={styles.closeButtonText}>×</Text>
           </Pressable>
 
           <Image

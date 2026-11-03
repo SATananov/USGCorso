@@ -30,10 +30,7 @@ const copy = {
     contactPerson: 'Лице за контакт',
     phone: 'Телефон',
     email: 'Email',
-    website: 'Sito web',
-    address: 'Indirizzo esatto',
-    website: 'Website',
-    address: 'Exact address',
+    website: 'Уебсайт',
     address: 'Точен адрес',
     facebook: 'Facebook',
     instagram: 'Instagram',
@@ -61,6 +58,11 @@ const copy = {
     location: 'Location',
     contactPerson: 'Contact person',
     phone: 'Phone',
+    email: 'Email',
+    website: 'Website',
+    address: 'Exact address',
+    facebook: 'Facebook',
+    instagram: 'Instagram',
     public: 'PUBLIC',
     private: 'HIDDEN',
     show: 'SHOW',
@@ -85,6 +87,11 @@ const copy = {
     location: 'Posizione',
     contactPerson: 'Referente',
     phone: 'Telefono',
+    email: 'Email',
+    website: 'Sito web',
+    address: 'Indirizzo esatto',
+    facebook: 'Facebook',
+    instagram: 'Instagram',
     public: 'PUBBLICO',
     private: 'NASCOSTO',
     show: 'MOSTRA',
@@ -111,7 +118,7 @@ const managedFields = [
   { key: 'address', labelKey: 'address', requiresValue: 'address' },
   { key: 'facebook_url', labelKey: 'facebook', requiresValue: 'facebook_url' },
   { key: 'instagram_url', labelKey: 'instagram', requiresValue: 'instagram_url' },
-]
+];
 
 function categoryLabel(categoryKey, language) {
   for (const group of serviceCategoryGroups) {

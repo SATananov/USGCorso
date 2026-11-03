@@ -1,10 +1,11 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '../auth/AuthContext';
 import { getAdminNotificationSummary } from '../admin/adminNotificationService';
 import { useLanguage } from '../i18n/LanguageContext';
+import { getUnreadNotificationCount } from '../notifications/notificationService';
 import { getAvatarPreset } from '../profile/avatarPresets';
 import { getMyProfile } from '../profile/profileService';
 import { useTheme } from '../theme/ThemeContext';
@@ -20,6 +21,7 @@ export default function USGGlobalHeader({ navigation, route, title }) {
   const [panel, setPanel] = useState(null);
   const [profile, setProfile] = useState(null);
   const [adminNotifications, setAdminNotifications] = useState(null);
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -41,6 +43,39 @@ export default function USGGlobalHeader({ navigation, route, title }) {
 
     loadProfile();
     const unsubscribe = navigation.addListener('focus', loadProfile);
+
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, [navigation, user?.id]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadUnreadNotifications() {
+      if (!user?.id) {
+        if (active) {
+          setUnreadNotificationCount(0);
+        }
+        return;
+      }
+
+      try {
+        const count = await getUnreadNotificationCount();
+
+        if (active) {
+          setUnreadNotificationCount(count);
+        }
+      } catch {
+        if (active) {
+          setUnreadNotificationCount(0);
+        }
+      }
+    }
+
+    loadUnreadNotifications();
+    const unsubscribe = navigation.addListener('focus', loadUnreadNotifications);
 
     return () => {
       active = false;
@@ -135,23 +170,21 @@ export default function USGGlobalHeader({ navigation, route, title }) {
           </View>
 
           <View style={styles.headerActions}>
-            {adminNotifications ? (
+            {user ? (
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={`Admin notifications: ${adminNotifications.total}`}
-                onPress={() => navigation.getParent()?.navigate('Admin')}
+                accessibilityLabel={`Notifications: ${unreadNotificationCount} unread`}
+                onPress={() => navigation.getParent()?.navigate('Notifications')}
                 style={({ pressed }) => [
                   styles.notificationButton,
                   pressed && styles.controlButtonPressed,
                 ]}
               >
                 <Text style={styles.notificationIcon}>{'\uD83D\uDD14'}</Text>
-                {adminNotifications.total > 0 ? (
+                {unreadNotificationCount > 0 ? (
                   <View style={styles.notificationBadge}>
                     <Text style={styles.notificationBadgeText}>
-                      {adminNotifications.total > 99
-                        ? '99+'
-                        : adminNotifications.total}
+                      {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
                     </Text>
                   </View>
                 ) : null}
@@ -226,9 +259,9 @@ function createStyles(colors) {
       gap: 8,
     },
     notificationButton: {
-      width: 38,
-      height: 38,
-      borderRadius: 19,
+      width: 42,
+      height: 42,
+      borderRadius: 21,
       borderWidth: 1,
       borderColor: colors.border,
       backgroundColor: colors.surface,
@@ -237,15 +270,16 @@ function createStyles(colors) {
       position: 'relative',
     },
     notificationIcon: {
-      fontSize: 21,
-      lineHeight: 24,
+      fontSize: 17,
+      lineHeight: 20,
+      transform: [{ scale: 0.9 }],
     },
     notificationBadge: {
       position: 'absolute',
-      top: -5,
-      right: -5,
-      minWidth: 18,
-      height: 18,
+      top: -3,
+      right: -3,
+      minWidth: 17,
+      height: 17,
       paddingHorizontal: 4,
       borderRadius: 9,
       backgroundColor: colors.gold,
