@@ -74,24 +74,24 @@ function PlaceCard({
           {reviewSummary?.reviewCount > 0 ? (
             <>
               <Text style={styles.placeRatingText}>
-                ★ {reviewSummary.averageRating.toFixed(1)}
-                {' · '}
+                в… {reviewSummary.averageRating.toFixed(1)}
+                {' В· '}
                 {reviewSummary.reviewCount} {copy.ratingSummary.reviews}
               </Text>
               <Text style={styles.placeHelpfulText}>
-                👍 {reviewSummary.helpfulCount}
+                рџ‘Ќ {reviewSummary.helpfulCount}
               </Text>
               {isFavorite ? (
-                <Text style={styles.personalFavoriteHeart}>♥</Text>
+                <Text style={styles.personalFavoriteHeart}>в™Ґ</Text>
               ) : null}
             </>
           ) : (
             <>
               <Text style={styles.placeNoRatingText}>
-                ☆ {copy.ratingSummary.noRatings}
+                в† {copy.ratingSummary.noRatings}
               </Text>
               {isFavorite ? (
-                <Text style={styles.personalFavoriteHeart}>♥</Text>
+                <Text style={styles.personalFavoriteHeart}>в™Ґ</Text>
               ) : null}
             </>
           )}
@@ -285,7 +285,7 @@ function AddPlaceForm({ copy, colors, user, onCreated }) {
     const generatedName =
       values.name.trim() ||
       `${copy.categories[values.category]}${
-        values.city.trim() ? ` — ${values.city.trim()}` : ''
+        values.city.trim() ? ` вЂ” ${values.city.trim()}` : ''
       }`;
 
     const payload = {
@@ -608,9 +608,10 @@ function AddPlaceForm({ copy, colors, user, onCreated }) {
         <MapView
           ref={mapRef}
           provider={PROVIDER_GOOGLE}
+          customMapStyle={USG_MAP_STYLE}
           style={styles.pickMap}
           initialRegion={previewRegion}
-          mapType="hybrid"
+          mapType="satellite"
           showsPointsOfInterest
           showsBuildings
           showsCompass={false}
@@ -728,9 +729,10 @@ function AddPlaceForm({ copy, colors, user, onCreated }) {
           <MapView
             ref={pickerMapRef}
             provider={PROVIDER_GOOGLE}
+            customMapStyle={USG_MAP_STYLE}
             style={{ flex: 1 }}
             initialRegion={previewRegion}
-            mapType="hybrid"
+            mapType="satellite"
             showsPointsOfInterest
             showsBuildings
             showsCompass
@@ -1391,7 +1393,7 @@ navigation }) {
         {[
           ['map', copy.map],
           ['list', copy.list],
-          ['favorites', `♥ ${copy.favorites.tab}`],
+          ['favorites', `в™Ґ ${copy.favorites.tab}`],
           ['add', copy.add],
         ].map(([value, label]) => (
           <Pressable
@@ -1418,14 +1420,14 @@ navigation }) {
             style={styles.filterSummary}
           >
             <Text style={styles.filterSummaryLabel}>
-              {language === 'bg' ? 'Категория' : language === 'it' ? 'Categoria' : 'Category'}
+              {language === 'bg' ? 'РљР°С‚РµРіРѕСЂРёСЏ' : language === 'it' ? 'Categoria' : 'Category'}
             </Text>
             <View style={styles.filterSummaryRight}>
               <Text style={styles.filterSummaryValue}>
                 {copy.categories[category]}
               </Text>
               <Text style={styles.filterSummaryArrow}>
-                {filtersOpen ? '▲' : '▼'}
+                {filtersOpen ? 'в–І' : 'в–ј'}
               </Text>
             </View>
           </Pressable>
@@ -1506,9 +1508,10 @@ navigation }) {
           <MapView
             ref={mapRef}
             provider={PROVIDER_GOOGLE}
+            customMapStyle={USG_MAP_STYLE}
             style={styles.map}
             initialRegion={DEFAULT_REGION}
-            mapType="hybrid"
+            mapType="satellite"
             showsPointsOfInterest
             showsBuildings
             showsCompass={false}
@@ -1563,7 +1566,7 @@ navigation }) {
                   longitude: Number(place.longitude),
                 }}
                 title={place.name}
-                description={`${copy.categories[place.category]} · ${place.city}`}
+                description={`${copy.categories[place.category]} В· ${place.city}`}
                 onPress={() => setSelectedPlaceId(place.id)}
                 onCalloutPress={() => openDetails(place)}
               >
@@ -1661,7 +1664,7 @@ navigation }) {
                 onPress={() => setSelectedMember(null)}
                 style={styles.memberOverlayClose}
               >
-                <Text style={styles.memberOverlayCloseText}>×</Text>
+                <Text style={styles.memberOverlayCloseText}>Г—</Text>
               </Pressable>
 
               <View style={styles.memberOverlayHeader}>
@@ -1690,7 +1693,7 @@ navigation }) {
                 <Text style={styles.memberOverlayLocation}>
                   {[selectedMember.city, selectedMember.country]
                     .filter(Boolean)
-                    .join(' · ')}
+                    .join(' В· ')}
                 </Text>
               ) : null}
 
@@ -1922,7 +1925,7 @@ function createStyles(colors) {
       color: colors.gold,
     },
     mapWrap: {
-      height: 520,
+      height: 520,
       marginTop: 0,
       marginHorizontal: 0,
       marginBottom: 0,

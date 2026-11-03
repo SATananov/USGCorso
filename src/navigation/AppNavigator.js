@@ -224,42 +224,42 @@ export default function AppNavigator() {
       <Stack.Screen
         name="Details"
         component={DetailsScreen}
-        options={{ title: 'USG Corso' }}
+        options={{ title: t('nav.details') }}
       />
       <Stack.Screen
         name="PlaceDetails"
         component={PlaceDetailsScreen}
-        options={{ title: 'Corso Map' }}
+        options={{ title: t('nav.placeDetails') }}
       />
       <Stack.Screen
         name="Admin"
         component={AdminScreen}
-        options={{ title: t('settings.account') }}
+        options={{ title: t('nav.admin') }}
       />
       <Stack.Screen
         name="AdminServices"
         component={AdminServicesScreen}
-        options={{ title: 'USG Admin Services' }}
+        options={{ title: t('nav.adminServices') }}
       />
       <Stack.Screen
         name="AdminInbox"
         component={AdminInboxScreen}
-        options={{ title: 'USG Admin Inbox' }}
+        options={{ title: t('nav.adminInbox') }}
       />
       <Stack.Screen
         name="AdminPlaceDetails"
         component={AdminPlaceDetailsScreen}
-        options={{ title: 'USG Admin' }}
+        options={{ title: t('nav.admin') }}
       />
       <Stack.Screen
         name="AdminContentDetails"
         component={AdminContentDetailsScreen}
-        options={{ title: 'USG Admin' }}
+        options={{ title: t('nav.admin') }}
       />
       <Stack.Screen
         name="AdminDogDetails"
         component={AdminDogDetailsScreen}
-        options={{ title: 'USG Admin' }}
+        options={{ title: t('nav.admin') }}
       />
       <Stack.Screen
         name="Settings"
