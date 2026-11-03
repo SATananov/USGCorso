@@ -155,7 +155,7 @@ export default function USGSectionScreen({
           {children}
         </View>
 
-        <Text style={styles.footer}>USG вЂ” Unico Suo Genereв„ў</Text>
+        <Text style={styles.footer}>USG — Unico Suo Genere™</Text>
       </ScrollView>
 
       <USGScrollHint

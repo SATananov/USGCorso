@@ -7,11 +7,21 @@ export async function getMyProfessionalApplication() {
 export async function submitProfessionalApplication({
   requestedType,
   categories,
+  profileName,
+  contactPhone,
+  contactEmail,
+  country,
+  city,
   message,
 }) {
   return supabase.rpc('submit_professional_application', {
     requested_role: requestedType,
     requested_categories: categories,
+    target_profile_name: profileName?.trim() || null,
+    target_contact_phone: contactPhone?.trim() || null,
+    target_contact_email: contactEmail?.trim() || null,
+    target_country: country?.trim() || null,
+    target_city: city?.trim() || null,
     application_message: message?.trim() || null,
   });
 }

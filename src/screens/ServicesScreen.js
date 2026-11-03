@@ -24,6 +24,8 @@ import { useTheme } from '../theme/ThemeContext';
 
 
 import ServiceCategoryPublicList from '../components/ServiceCategoryPublicList';
+import { getPublicProfessionalProfileCategoryCounts } from '../services/professionalProfileService';
+import ServicePublicProfileDetails from '../components/ServicePublicProfileDetails';
 const copy = {
   en: {
     intro: 'Profiles in this area use private owner data, USG moderation and admin-controlled public visibility.',
@@ -51,29 +53,29 @@ const copy = {
     adminNote: 'Admin note',
   },
   bg: {
-    intro: 'Р В РЎСџР РЋР вЂљР В РЎвЂўР РЋРІР‚С›Р В РЎвЂР В Р’В»Р В РЎвЂР РЋРІР‚С™Р В Р’Вµ Р В Р вЂ  Р РЋРІР‚С™Р В Р’В°Р В Р’В·Р В РЎвЂ Р РЋР С“Р В Р’ВµР В РЎвЂќР РЋРІР‚В Р В РЎвЂР РЋР РЏ Р В РЎвЂР В Р’В·Р В РЎвЂ”Р В РЎвЂўР В Р’В»Р В Р’В·Р В Р вЂ Р В Р’В°Р РЋРІР‚С™ Р В Р’В»Р В РЎвЂР РЋРІР‚РЋР В Р вЂ¦Р В РЎвЂ Р В РўвЂР В Р’В°Р В Р вЂ¦Р В Р вЂ¦Р В РЎвЂ Р В Р вЂ¦Р В Р’В° Р РЋР С“Р В РЎвЂўР В Р’В±Р РЋР С“Р РЋРІР‚С™Р В Р вЂ Р В Р’ВµР В Р вЂ¦Р В РЎвЂР В РЎвЂќР В Р’В°, USG Р В РЎВР В РЎвЂўР В РўвЂР В Р’ВµР РЋР вЂљР В Р’В°Р РЋРІР‚В Р В РЎвЂР РЋР РЏ Р В РЎвЂ Р В РЎвЂ”Р РЋРЎвЂњР В Р’В±Р В Р’В»Р В РЎвЂР РЋРІР‚РЋР В Р вЂ¦Р В Р’В° Р В Р вЂ Р В РЎвЂР В РўвЂР В РЎвЂР В РЎВР В РЎвЂўР РЋР С“Р РЋРІР‚С™, Р В РЎвЂќР В РЎвЂўР В Р вЂ¦Р РЋРІР‚С™Р РЋР вЂљР В РЎвЂўР В Р’В»Р В РЎвЂР РЋР вЂљР В Р’В°Р В Р вЂ¦Р В Р’В° Р В РЎвЂўР РЋРІР‚С™ Р В Р’В°Р В РўвЂР В РЎВР В РЎвЂР В Р вЂ¦Р В РЎвЂР РЋР С“Р РЋРІР‚С™Р РЋР вЂљР В Р’В°Р РЋРІР‚С™Р В РЎвЂўР РЋР вЂљ.',
-    privateTitle: 'Р В РЎСџР В РЎвЂўР В Р вЂ Р В Р’ВµР РЋР вЂљР В РЎвЂР РЋРІР‚С™Р В Р’ВµР В Р’В»Р В Р вЂ¦Р В РЎвЂўР РЋР С“Р РЋРІР‚С™ Р В РЎвЂ”Р В РЎвЂў Р В РЎвЂ”Р В РЎвЂўР В РўвЂР РЋР вЂљР В Р’В°Р В Р’В·Р В Р’В±Р В РЎвЂР РЋР вЂљР В Р’В°Р В Р вЂ¦Р В Р’Вµ',
-    privateText: 'Р В РЎСџР РЋР вЂљР В РЎвЂўР РЋРІР‚С›Р В Р’ВµР РЋР С“Р В РЎвЂР В РЎвЂўР В Р вЂ¦Р В Р’В°Р В Р’В»Р В Р вЂ¦Р В РЎвЂР РЋРІР‚С™Р В Р’Вµ Р В РЎвЂ”Р В РЎвЂўР РЋРІР‚С™Р РЋР вЂљР В Р’ВµР В Р’В±Р В РЎвЂР РЋРІР‚С™Р В Р’ВµР В Р’В»Р В РЎвЂ Р В РЎВР В РЎвЂўР В РЎвЂ“Р В Р’В°Р РЋРІР‚С™ Р В РўвЂР В Р’В° Р В РЎвЂ”Р В РЎвЂўР В РЎвЂ”Р РЋР вЂ°Р В Р’В»Р В Р вЂ¦Р РЋР РЏР РЋРІР‚С™ Р РЋР С“Р В Р вЂ Р В РЎвЂўР РЋР РЏ Р В РЎвЂ”Р РЋР вЂљР В РЎвЂўР РЋРІР‚С›Р В РЎвЂР В Р’В» Р В РЎвЂ Р В РўвЂР В Р’В°Р В Р вЂ¦Р В Р вЂ¦Р В РЎвЂ Р В Р’В·Р В Р’В° Р В РЎвЂќР В РЎвЂўР В Р вЂ¦Р РЋРІР‚С™Р В Р’В°Р В РЎвЂќР РЋРІР‚С™. Р В РІР‚С”Р В РЎвЂР РЋРІР‚РЋР В Р вЂ¦Р В РЎвЂР РЋРІР‚С™Р В Р’Вµ Р В РўвЂР В Р’В°Р В Р вЂ¦Р В Р вЂ¦Р В РЎвЂ Р В РЎвЂўР РЋР С“Р РЋРІР‚С™Р В Р’В°Р В Р вЂ Р В Р’В°Р РЋРІР‚С™ Р В Р вЂ Р В РЎвЂР В РўвЂР В РЎвЂР В РЎВР В РЎвЂ Р РЋР С“Р В Р’В°Р В РЎВР В РЎвЂў Р В Р’В·Р В Р’В° Р РЋР С“Р В РЎвЂўР В Р’В±Р РЋР С“Р РЋРІР‚С™Р В Р вЂ Р В Р’ВµР В Р вЂ¦Р В РЎвЂР В РЎвЂќР В Р’В° Р В Р вЂ¦Р В Р’В° Р В РЎвЂ”Р РЋР вЂљР В РЎвЂўР РЋРІР‚С›Р В РЎвЂР В Р’В»Р В Р’В° Р В РЎвЂ USG Р В Р’В°Р В РўвЂР В РЎВР В РЎвЂР В Р вЂ¦Р В РЎвЂР РЋР С“Р РЋРІР‚С™Р РЋР вЂљР В Р’В°Р РЋРІР‚В Р В РЎвЂР РЋР РЏР РЋРІР‚С™Р В Р’В°, Р В РЎвЂўР РЋР С“Р В Р вЂ Р В Р’ВµР В Р вЂ¦ Р В Р’В°Р В РЎвЂќР В РЎвЂў Р В Р’В°Р В РўвЂР В РЎВР В РЎвЂР В Р вЂ¦Р В РЎвЂР РЋР С“Р РЋРІР‚С™Р РЋР вЂљР В Р’В°Р РЋРІР‚С™Р В РЎвЂўР РЋР вЂљ Р В РЎвЂР В Р’В·Р РЋР вЂљР В РЎвЂР РЋРІР‚РЋР В Р вЂ¦Р В РЎвЂў Р В Р вЂ¦Р В Р’Вµ Р РЋР вЂљР В Р’В°Р В Р’В·Р РЋР вЂљР В Р’ВµР РЋРІвЂљВ¬Р В РЎвЂ Р В РЎвЂќР В РЎвЂўР В Р вЂ¦Р В РЎвЂќР РЋР вЂљР В Р’ВµР РЋРІР‚С™Р В Р вЂ¦Р В РЎвЂў Р В РЎвЂ”Р В РЎвЂўР В Р’В»Р В Р’Вµ Р В Р’В·Р В Р’В° Р В РЎвЂ”Р РЋРЎвЂњР В Р’В±Р В Р’В»Р В РЎвЂР РЋРІР‚РЋР В Р вЂ¦Р В РЎвЂў Р В РЎвЂ”Р В РЎвЂўР В РЎвЂќР В Р’В°Р В Р’В·Р В Р вЂ Р В Р’В°Р В Р вЂ¦Р В Р’Вµ.',
-    accessTitle: 'Р В РЎСџР РЋР вЂљР В РЎвЂўР РЋРІР‚С›Р В Р’ВµР РЋР С“Р В РЎвЂР В РЎвЂўР В Р вЂ¦Р В Р’В°Р В Р’В»Р В Р’ВµР В Р вЂ¦ Р В РўвЂР В РЎвЂўР РЋР С“Р РЋРІР‚С™Р РЋР вЂ°Р В РЎвЂ”',
-    guestText: 'Р В РІР‚в„ўР В Р’В»Р В Р’ВµР В Р’В· Р В Р вЂ  Р В Р’В°Р В РЎвЂќР В Р’В°Р РЋРЎвЂњР В Р вЂ¦Р РЋРІР‚С™Р В Р’В° Р РЋР С“Р В РЎвЂ, Р В Р’В·Р В Р’В° Р В РўвЂР В Р’В° Р В РЎвЂќР В Р’В°Р В Р вЂ¦Р В РўвЂР В РЎвЂР В РўвЂР В Р’В°Р РЋРІР‚С™Р РЋР С“Р РЋРІР‚С™Р В Р вЂ Р В Р’В°Р РЋРІвЂљВ¬ Р В РЎвЂќР В Р’В°Р РЋРІР‚С™Р В РЎвЂў Р В РЎвЂ”Р РЋР вЂљР В РЎвЂўР РЋРІР‚С›Р В Р’ВµР РЋР С“Р В РЎвЂР В РЎвЂўР В Р вЂ¦Р В Р’В°Р В Р’В»Р В РЎвЂР РЋР С“Р РЋРІР‚С™ Р В РЎвЂР В Р’В»Р В РЎвЂ Р В РЎвЂўР РЋР вЂљР В РЎвЂ“Р В Р’В°Р В Р вЂ¦Р В РЎвЂР В Р’В·Р В Р’В°Р РЋРІР‚В Р В РЎвЂР РЋР РЏ.',
-    applyText: 'Р В Р Р‹Р В Р’В°Р В РЎВР В РЎвЂў Р В РЎвЂўР В РўвЂР В РЎвЂўР В Р’В±Р РЋР вЂљР В Р’ВµР В Р вЂ¦Р В РЎвЂ Р В РЎвЂ”Р РЋР вЂљР В РЎвЂўР РЋРІР‚С›Р В Р’ВµР РЋР С“Р В РЎвЂР В РЎвЂўР В Р вЂ¦Р В Р’В°Р В Р’В»Р В Р вЂ¦Р В РЎвЂ Р В РЎвЂ Р В РЎвЂўР РЋР вЂљР В РЎвЂ“Р В Р’В°Р В Р вЂ¦Р В РЎвЂР В Р’В·Р В Р’В°Р РЋРІР‚В Р В РЎвЂР В РЎвЂўР В Р вЂ¦Р В Р вЂ¦Р В РЎвЂ Р В Р’В°Р В РЎвЂќР В Р’В°Р РЋРЎвЂњР В Р вЂ¦Р РЋРІР‚С™Р В РЎвЂ Р В РЎВР В РЎвЂўР В РЎвЂ“Р В Р’В°Р РЋРІР‚С™ Р В РўвЂР В Р’В° Р РЋР С“Р РЋР вЂ°Р В Р’В·Р В РўвЂР В Р’В°Р В Р вЂ Р В Р’В°Р РЋРІР‚С™ Р В РЎвЂ Р РЋРЎвЂњР В РЎвЂ”Р РЋР вЂљР В Р’В°Р В Р вЂ Р В Р’В»Р РЋР РЏР В Р вЂ Р В Р’В°Р РЋРІР‚С™ Р В РЎвЂ”Р РЋР вЂљР В РЎвЂўР РЋРІР‚С›Р В РЎвЂР В Р’В»Р В РЎвЂ Р В Р вЂ  Р РЋРІР‚С™Р В Р’В°Р В Р’В·Р В РЎвЂ Р РЋР С“Р В Р’ВµР В РЎвЂќР РЋРІР‚В Р В РЎвЂР РЋР РЏ.',
-    type: 'Р В РЎС›Р В РЎвЂР В РЎвЂ” Р В Р’В°Р В РЎвЂќР В Р’В°Р РЋРЎвЂњР В Р вЂ¦Р РЋРІР‚С™',
-    professional: 'Р В РЎСџР РЋР вЂљР В РЎвЂўР РЋРІР‚С›Р В Р’ВµР РЋР С“Р В РЎвЂР В РЎвЂўР В Р вЂ¦Р В Р’В°Р В Р’В»Р В РЎвЂР РЋР С“Р РЋРІР‚С™',
-    organization: 'Р В РЎвЂєР РЋР вЂљР В РЎвЂ“Р В Р’В°Р В Р вЂ¦Р В РЎвЂР В Р’В·Р В Р’В°Р РЋРІР‚В Р В РЎвЂР РЋР РЏ',
-    categories: 'Р В РЎв„ўР В Р’В°Р РЋРІР‚С™Р В Р’ВµР В РЎвЂ“Р В РЎвЂўР РЋР вЂљР В РЎвЂР В РЎвЂ',
-    message: 'Р В Р Р‹Р РЋР вЂ°Р В РЎвЂўР В Р’В±Р РЋРІР‚В°Р В Р’ВµР В Р вЂ¦Р В РЎвЂР В Р’Вµ Р В РЎвЂќР РЋР вЂ°Р В РЎВ Р В Р’В·Р В Р’В°Р РЋР РЏР В Р вЂ Р В РЎвЂќР В Р’В°Р РЋРІР‚С™Р В Р’В°',
-    messagePlaceholder: 'Р В РЎвЂєР В РЎвЂ”Р В РЎвЂР РЋРІвЂљВ¬Р В РЎвЂ Р В Р вЂ¦Р В Р’В°Р В РЎвЂќР РЋР вЂљР В Р’В°Р РЋРІР‚С™Р В РЎвЂќР В РЎвЂў Р В РЎвЂ”Р РЋР вЂљР В РЎвЂўР РЋРІР‚С›Р В Р’ВµР РЋР С“Р В РЎвЂР В РЎвЂўР В Р вЂ¦Р В Р’В°Р В Р’В»Р В Р вЂ¦Р В Р’В°Р РЋРІР‚С™Р В Р’В° Р РЋР С“Р В РЎвЂ Р В РўвЂР В Р’ВµР В РІвЂћвЂ“Р В Р вЂ¦Р В РЎвЂўР РЋР С“Р РЋРІР‚С™ Р В РЎвЂР В Р’В»Р В РЎвЂ Р В РЎвЂўР РЋР вЂљР В РЎвЂ“Р В Р’В°Р В Р вЂ¦Р В РЎвЂР В Р’В·Р В Р’В°Р РЋРІР‚В Р В РЎвЂР РЋР РЏР РЋРІР‚С™Р В Р’В°.',
-    submit: 'Р В Р’ВР В РІР‚вЂќР В РЎСџР В Р’В Р В РЎвЂ™Р В РЎС›Р В Р’В Р В РІР‚вЂќР В РЎвЂ™Р В Р вЂЎР В РІР‚в„ўР В РЎв„ўР В РЎвЂ™',
-    submitting: 'Р В Р’ВР В РІР‚вЂќР В РЎСџР В Р’В Р В РЎвЂ™Р В Р’В©Р В РЎвЂ™Р В РЎСљР В РІР‚СћР Р†Р вЂљР’В¦',
-    chooseCategory: 'Р В Р’ВР В Р’В·Р В Р’В±Р В Р’ВµР РЋР вЂљР В РЎвЂ Р В РЎвЂ”Р В РЎвЂўР В Р вЂ¦Р В Р’Вµ Р В Р’ВµР В РўвЂР В Р вЂ¦Р В Р’В° Р В РЎвЂќР В Р’В°Р РЋРІР‚С™Р В Р’ВµР В РЎвЂ“Р В РЎвЂўР РЋР вЂљР В РЎвЂР РЋР РЏ.',
-    submitFailed: 'Р В РІР‚вЂќР В Р’В°Р РЋР РЏР В Р вЂ Р В РЎвЂќР В Р’В°Р РЋРІР‚С™Р В Р’В° Р В Р вЂ¦Р В Р’Вµ Р В РЎВР В РЎвЂўР В Р’В¶Р В Р’В° Р В РўвЂР В Р’В° Р В Р’В±Р РЋР вЂ°Р В РўвЂР В Р’Вµ Р В РЎвЂР В Р’В·Р В РЎвЂ”Р РЋР вЂљР В Р’В°Р РЋРІР‚С™Р В Р’ВµР В Р вЂ¦Р В Р’В°.',
-    pending: 'Р В РІР‚вЂќР В Р’В°Р РЋР РЏР В Р вЂ Р В РЎвЂќР В Р’В°Р РЋРІР‚С™Р В Р’В° Р РЋРІР‚С™Р В РЎвЂ Р РЋРІР‚РЋР В Р’В°Р В РЎвЂќР В Р’В° Р В РЎвЂ”Р РЋР вЂљР В Р’ВµР В РЎвЂ“Р В Р’В»Р В Р’ВµР В РўвЂ Р В РЎвЂўР РЋРІР‚С™ Р В Р’В°Р В РўвЂР В РЎВР В РЎвЂР В Р вЂ¦Р В РЎвЂР РЋР С“Р РЋРІР‚С™Р РЋР вЂљР В Р’В°Р РЋРІР‚С™Р В РЎвЂўР РЋР вЂљ.',
-    approved: 'Р В РЎСџР РЋР вЂљР В РЎвЂўР РЋРІР‚С›Р В Р’ВµР РЋР С“Р В РЎвЂР В РЎвЂўР В Р вЂ¦Р В Р’В°Р В Р’В»Р В Р вЂ¦Р В РЎвЂР РЋР РЏР РЋРІР‚С™ Р РЋРІР‚С™Р В РЎвЂ Р В РўвЂР В РЎвЂўР РЋР С“Р РЋРІР‚С™Р РЋР вЂ°Р В РЎвЂ” Р В Р’Вµ Р В РЎвЂўР В РўвЂР В РЎвЂўР В Р’В±Р РЋР вЂљР В Р’ВµР В Р вЂ¦.',
-    rejected: 'Р В РІР‚вЂќР В Р’В°Р РЋР РЏР В Р вЂ Р В РЎвЂќР В Р’В°Р РЋРІР‚С™Р В Р’В° Р В Р’Вµ Р В РЎвЂўР РЋРІР‚С™Р РЋРІР‚В¦Р В Р вЂ Р РЋР вЂ°Р РЋР вЂљР В Р’В»Р В Р’ВµР В Р вЂ¦Р В Р’В°. Р В РЎС™Р В РЎвЂўР В Р’В¶Р В Р’ВµР РЋРІвЂљВ¬ Р В РўвЂР В Р’В° Р РЋР РЏ Р В РЎвЂ”Р РЋР вЂљР В РЎвЂўР В РЎВР В Р’ВµР В Р вЂ¦Р В РЎвЂР РЋРІвЂљВ¬ Р В РЎвЂ Р В РЎвЂР В Р’В·Р В РЎвЂ”Р РЋР вЂљР В Р’В°Р РЋРІР‚С™Р В РЎвЂР РЋРІвЂљВ¬ Р В РЎвЂўР РЋРІР‚С™Р В Р вЂ¦Р В РЎвЂўР В Р вЂ Р В РЎвЂў.',
-    needs_changes: 'Р В Р’ВР В Р’В·Р В РЎвЂР РЋР С“Р В РЎвЂќР В Р’В°Р В Р вЂ¦Р В РЎвЂ Р РЋР С“Р В Р’В° Р В РЎвЂ”Р РЋР вЂљР В РЎвЂўР В РЎВР В Р’ВµР В Р вЂ¦Р В РЎвЂ. Р В РЎвЂєР В Р’В±Р В Р вЂ¦Р В РЎвЂўР В Р вЂ Р В РЎвЂ Р В Р’В·Р В Р’В°Р РЋР РЏР В Р вЂ Р В РЎвЂќР В Р’В°Р РЋРІР‚С™Р В Р’В° Р В РЎвЂ Р РЋР РЏ Р В РЎвЂР В Р’В·Р В РЎвЂ”Р РЋР вЂљР В Р’В°Р РЋРІР‚С™Р В РЎвЂ Р В РЎвЂўР РЋРІР‚С™Р В Р вЂ¦Р В РЎвЂўР В Р вЂ Р В РЎвЂў.',
-    admin: 'Р В РЎвЂ™Р В РўвЂР В РЎВР В РЎвЂР В Р вЂ¦Р В РЎвЂР РЋР С“Р РЋРІР‚С™Р РЋР вЂљР В Р’В°Р РЋРІР‚С™Р В РЎвЂўР РЋР вЂљР РЋР С“Р В РЎвЂќР В РЎвЂР РЋР РЏР РЋРІР‚С™ Р В РўвЂР В РЎвЂўР РЋР С“Р РЋРІР‚С™Р РЋР вЂ°Р В РЎвЂ” Р В Р’Вµ Р В Р’В°Р В РЎвЂќР РЋРІР‚С™Р В РЎвЂР В Р вЂ Р В Р’ВµР В Р вЂ¦.',
-    status: 'Р В Р Р‹Р РЋРІР‚С™Р В Р’В°Р РЋРІР‚С™Р РЋРЎвЂњР РЋР С“',
-    adminNote: 'Р В РІР‚ВР В Р’ВµР В Р’В»Р В Р’ВµР В Р’В¶Р В РЎвЂќР В Р’В° Р В РЎвЂўР РЋРІР‚С™ Р В Р’В°Р В РўвЂР В РЎВР В РЎвЂР В Р вЂ¦Р В РЎвЂР РЋР С“Р РЋРІР‚С™Р РЋР вЂљР В Р’В°Р РЋРІР‚С™Р В РЎвЂўР РЋР вЂљ',
+    intro: 'Професионалисти и организации в света на Кане Корсо с USG модерация и контролирана публичност.',
+    privateTitle: 'Поверителност по подразбиране',
+    privateText: 'Професионалистите могат да попълват своя профил и контактни данни. Личната информация остава видима само за собственика на профила и администрацията на USG, освен ако администратор изрично не разреши конкретно поле за публично показване.',
+    accessTitle: 'Професионален достъп',
+    guestText: 'Влезте в профила си, за да кандидатствате като професионалист или организация.',
+    applyText: 'Само одобрени професионални и организационни акаунти могат да създават и управляват профили в тази секция.',
+    type: 'Тип профил',
+    professional: 'Професионалист',
+    organization: 'Организация',
+    categories: 'Категории',
+    message: 'Съобщение към заявката',
+    messagePlaceholder: 'Опишете накратко професионалната си дейност или организацията.',
+    submit: 'ИЗПРАТИ ЗАЯВКА',
+    submitting: 'ИЗПРАЩАНЕ...',
+    chooseCategory: 'Изберете поне една категория.',
+    submitFailed: 'Заявката не можа да бъде изпратена.',
+    pending: 'Заявката ви очаква преглед от администратор.',
+    approved: 'Професионалният ви достъп е одобрен.',
+    rejected: 'Заявката ви е отказана. Можете да я редактирате и изпратите отново.',
+    needs_changes: 'Изискани са промени. Актуализирайте заявката и я изпратете отново.',
+    admin: 'Администраторският достъп е активен.',
+    status: 'Статус',
+    adminNote: 'Бележка от администратор',
   },
   it: {
     intro: 'I profili di questa sezione usano dati privati del proprietario, moderazione USG e visibilitР вЂњР’В  pubblica controllata dallР Р†Р вЂљРІвЂћСћamministratore.',
@@ -102,6 +104,33 @@ const copy = {
   },
 };
 
+const applicationFieldCopy = {
+  bg: {
+    profileName: 'Име / наименование',
+    phone: 'Телефон',
+    email: 'Email',
+    country: 'Държава',
+    city: 'Град',
+    requiredInfo: 'Попълни име, телефон, email, държава, град, категория и кратко описание.',
+  },
+  en: {
+    profileName: 'Name / business name',
+    phone: 'Phone',
+    email: 'Email',
+    country: 'Country',
+    city: 'City',
+    requiredInfo: 'Complete name, phone, email, country, city, category and a short description.',
+  },
+  it: {
+    profileName: 'Nome / denominazione',
+    phone: 'Telefono',
+    email: 'Email',
+    country: 'Paese',
+    city: 'Città',
+    requiredInfo: 'Completa nome, telefono, email, paese, città, categoria e una breve descrizione.',
+  },
+};
+
 function getApplicationFromResult(data) {
   if (Array.isArray(data)) {
     return data[0] ?? null;
@@ -112,6 +141,27 @@ function getApplicationFromResult(data) {
 
 export default function ServicesScreen({ navigation, route }) {
   const publicCategoryKey = route?.params?.categoryKey;
+  const openApplication = route?.params?.openApplication === true;
+  const publicProfileId = route?.params?.profileId;
+
+  if (publicProfileId) {
+    return (
+      <ServicePublicProfileDetails
+        profileId={publicProfileId}
+        onBack={() => {
+          if (publicCategoryKey) {
+            navigation.setParams({
+              profileId: undefined,
+              categoryKey: publicCategoryKey,
+            });
+            return;
+          }
+
+          navigation.goBack();
+        }}
+      />
+    );
+  }
 
   if (publicCategoryKey) {
     return (
@@ -138,21 +188,54 @@ export default function ServicesScreen({ navigation, route }) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const labels = copy[language] ?? copy.en;
+  const applicationLabels = applicationFieldCopy[language] ?? applicationFieldCopy.en;
 
   const [role, setRole] = useState(null);
   const [application, setApplication] = useState(null);
   const [requestedType, setRequestedType] = useState('professional');
   const [selectedCategories, setSelectedCategories] = useState([]);
+  const [profileName, setProfileName] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [applicationCountry, setApplicationCountry] = useState('');
+  const [applicationCity, setApplicationCity] = useState('');
   const [message, setMessage] = useState('');
   const [accessLoading, setAccessLoading] = useState(Boolean(user));
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
+  const [publicCategoryCounts, setPublicCategoryCounts] = useState({});
 
   const activeGroup = serviceCategoryGroups.find((group) =>
     requestedType === 'organization'
       ? group.key === 'organizations'
       : group.key === 'professionals'
   );
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadPublicCategoryCounts() {
+      const { data, error } = await getPublicProfessionalProfileCategoryCounts();
+
+      if (!active || error) {
+        return;
+      }
+
+      const nextCounts = {};
+
+      for (const row of data || []) {
+        nextCounts[row.category_key] = Number(row.profile_count) || 0;
+      }
+
+      setPublicCategoryCounts(nextCounts);
+    }
+
+    loadPublicCategoryCounts();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -186,6 +269,11 @@ export default function ServicesScreen({ navigation, route }) {
       if (nextApplication) {
         setRequestedType(nextApplication.requested_type ?? 'professional');
         setSelectedCategories(nextApplication.categories ?? []);
+        setProfileName(nextApplication.profile_name ?? '');
+        setContactPhone(nextApplication.contact_phone ?? '');
+        setContactEmail(nextApplication.contact_email ?? '');
+        setApplicationCountry(nextApplication.country ?? '');
+        setApplicationCity(nextApplication.city ?? '');
         setMessage(nextApplication.message ?? '');
       }
 
@@ -215,8 +303,17 @@ export default function ServicesScreen({ navigation, route }) {
   }
 
   async function submitApplication() {
-    if (selectedCategories.length === 0) {
-      setFormError(labels.chooseCategory);
+    const hasRequiredInfo =
+      profileName.trim() &&
+      contactPhone.trim() &&
+      contactEmail.trim() &&
+      applicationCountry.trim() &&
+      applicationCity.trim() &&
+      message.trim() &&
+      selectedCategories.length > 0;
+
+    if (!hasRequiredInfo) {
+      setFormError(applicationLabels.requiredInfo);
       return;
     }
 
@@ -226,6 +323,11 @@ export default function ServicesScreen({ navigation, route }) {
     const result = await submitProfessionalApplication({
       requestedType,
       categories: selectedCategories,
+      profileName,
+      contactPhone,
+      contactEmail,
+      country: applicationCountry,
+      city: applicationCity,
       message,
     });
 
@@ -240,6 +342,18 @@ export default function ServicesScreen({ navigation, route }) {
     setApplication(getApplicationFromResult(refreshed.data));
     setSubmitting(false);
   }
+
+  const applicationReady = Boolean(
+    profileName.trim() &&
+      contactPhone.trim() &&
+      contactEmail.trim() &&
+      applicationCountry.trim() &&
+      applicationCity.trim() &&
+      message.trim() &&
+      selectedCategories.length > 0
+  );
+
+  const showApplicationArea = openApplication;
 
   const canApply =
     user &&
@@ -271,121 +385,171 @@ export default function ServicesScreen({ navigation, route }) {
         <Text style={styles.noticeText}>{labels.privateText}</Text>
       </View>
 
-      <View style={styles.accessCard}>
-        <Text style={styles.accessTitle}>{labels.accessTitle}</Text>
-        <Text style={styles.accessText}>
-          {!user ? labels.guestText : labels.applyText}
-        </Text>
-
-        {accessLoading ? (
-          <Text style={styles.statusText}>Р Р†Р вЂљР’В¦</Text>
-        ) : accessMessage ? (
-          <View style={styles.statusBox}>
-            <Text style={styles.statusLabel}>
-              {labels.status}: {application?.status ?? role}
-            </Text>
-            <Text style={styles.statusText}>{accessMessage}</Text>
-            {application?.admin_note ? (
-              <Text style={styles.adminNote}>
-                {labels.adminNote}: {application.admin_note}
+      {showApplicationArea ? (
+        <View style={styles.accessCard}>
+          <Text style={styles.accessTitle}>{labels.accessTitle}</Text>
+          <Text style={styles.accessText}>
+            {!user ? labels.guestText : labels.applyText}
+          </Text>
+  
+          {accessLoading ? (
+            <Text style={styles.statusText}>...</Text>
+          ) : accessMessage ? (
+            <View style={styles.statusBox}>
+              <Text style={styles.statusLabel}>
+                {labels.status}: {application?.status ?? role}
               </Text>
-            ) : null}
-          </View>
-        ) : null}
-
-        {canApply ? (
-          <View style={styles.form}>
-            <Text style={styles.fieldLabel}>{labels.type}</Text>
-
-            <View style={styles.typeRow}>
-              {['professional', 'organization'].map((type) => {
-                const selected = requestedType === type;
-
-                return (
-                  <Pressable
-                    key={type}
-                    onPress={() => selectType(type)}
-                    style={[
-                      styles.typeButton,
-                      selected && styles.typeButtonSelected,
-                    ]}
-                  >
-                    <Text
+              <Text style={styles.statusText}>{accessMessage}</Text>
+              {application?.admin_note ? (
+                <Text style={styles.adminNote}>
+                  {labels.adminNote}: {application.admin_note}
+                </Text>
+              ) : null}
+            </View>
+          ) : null}
+  
+          {canApply ? (
+            <View style={styles.form}>
+              <Text style={styles.fieldLabel}>{labels.type}</Text>
+  
+              <View style={styles.typeRow}>
+                {['professional', 'organization'].map((type) => {
+                  const selected = requestedType === type;
+  
+                  return (
+                    <Pressable
+                      key={type}
+                      onPress={() => selectType(type)}
                       style={[
-                        styles.typeButtonText,
-                        selected && styles.typeButtonTextSelected,
+                        styles.typeButton,
+                        selected && styles.typeButtonSelected,
                       ]}
                     >
-                      {labels[type]}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-
-            <Text style={styles.fieldLabel}>{labels.categories}</Text>
-
-            <View style={styles.categorySelectList}>
-              {(activeGroup?.items ?? []).map((item) => {
-                const selected = selectedCategories.includes(item.key);
-
-                return (
-                  <Pressable
-                    key={item.key}
-                    onPress={() => toggleCategory(item.key)}
-                    style={[
-                      styles.selectRow,
-                      selected && styles.selectRowSelected,
-                    ]}
-                  >
-                    <View
+                      <Text
+                        style={[
+                          styles.typeButtonText,
+                          selected && styles.typeButtonTextSelected,
+                        ]}
+                      >
+                        {labels[type]}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+  
+              <Text style={styles.fieldLabel}>{labels.categories}</Text>
+  
+              <View style={styles.categorySelectList}>
+                {(activeGroup?.items ?? []).map((item) => {
+                  const selected = selectedCategories.includes(item.key);
+  
+                  return (
+                    <Pressable
+                      key={item.key}
+                      onPress={() => toggleCategory(item.key)}
                       style={[
-                        styles.checkbox,
-                        selected && styles.checkboxSelected,
+                        styles.selectRow,
+                        selected && styles.selectRowSelected,
                       ]}
                     >
-                      {selected ? <Text style={styles.checkmark}>Р Р†РЎС™РІР‚Сљ</Text> : null}
-                    </View>
-                    <Text style={styles.selectLabel}>
-                      {getServiceLabel(item, language)}
-                    </Text>
-                  </Pressable>
-                );
-              })}
+                      <View
+                        style={[
+                          styles.checkbox,
+                          selected && styles.checkboxSelected,
+                        ]}
+                      >
+                        {selected ? <View style={styles.checkmarkShape} /> : null}
+                      </View>
+                      <Text style={styles.selectLabel}>
+                        {getServiceLabel(item, language)}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+  
+              <Text style={styles.fieldLabel}>{applicationLabels.profileName}</Text>
+              <TextInput
+                value={profileName}
+                onChangeText={setProfileName}
+                placeholder={applicationLabels.profileName}
+                placeholderTextColor={colors.textMuted}
+                style={styles.applicationInput}
+              />
+  
+              <Text style={styles.fieldLabel}>{applicationLabels.phone}</Text>
+              <TextInput
+                value={contactPhone}
+                onChangeText={setContactPhone}
+                placeholder={applicationLabels.phone}
+                placeholderTextColor={colors.textMuted}
+                keyboardType="phone-pad"
+                style={styles.applicationInput}
+              />
+  
+              <Text style={styles.fieldLabel}>{applicationLabels.email}</Text>
+              <TextInput
+                value={contactEmail}
+                onChangeText={setContactEmail}
+                placeholder={applicationLabels.email}
+                placeholderTextColor={colors.textMuted}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                style={styles.applicationInput}
+              />
+  
+              <Text style={styles.fieldLabel}>{applicationLabels.country}</Text>
+              <TextInput
+                value={applicationCountry}
+                onChangeText={setApplicationCountry}
+                placeholder={applicationLabels.country}
+                placeholderTextColor={colors.textMuted}
+                style={styles.applicationInput}
+              />
+  
+              <Text style={styles.fieldLabel}>{applicationLabels.city}</Text>
+              <TextInput
+                value={applicationCity}
+                onChangeText={setApplicationCity}
+                placeholder={applicationLabels.city}
+                placeholderTextColor={colors.textMuted}
+                style={styles.applicationInput}
+              />
+  
+              <Text style={styles.fieldLabel}>{labels.message}</Text>
+              <TextInput
+                value={message}
+                onChangeText={setMessage}
+                placeholder={labels.messagePlaceholder}
+                placeholderTextColor={colors.textMuted}
+                multiline
+                maxLength={1000}
+                style={styles.messageInput}
+              />
+  
+              {formError ? (
+                <Text style={styles.formError}>{formError}</Text>
+              ) : null}
+  
+              <Pressable
+                disabled={submitting || !applicationReady}
+                onPress={submitApplication}
+                style={[
+                  styles.submitButton,
+                  (submitting || !applicationReady) && styles.submitButtonDisabled,
+                ]}
+              >
+                <Text style={styles.submitButtonText}>
+                  {submitting ? labels.submitting : labels.submit}
+                </Text>
+              </Pressable>
             </View>
+          ) : null}
+        </View>
+      ) : null}
 
-            <Text style={styles.fieldLabel}>{labels.message}</Text>
-            <TextInput
-              value={message}
-              onChangeText={setMessage}
-              placeholder={labels.messagePlaceholder}
-              placeholderTextColor={colors.textMuted}
-              multiline
-              maxLength={1000}
-              style={styles.messageInput}
-            />
-
-            {formError ? (
-              <Text style={styles.formError}>{formError}</Text>
-            ) : null}
-
-            <Pressable
-              disabled={submitting}
-              onPress={submitApplication}
-              style={[
-                styles.submitButton,
-                submitting && styles.submitButtonDisabled,
-              ]}
-            >
-              <Text style={styles.submitButtonText}>
-                {submitting ? labels.submitting : labels.submit}
-              </Text>
-            </Pressable>
-          </View>
-        ) : null}
-      </View>
-
-      {serviceCategoryGroups.map((group) => (
+      {!showApplicationArea ? serviceCategoryGroups.map((group) => (
         <View key={group.key} style={styles.group}>
           <Text style={styles.groupTitle}>
             {getServiceLabel(group, language)}
@@ -393,16 +557,34 @@ export default function ServicesScreen({ navigation, route }) {
 
           <View style={styles.grid}>
             {group.items.map((item) => (
-              <View key={item.key} style={styles.categoryCard}>
+              <Pressable
+                key={item.key}
+                onPress={() =>
+                  navigation.setParams({
+                    categoryKey: item.key,
+                    profileId: undefined,
+                    openApplication: undefined,
+                  })
+                }
+                style={({ pressed }) => [
+                  styles.categoryCard,
+                  pressed && styles.categoryCardPressed,
+                ]}
+              >
                 <View style={styles.dot} />
                 <Text style={styles.categoryLabel}>
                   {getServiceLabel(item, language)}
                 </Text>
-              </View>
+                <View style={styles.categoryCountBadge}>
+                  <Text style={styles.categoryCountText}>
+                    {publicCategoryCounts[item.key] ?? 0}
+                  </Text>
+                </View>
+              </Pressable>
             ))}
           </View>
         </View>
-      ))}
+      )) : null}
     </USGSectionScreen>
   );
 }
@@ -549,16 +731,30 @@ function createStyles(colors) {
       borderColor: colors.gold,
       backgroundColor: colors.gold,
     },
-    checkmark: {
-      color: colors.background,
-      fontSize: 13,
-      fontWeight: '900',
+    checkmarkShape: {
+      width: 7,
+      height: 12,
+      borderRightWidth: 3,
+      borderBottomWidth: 3,
+      borderColor: colors.background,
+      transform: [{ rotate: '45deg' }, { translateY: -1 }],
     },
     selectLabel: {
       flex: 1,
       color: colors.text,
       fontSize: 12,
       fontWeight: '700',
+    },
+    applicationInput: {
+      minHeight: 46,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surfaceSoft,
+      color: colors.text,
+      fontSize: 13,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
     },
     messageInput: {
       minHeight: 100,
@@ -630,6 +826,26 @@ function createStyles(colors) {
       borderRadius: 4,
       backgroundColor: colors.gold,
       marginRight: 12,
+    },
+    categoryCardPressed: {
+      opacity: 0.72,
+    },
+    categoryCountBadge: {
+      minWidth: 28,
+      height: 28,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.gold,
+      backgroundColor: colors.activeSurface,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 7,
+      marginLeft: 10,
+    },
+    categoryCountText: {
+      color: colors.gold,
+      fontSize: 11,
+      fontWeight: '900',
     },
     categoryLabel: {
       flex: 1,

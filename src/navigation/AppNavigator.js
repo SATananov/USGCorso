@@ -8,6 +8,8 @@ import { useAuth } from '../auth/AuthContext';
 import GuestSectionPreview from '../components/GuestSectionPreview';
 import AboutScreen from '../screens/AboutScreen';
 import AdminScreen from '../screens/AdminScreen';
+import AdminServicesScreen from '../screens/AdminServicesScreen';
+import AdminInboxScreen from '../screens/AdminInboxScreen';
 import AdminPlaceDetailsScreen from '../screens/AdminPlaceDetailsScreen';
 import AdminContentDetailsScreen from '../screens/AdminContentDetailsScreen';
 import AdminDogDetailsScreen from '../screens/AdminDogDetailsScreen';
@@ -22,6 +24,7 @@ import KnowledgePublicDetailsScreen from '../screens/KnowledgePublicDetailsScree
 import MyCorsoScreen from '../screens/MyCorsoScreen';
 import PlaceDetailsScreen from '../screens/PlaceDetailsScreen';
 import ServicesScreen from '../screens/ServicesScreen';
+import MyProfessionalProfileScreen from '../screens/MyProfessionalProfileScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import NotificationSettingsScreen from '../screens/NotificationSettingsScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
@@ -171,6 +174,11 @@ function MainTabs() {
       <Tab.Screen name="Knowledge" component={KnowledgeScreen} options={{ tabBarLabel: t('nav.knowledge') }} />
       <Tab.Screen name="Community" component={session ? CommunityScreen : GuestCommunityScreen} options={{ tabBarLabel: t('nav.community') }} />
       <Tab.Screen name="Services" component={session ? ServicesScreen : GuestServicesScreen} options={{ tabBarLabel: t('nav.services') }} />
+      <Stack.Screen
+        name="MyProfessionalProfile"
+        component={MyProfessionalProfileScreen}
+        options={{ headerShown: false }}
+      />
       <Tab.Screen name="Events" component={session ? EventsScreen : GuestEventsScreen} options={{ tabBarLabel: t('nav.events') }} />
       <Tab.Screen name="Corso Match" component={session ? CorsoMatchScreen : GuestCorsoMatchScreen} options={{ tabBarLabel: t('nav.corsoMatch') }} />
       <Tab.Screen name="About" component={session ? AboutScreen : GuestAboutScreen} options={{ tabBarLabel: t('nav.about') }} />
@@ -227,6 +235,16 @@ export default function AppNavigator() {
         name="Admin"
         component={AdminScreen}
         options={{ title: t('settings.account') }}
+      />
+      <Stack.Screen
+        name="AdminServices"
+        component={AdminServicesScreen}
+        options={{ title: 'USG Admin Services' }}
+      />
+      <Stack.Screen
+        name="AdminInbox"
+        component={AdminInboxScreen}
+        options={{ title: 'USG Admin Inbox' }}
       />
       <Stack.Screen
         name="AdminPlaceDetails"

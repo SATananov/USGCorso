@@ -3,6 +3,7 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '../auth/AuthContext';
+import { getAdminNotificationSummary } from '../admin/adminNotificationService';
 import { useLanguage } from '../i18n/LanguageContext';
 import { getAvatarPreset } from '../profile/avatarPresets';
 import { getMyProfile } from '../profile/profileService';
@@ -18,6 +19,7 @@ export default function USGGlobalHeader({ navigation, route, title }) {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [panel, setPanel] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [adminNotifications, setAdminNotifications] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -39,6 +41,33 @@ export default function USGGlobalHeader({ navigation, route, title }) {
 
     loadProfile();
     const unsubscribe = navigation.addListener('focus', loadProfile);
+
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, [navigation, user?.id]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadAdminNotifications() {
+      if (!user?.id) {
+        if (active) {
+          setAdminNotifications(null);
+        }
+        return;
+      }
+
+      const { data } = await getAdminNotificationSummary(user.id);
+
+      if (active) {
+        setAdminNotifications(data?.isAdmin ? data : null);
+      }
+    }
+
+    loadAdminNotifications();
+    const unsubscribe = navigation.addListener('focus', loadAdminNotifications);
 
     return () => {
       active = false;
@@ -105,6 +134,30 @@ export default function USGGlobalHeader({ navigation, route, title }) {
             </Text>
           </View>
 
+          <View style={styles.headerActions}>
+            {adminNotifications ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Admin notifications: ${adminNotifications.total}`}
+                onPress={() => navigation.getParent()?.navigate('Admin')}
+                style={({ pressed }) => [
+                  styles.notificationButton,
+                  pressed && styles.controlButtonPressed,
+                ]}
+              >
+                <Text style={styles.notificationIcon}>{'\uD83D\uDD14'}</Text>
+                {adminNotifications.total > 0 ? (
+                  <View style={styles.notificationBadge}>
+                    <Text style={styles.notificationBadgeText}>
+                      {adminNotifications.total > 99
+                        ? '99+'
+                        : adminNotifications.total}
+                    </Text>
+                  </View>
+                ) : null}
+              </Pressable>
+            ) : null}
+
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={accountLabel}
@@ -126,6 +179,7 @@ export default function USGGlobalHeader({ navigation, route, title }) {
               </View>
             )}
           </Pressable>
+          </View>
         </View>
       </View>
 
@@ -165,6 +219,45 @@ function createStyles(colors) {
     controlButtonActive: {
       borderColor: colors.gold,
       backgroundColor: colors.activeSurface,
+    },
+    headerActions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    notificationButton: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+      position: 'relative',
+    },
+    notificationIcon: {
+      fontSize: 21,
+      lineHeight: 24,
+    },
+    notificationBadge: {
+      position: 'absolute',
+      top: -5,
+      right: -5,
+      minWidth: 18,
+      height: 18,
+      paddingHorizontal: 4,
+      borderRadius: 9,
+      backgroundColor: colors.gold,
+      borderWidth: 1,
+      borderColor: colors.background,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    notificationBadgeText: {
+      color: colors.background,
+      fontSize: 9,
+      fontWeight: '900',
     },
     avatarButton: {
       width: 42,

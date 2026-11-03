@@ -141,12 +141,16 @@ export default function HomeSectionActions({ sectionId, navigation }) {
   let serviceSecondaryLabel = copy.applyProfessional;
   let serviceSecondaryParams = { openApplication: true };
 
+  let serviceSecondaryRoute = 'Services';
+
   if (role === 'admin') {
     serviceSecondaryLabel = copy.adminServices;
-    serviceSecondaryParams = { adminServices: true };
+    serviceSecondaryRoute = 'AdminServices';
+    serviceSecondaryParams = undefined;
   } else if (role === 'professional' || role === 'organization') {
     serviceSecondaryLabel = copy.addServiceProfile;
-    serviceSecondaryParams = { manageProfile: true };
+    serviceSecondaryRoute = 'MyProfessionalProfile';
+    serviceSecondaryParams = undefined;
   } else if (applicationStatus === 'pending') {
     serviceSecondaryLabel = copy.applicationPending;
     serviceSecondaryParams = { openApplication: true };
@@ -186,7 +190,7 @@ export default function HomeSectionActions({ sectionId, navigation }) {
       primaryRoute: 'Services',
       primaryCount: counters.services,
       secondaryLabel: serviceSecondaryLabel,
-      secondaryRoute: 'Services',
+      secondaryRoute: serviceSecondaryRoute,
       secondaryParams: serviceSecondaryParams,
     },
     events: {
@@ -229,7 +233,14 @@ export default function HomeSectionActions({ sectionId, navigation }) {
           )
         }
       >
-        <Text style={styles.addButtonText}>{config.secondaryLabel}</Text>
+        <Text
+          style={styles.addButtonText}
+          numberOfLines={section === 'services' ? 1 : 2}
+          adjustsFontSizeToFit={section === 'services'}
+          minimumFontScale={0.68}
+        >
+          {config.secondaryLabel}
+        </Text>
       </Pressable>
     </View>
   );

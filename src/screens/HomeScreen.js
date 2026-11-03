@@ -326,7 +326,7 @@ navigation }) {
         {!user ? (
           <View style={styles.guestExitRow}>
             <Pressable style={styles.guestBackButton} onPress={exitGuestHome}>
-              <Text style={styles.guestBackText}>РІвЂ С’ {language === 'bg' ? 'Р СњР С’Р вЂ”Р С’Р вЂќ' : language === 'it' ? 'INDIETRO' : 'BACK'}</Text>
+              <Text style={styles.guestBackText}>РІвЂ С’ {language === 'bg' ? 'Р СњР С’Р —Р С’Р вЂќ' : language === 'it' ? 'INDIETRO' : 'BACK'}</Text>
             </Pressable>
 
             <Pressable style={styles.guestAuthButton} onPress={exitGuestHome}>
@@ -337,7 +337,7 @@ navigation }) {
                 minimumFontScale={0.78}
               >
                 {language === 'bg'
-                  ? 'Р вЂ™Р ТђР С›Р вЂќ / Р В Р вЂўР вЂњР ВР РЋР СћР В Р С’Р В¦Р ВР Р‡'
+                  ? 'Р вЂ™Р ТђР С›Р вЂќ / Р В Р •Р вЂњР ВР РЋР СћР В Р С’Р В¦Р ВР Р‡'
                   : language === 'it'
                     ? 'ACCEDI / REGISTRATI'
                     : 'SIGN IN / REGISTER'} РІвЂ вЂ™

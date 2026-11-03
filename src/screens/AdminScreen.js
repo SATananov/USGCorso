@@ -25,6 +25,7 @@ import AdminDogModeration from '../components/AdminDogModeration';
 import AdminDogsManagement from '../components/AdminDogsManagement';
 import AdminPlaceMediaModeration from '../components/AdminPlaceMediaModeration';
 import AdminPlacesModeration from '../components/AdminPlacesModeration';
+import AdminServiceVisibility from '../components/AdminServiceVisibility';
 import USGProgressBar from '../components/USGProgressBar';
 
 const sectionCopy = {
@@ -476,20 +477,22 @@ export default function AdminScreen() {
                           onChanged={loadDashboard}
                         />
                       </>
+                    ) : key === 'services' ? (
+                      <AdminServiceVisibility
+                        key={`services-${refreshToken}`}
+                        refreshToken={refreshToken}
+                      />
+                    ) : key === 'myCorso' ? (
+                      <>
+                        <AdminDogModeration onChanged={loadDashboard} />
+                        <AdminDogsManagement />
+                      </>
                     ) : (
-                        key === 'myCorso' ? (
-                          <>
-                            <AdminDogModeration onChanged={loadDashboard} />
-                            <AdminDogsManagement />
-                          </>
-                        ) : (
-
                       <AdminContentGovernance
                         sectionKey={moduleSectionKeys[key]}
                         onChanged={loadDashboard}
                       />
-                                            )
-                      )}
+                    )}
                   </View>
                 ) : null}
               </View>
