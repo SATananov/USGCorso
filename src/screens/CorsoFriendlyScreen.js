@@ -74,24 +74,24 @@ function PlaceCard({
           {reviewSummary?.reviewCount > 0 ? (
             <>
               <Text style={styles.placeRatingText}>
-                в… {reviewSummary.averageRating.toFixed(1)}
-                {' В· '}
+                ★ {reviewSummary.averageRating.toFixed(1)}
+                {' · '}
                 {reviewSummary.reviewCount} {copy.ratingSummary.reviews}
               </Text>
               <Text style={styles.placeHelpfulText}>
-                рџ‘Ќ {reviewSummary.helpfulCount}
+                👍 {reviewSummary.helpfulCount}
               </Text>
               {isFavorite ? (
-                <Text style={styles.personalFavoriteHeart}>в™Ґ</Text>
+                <Text style={styles.personalFavoriteHeart}>♥</Text>
               ) : null}
             </>
           ) : (
             <>
               <Text style={styles.placeNoRatingText}>
-                в† {copy.ratingSummary.noRatings}
+                ☆ {copy.ratingSummary.noRatings}
               </Text>
               {isFavorite ? (
-                <Text style={styles.personalFavoriteHeart}>в™Ґ</Text>
+                <Text style={styles.personalFavoriteHeart}>♥</Text>
               ) : null}
             </>
           )}
@@ -285,7 +285,7 @@ function AddPlaceForm({ copy, colors, user, onCreated }) {
     const generatedName =
       values.name.trim() ||
       `${copy.categories[values.category]}${
-        values.city.trim() ? ` вЂ” ${values.city.trim()}` : ''
+        values.city.trim() ? ` — ${values.city.trim()}` : ''
       }`;
 
     const payload = {
@@ -1393,7 +1393,7 @@ navigation }) {
         {[
           ['map', copy.map],
           ['list', copy.list],
-          ['favorites', `в™Ґ ${copy.favorites.tab}`],
+          ['favorites', `♥ ${copy.favorites.tab}`],
           ['add', copy.add],
         ].map(([value, label]) => (
           <Pressable
@@ -1420,14 +1420,14 @@ navigation }) {
             style={styles.filterSummary}
           >
             <Text style={styles.filterSummaryLabel}>
-              {language === 'bg' ? 'РљР°С‚РµРіРѕСЂРёСЏ' : language === 'it' ? 'Categoria' : 'Category'}
+              {language === 'bg' ? 'Категория' : language === 'it' ? 'Categoria' : 'Category'}
             </Text>
             <View style={styles.filterSummaryRight}>
               <Text style={styles.filterSummaryValue}>
                 {copy.categories[category]}
               </Text>
               <Text style={styles.filterSummaryArrow}>
-                {filtersOpen ? 'в–І' : 'в–ј'}
+                {filtersOpen ? '▲' : '▼'}
               </Text>
             </View>
           </Pressable>
@@ -1566,7 +1566,7 @@ navigation }) {
                   longitude: Number(place.longitude),
                 }}
                 title={place.name}
-                description={`${copy.categories[place.category]} В· ${place.city}`}
+                description={`${copy.categories[place.category]} · ${place.city}`}
                 onPress={() => setSelectedPlaceId(place.id)}
                 onCalloutPress={() => openDetails(place)}
               >
@@ -1664,7 +1664,7 @@ navigation }) {
                 onPress={() => setSelectedMember(null)}
                 style={styles.memberOverlayClose}
               >
-                <Text style={styles.memberOverlayCloseText}>Г—</Text>
+                <Text style={styles.memberOverlayCloseText}>×</Text>
               </Pressable>
 
               <View style={styles.memberOverlayHeader}>
@@ -1693,7 +1693,7 @@ navigation }) {
                 <Text style={styles.memberOverlayLocation}>
                   {[selectedMember.city, selectedMember.country]
                     .filter(Boolean)
-                    .join(' В· ')}
+                    .join(' · ')}
                 </Text>
               ) : null}
 
