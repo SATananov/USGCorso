@@ -69,6 +69,7 @@ const copy = {
     signOutHint: 'End the current session on this device.',
     guestTitle: 'Guest mode',
     guestHint: 'You are browsing the public part without an account.',
+    guestHome: 'HOME',
     close: 'Close',
     resetTitle: 'Reset preferences?',
     resetMessage: 'Language, theme, notifications and privacy preferences will return to defaults.',
@@ -108,6 +109,8 @@ const copy = {
     signOutHint: 'Приключи текущата сесия на това устройство.',
     guestTitle: 'Гост режим',
     guestHint: 'Разглеждаш публичната част без акаунт.',
+
+    guestHome: '\u041a\u042a\u041c \u041d\u0410\u0427\u0410\u041b\u041e\u0422\u041e',
     close: 'Затвори',
     resetTitle: 'Да нулирам ли предпочитанията?',
     resetMessage: 'Езикът, темата, известията и поверителността ще се върнат към началните стойности.',
@@ -147,6 +150,7 @@ const copy = {
     signOutHint: 'Termina la sessione corrente su questo dispositivo.',
     guestTitle: 'Modalità ospite',
     guestHint: 'Stai esplorando la parte pubblica senza account.',
+    guestHome: 'ALL\u2019INIZIO',
     close: 'Chiudi',
     resetTitle: 'Ripristinare le preferenze?',
     resetMessage: 'Lingua, tema, notifiche e privacy torneranno ai valori iniziali.',
@@ -420,6 +424,7 @@ function confirmReset() {
 
 function AccountPanel({ navigation, onClose }) {
   const { user, signOut } = useAuth();
+  const { leaveGuestMode } = useAppControls();
   const { language } = useLanguage();
   const { colors } = useTheme();
   const [openKey, setOpenKey] = useState(null);
@@ -582,6 +587,11 @@ function AccountPanel({ navigation, onClose }) {
 
     await supabase.auth.signOut({ scope: 'local' });
     onClose();
+  }
+
+  function goGuestHome() {
+    onClose();
+    leaveGuestMode();
   }
 
   async function handleSignOut() {
@@ -816,6 +826,7 @@ function AccountPanel({ navigation, onClose }) {
       ) : (
         <View style={styles.guestCard}>
           <Text style={styles.hint}>{labels.guestHint}</Text>
+          <ActionButton label={labels.guestHome} onPress={goGuestHome} />
         </View>
       )}
     </PanelShell>

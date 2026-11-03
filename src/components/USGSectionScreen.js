@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   BackHandler,
   Image,
@@ -26,6 +26,7 @@ export default function USGSectionScreen({
   heroImage,
   heroCarousel = false,
   showScrollHint = false,
+  resetScrollOnFocus = false,
 }) {
   const scrollRef = useRef(null);
   const [isHeroOpen, setIsHeroOpen] = useState(false);
@@ -37,7 +38,7 @@ export default function USGSectionScreen({
   const styles = useMemo(() => createStyles(colors), [colors]);
   useFocusEffect(
     useCallback(() => {
-      if (!heroCarousel) {
+      if (!heroCarousel && !resetScrollOnFocus) {
         return undefined;
       }
 
@@ -45,11 +46,14 @@ export default function USGSectionScreen({
         y: 0,
         animated: false,
       });
-      setIsScrollHintVisible(showScrollHint);
-      setCarouselResetKey((value) => value + 1);
+
+      if (heroCarousel) {
+        setIsScrollHintVisible(showScrollHint);
+        setCarouselResetKey((value) => value + 1);
+      }
 
       return undefined;
-    }, [heroCarousel, showScrollHint])
+    }, [heroCarousel, resetScrollOnFocus, showScrollHint])
   );
 
   const closeHero = () => {
@@ -151,7 +155,7 @@ export default function USGSectionScreen({
           {children}
         </View>
 
-        <Text style={styles.footer}>USG — Unico Suo Genere™</Text>
+        <Text style={styles.footer}>USG вЂ” Unico Suo Genereв„ў</Text>
       </ScrollView>
 
       <USGScrollHint
@@ -187,7 +191,7 @@ export default function USGSectionScreen({
                   pressed && styles.closeButtonPressed,
                 ]}
               >
-                <Text style={styles.closeButtonText}>×</Text>
+                <Text style={styles.closeButtonText}>Г—</Text>
               </Pressable>
 
               <Pressable
@@ -210,7 +214,7 @@ export default function USGSectionScreen({
               </Pressable>
 
               <Text pointerEvents="none" style={styles.fullscreenHint}>
-                Tap outside the image or × to close
+                Tap outside the image or Г— to close
               </Text>
             </View>
           </Pressable>

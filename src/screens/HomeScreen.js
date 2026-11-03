@@ -1,4 +1,4 @@
-﻿import { useCallback, useMemo, useState, useRef } from 'react';
+import { useCallback, useMemo, useState, useRef } from 'react';
 import {
   Image,
   Modal,
@@ -21,6 +21,7 @@ import { getMyProfile, isLocalProfileReady } from '../profile/profileService';
 import { useTheme } from '../theme/ThemeContext';
 import HomeSectionActions from '../components/HomeSectionActions';
 import { KNOWLEDGE_CATEGORY_KEYS } from '../knowledge/knowledgeCategories';
+import { getServiceLabel, serviceCategoryGroups } from '../services/serviceCategories';
 
 const sectionConfig = [
   { id: 'myCorso', icon: require('../../assets/icons/my-corso.png') },
@@ -227,7 +228,7 @@ navigation }) {
                   </View>
 
                   <Text style={styles.sectionToggle}>
-                    {isOpen ? '−' : '+'}
+                    {isOpen ? '\u2212' : '+'}
                   </Text>
                 </Pressable>
 
@@ -270,6 +271,32 @@ navigation }) {
                           {t('home.philosophyTranslation')}
                         </Text>
                       </>
+                    ) : section.id === 'services' ? (
+                      serviceCategoryGroups.map((group) => (
+                        <View key={group.key} style={styles.serviceGroup}>
+                          <Text style={styles.serviceGroupTitle}>
+                            {getServiceLabel(group, language)}
+                          </Text>
+
+                          {group.items.map((item) => (
+                            <Pressable
+                              key={item.key}
+                              style={styles.menuItem}
+                              onPress={() =>
+                                navigation.navigate('Services', {
+                                  categoryKey: item.key,
+                                  categoryGroup: group.key,
+                                })
+                              }
+                            >
+                              <Text style={styles.menuItemText}>
+                                {getServiceLabel(item, language)}
+                              </Text>
+                              <Text style={styles.menuItemArrow}>{'\u203A'}</Text>
+                            </Pressable>
+                          ))}
+                        </View>
+                      ))
                     ) : (
                       items.map((item, itemIndex) => (
                         <Pressable
@@ -285,7 +312,7 @@ navigation }) {
                           }
                         >
                           <Text style={styles.menuItemText}>{item}</Text>
-                          <Text style={styles.menuItemArrow}>›</Text>
+                          <Text style={styles.menuItemArrow}>{'\u203A'}</Text>
                         </Pressable>
                       ))
                     )}
@@ -299,7 +326,7 @@ navigation }) {
         {!user ? (
           <View style={styles.guestExitRow}>
             <Pressable style={styles.guestBackButton} onPress={exitGuestHome}>
-              <Text style={styles.guestBackText}>← {language === 'bg' ? 'НАЗАД' : language === 'it' ? 'INDIETRO' : 'BACK'}</Text>
+              <Text style={styles.guestBackText}>РІвЂ С’ {language === 'bg' ? 'Р СњР С’Р вЂ”Р С’Р вЂќ' : language === 'it' ? 'INDIETRO' : 'BACK'}</Text>
             </Pressable>
 
             <Pressable style={styles.guestAuthButton} onPress={exitGuestHome}>
@@ -310,17 +337,17 @@ navigation }) {
                 minimumFontScale={0.78}
               >
                 {language === 'bg'
-                  ? 'ВХОД / РЕГИСТРАЦИЯ'
+                  ? 'Р вЂ™Р ТђР С›Р вЂќ / Р В Р вЂўР вЂњР ВР РЋР СћР В Р С’Р В¦Р ВР Р‡'
                   : language === 'it'
                     ? 'ACCEDI / REGISTRATI'
-                    : 'SIGN IN / REGISTER'} →
+                    : 'SIGN IN / REGISTER'} РІвЂ вЂ™
               </Text>
             </Pressable>
           </View>
         ) : null}
 
         <View style={styles.footer}>
-          <Text style={styles.footerBrand}>USG — Unico Suo Genere™</Text>
+          <Text style={styles.footerBrand}>USG РІР‚вЂќ Unico Suo GenereРІвЂћСћ</Text>
           <Text style={styles.footerRights}>{t('home.rights')}</Text>
         </View>
       </ScrollView>
@@ -331,7 +358,7 @@ navigation }) {
             style={styles.closeButton}
             onPress={() => setShowHero(false)}
           >
-            <Text style={styles.closeButtonText}>×</Text>
+            <Text style={styles.closeButtonText}>Р вЂњРІР‚вЂќ</Text>
           </Pressable>
 
           <Image
@@ -540,6 +567,19 @@ function createStyles(colors) {
       borderTopColor: colors.border,
       paddingHorizontal: 12,
       paddingVertical: 4,
+    },
+    serviceGroup: {
+      marginBottom: 10,
+    },
+    serviceGroupTitle: {
+      color: colors.goldSoft,
+      fontSize: 10,
+      fontWeight: '900',
+      letterSpacing: 0.8,
+      textTransform: 'uppercase',
+      paddingHorizontal: 12,
+      paddingTop: 12,
+      paddingBottom: 6,
     },
     menuItem: {
       minHeight: 40,

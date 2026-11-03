@@ -2,8 +2,11 @@ import { useCallback, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
+import { getMyRole } from '../admin/adminService';
+import { useAuth } from '../auth/AuthContext';
 import { getHomePublicCounters } from '../home/homeCounterService';
 import { useLanguage } from '../i18n/LanguageContext';
+import { getMyProfessionalApplication } from '../services/professionalAccessService';
 import { useTheme } from '../theme/ThemeContext';
 
 const copyByLanguage = {
@@ -17,7 +20,11 @@ const copyByLanguage = {
     publicCorsos: 'ПУБЛИЧНИ КОРСО',
     community: 'ГАЛЕРИЯ',
     services: 'УСЛУГИ',
-    addService: '+ ДОБАВИ УСЛУГА',
+    applyProfessional: 'КАНДИДАТСТВАЙ',
+    applicationPending: 'ЗАЯВКА В ПРЕГЛЕД',
+    reviewApplication: 'ПРЕГЛЕДАЙ ЗАЯВКАТА',
+    addServiceProfile: '+ ДОБАВИ ПРОФИЛ',
+    adminServices: 'АДМИН УСЛУГИ',
     upcoming: 'ПРЕДСТОЯЩИ',
     addEvent: '+ ДОБАВИ СЪБИТИЕ',
     openChoice: 'ОТВОРИ',
@@ -32,7 +39,11 @@ const copyByLanguage = {
     publicCorsos: 'PUBLIC CORSOS',
     community: 'GALLERY',
     services: 'SERVICES',
-    addService: '+ ADD SERVICE',
+    applyProfessional: 'APPLY',
+    applicationPending: 'APPLICATION PENDING',
+    reviewApplication: 'REVIEW APPLICATION',
+    addServiceProfile: '+ ADD PROFILE',
+    adminServices: 'ADMIN SERVICES',
     upcoming: 'UPCOMING',
     addEvent: '+ ADD EVENT',
     openChoice: 'OPEN',
@@ -47,7 +58,11 @@ const copyByLanguage = {
     publicCorsos: 'CORSO PUBBLICI',
     community: 'GALLERIA',
     services: 'SERVIZI',
-    addService: '+ AGGIUNGI SERVIZIO',
+    applyProfessional: 'CANDIDATI',
+    applicationPending: 'RICHIESTA IN REVISIONE',
+    reviewApplication: 'RIVEDI RICHIESTA',
+    addServiceProfile: '+ AGGIUNGI PROFILO',
+    adminServices: 'SERVIZI ADMIN',
     upcoming: 'IN ARRIVO',
     addEvent: '+ AGGIUNGI EVENTO',
     openChoice: 'APRI',
@@ -70,21 +85,45 @@ function resolveSection(sectionId) {
 export default function HomeSectionActions({ sectionId, navigation }) {
   const { language } = useLanguage();
   const { colors } = useTheme();
+  const { user } = useAuth();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const copy = copyByLanguage[language] ?? copyByLanguage.en;
   const section = resolveSection(sectionId);
   const [counters, setCounters] = useState({});
+  const [role, setRole] = useState('user');
+  const [applicationStatus, setApplicationStatus] = useState(null);
 
   useFocusEffect(
     useCallback(() => {
       let active = true;
 
       async function load() {
-        const result = await getHomePublicCounters();
+        const counterResult = await getHomePublicCounters();
 
-        if (active && !result.error) {
-          setCounters(result.data ?? {});
+        if (active && !counterResult.error) {
+          setCounters(counterResult.data ?? {});
         }
+
+        if (!user || section !== 'services') {
+          return;
+        }
+
+        const [{ data: roleData }, { data: applicationData }] = await Promise.all([
+          getMyRole(user.id),
+          getMyProfessionalApplication(),
+        ]);
+
+        if (!active) {
+          return;
+        }
+
+        setRole(roleData?.role || 'user');
+
+        const application = Array.isArray(applicationData)
+          ? applicationData[0]
+          : applicationData;
+
+        setApplicationStatus(application?.status || null);
       }
 
       load();
@@ -92,11 +131,31 @@ export default function HomeSectionActions({ sectionId, navigation }) {
       return () => {
         active = false;
       };
-    }, [])
+    }, [section, user])
   );
 
   if (!section) {
     return null;
+  }
+
+  let serviceSecondaryLabel = copy.applyProfessional;
+  let serviceSecondaryParams = { openApplication: true };
+
+  if (role === 'admin') {
+    serviceSecondaryLabel = copy.adminServices;
+    serviceSecondaryParams = { adminServices: true };
+  } else if (role === 'professional' || role === 'organization') {
+    serviceSecondaryLabel = copy.addServiceProfile;
+    serviceSecondaryParams = { manageProfile: true };
+  } else if (applicationStatus === 'pending') {
+    serviceSecondaryLabel = copy.applicationPending;
+    serviceSecondaryParams = { openApplication: true };
+  } else if (
+    applicationStatus === 'rejected' ||
+    applicationStatus === 'needs_changes'
+  ) {
+    serviceSecondaryLabel = copy.reviewApplication;
+    serviceSecondaryParams = { openApplication: true };
   }
 
   const config = {
@@ -126,9 +185,9 @@ export default function HomeSectionActions({ sectionId, navigation }) {
       primaryLabel: copy.services,
       primaryRoute: 'Services',
       primaryCount: counters.services,
-      secondaryLabel: copy.addService,
-      secondaryRoute: 'AddMaterial',
-      secondaryParams: { section: 'services' },
+      secondaryLabel: serviceSecondaryLabel,
+      secondaryRoute: 'Services',
+      secondaryParams: serviceSecondaryParams,
     },
     events: {
       primaryLabel: copy.upcoming,
