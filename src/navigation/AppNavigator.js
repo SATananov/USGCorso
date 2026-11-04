@@ -23,6 +23,7 @@ import KnowledgeScreen from '../screens/KnowledgeScreen';
 import KnowledgePublicDetailsScreen from '../screens/KnowledgePublicDetailsScreen';
 import MyCorsoScreen from '../screens/MyCorsoScreen';
 import MyCorsoGrowthScreen from '../screens/MyCorsoGrowthScreen';
+import MyCorsoCareScreen from '../screens/MyCorsoCareScreen';
 import PlaceDetailsScreen from '../screens/PlaceDetailsScreen';
 import ServicesScreen from '../screens/ServicesScreen';
 import MyProfessionalProfileScreen from '../screens/MyProfessionalProfileScreen';
@@ -221,6 +222,11 @@ export default function AppNavigator() {
       <Stack.Screen
         name="MyCorsoGrowth"
         component={MyCorsoGrowthScreen}
+        options={{ title: t('nav.myCorso') }}
+      />
+      <Stack.Screen
+        name="MyCorsoCare"
+        component={MyCorsoCareScreen}
         options={{ title: t('nav.myCorso') }}
       />
       <Stack.Screen
