@@ -228,7 +228,7 @@ export default function MyCorsoChallengesScreen({ route, navigation }) {
     <SafeAreaView style={styles.page} edges={['bottom']}>
       <ScrollView ref={scrollRef} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" onScroll={event => setShowBackToTop(event.nativeEvent.contentOffset.y > 220)} scrollEventThrottle={32}>
         <Text style={styles.kicker}>USG · UNICO SUO GENERE</Text>
-        <Text style={styles.title}>{t.title}</Text>
+        <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.55}>{t.title}</Text>
         <Text style={styles.sub}>{t.intro}</Text>
         {loading ? <ActivityIndicator color={colors.gold} /> : null}
         {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -322,7 +322,7 @@ function makeStyles(colors) {
     page: {flex: 1, backgroundColor: colors.background},
     content: {padding: 18, paddingBottom: 48, gap: 14},
     kicker: {fontSize: 11, color: colors.gold, letterSpacing: 2, fontWeight: '700'},
-    title: {color: colors.text, fontSize: 26, fontWeight: '800'},
+    title: {color: colors.text, fontSize: 25, fontWeight: '800', flexShrink: 1},
     sub: {color: colors.textMuted, fontSize: 13, lineHeight: 19},
     card: {borderColor: colors.border, borderWidth: 1, borderRadius: 18, padding: 15, gap: 12, backgroundColor: colors.surface},
     heading: {color: colors.gold, fontWeight: '800', fontSize: 15, letterSpacing: 0.7},

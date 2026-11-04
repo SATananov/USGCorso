@@ -3,6 +3,7 @@ import { Animated, AppState, Image, Pressable, ScrollView, StyleSheet, Text, Vie
 import MapView, { Circle, Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import USGBackToTop from '../components/USGBackToTop';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useTheme } from '../theme/ThemeContext';
 
@@ -18,7 +19,7 @@ const languageText = {
     summary: 'Резултат от разходката', review: 'ИЗПРАТИ КЪМ ФОРМАТА', short: 'За запис с точки са необходими поне 5 минути и 0,10 км. Можеш да повториш теста.',
     accuracy: 'Измерването зависи от GPS сигнала. Скокове и неточни точки се пропускат.', back: 'НАЗАД КЪМ ARENA',
     photo: 'USG', owner: 'Собственик', current: 'Текуща позиция', noRoute: 'Маршрутът ще се появи след получаване на GPS координати.',
-    territoryTitle: 'USG ТЕРИТОРИИ', territoryIntro: 'Откривай сектори по време на виртуалната експедиция.', territoryLocked: 'ЗАКЛЮЧЕНА', territoryOpen: 'ОТКРИТА', territoryNext: 'СЛЕДВАЩА ЗОНА', territoryAll: 'ВСИЧКИ ЗОНИ СА ОТКРИТИ', territoryProgress: 'ОТКРИТИ ЗОНИ', territoryTest: 'ВИРТУАЛНА ЕКСПЕДИЦИЯ · БЕЗ XP', territorySector: 'СЕКТОР', territoryMap: 'КАРТА НА ПРИКЛЮЧЕНИЕТО', territoryReward: 'ОТКЛЮЧЕН СЕКТОР',
+    territoryTitle: 'USG ТЕРИТОРИИ', territoryIntro: 'Откривай сектори по време на виртуалната експедиция.', territoryLocked: 'ЗАКЛЮЧЕНА', territoryOpen: 'ОТКРИТА', territoryNext: 'СЛЕДВАЩА ЗОНА', territoryAll: 'ВСИЧКИ ЗОНИ СА ОТКРИТИ', territoryProgress: 'ОТКРИТИ ЗОНИ', territoryTest: 'ВИРТУАЛНА ЕКСПЕДИЦИЯ · БЕЗ XP', territorySector: 'СЕКТОР', territoryMap: 'КАРТА НА ПРИКЛЮЧЕНИЕТО', territoryReward: 'ОТКЛЮЧЕН СЕКТОР', expeditionComplete: 'ЕКСПЕДИЦИЯТА Е ЗАВЪРШЕНА', expeditionSubtitle: 'Хера откри всички територии!', expeditionTerritories: 'ОТКРИТИ ТЕРИТОРИИ', expeditionBadges: 'ВИРТУАЛНИ ЗНАЧКИ', expeditionAward: 'МЕДАЛ НА ОТКРИВАТЕЛЯ', expeditionSafety: 'Демонстрационни награди · 0 XP · без запис в Supabase', expeditionNext: 'НОВО ПРИКЛЮЧЕНИЕ',
     simTitle: 'ТЕСТОВ GPS РЕЖИМ', realMode: 'РЕАЛЕН GPS', simMode: 'СИМУЛАЦИЯ', simHelp: 'Демонстрационен маршрут около текущата позиция. Без реални XP и запис в Supabase.', simStart: 'СТАРТ НА СИМУЛАЦИЯ', simComplete: 'Тестът приключи. Няма запис или точки.', simLocation: 'За да поставим тестовия маршрут на картата, разреши местоположение.', simCheckpoint: 'КОНТРОЛНА ТОЧКА', simNoRewards: 'ТЕСТ · 0 XP · БЕЗ ЗАПИС', simDistance: 'ВИРТУАЛНА ДИСТАНЦИЯ', simRestart: 'НОВ ТЕСТ', confirm: 'КРАЙ И ПРЕГЛЕД', resetHelp: 'Новата разходка изчиства само локалния тест, без да изтрива запис от Supabase.',
   },
   en: {
@@ -29,7 +30,7 @@ const languageText = {
     limitation: 'This first version tracks only while the app is open. Keep the screen unlocked during testing. No automatic XP.',
     summary: 'Walk summary', review: 'SEND TO ACTIVITY FORM', short: 'At least 5 minutes and 0.10 km are needed to record points. Try another walk.',
     accuracy: 'GPS results depend on signal quality. Poor fixes and jumps are ignored.', back: 'BACK TO ARENA', photo: 'USG', owner: 'Owner', current: 'Current position', noRoute: 'The trail appears as GPS locations arrive.',
-    territoryTitle: 'USG TERRITORIES', territoryIntro: 'Discover sectors on your virtual expedition.', territoryLocked: 'LOCKED', territoryOpen: 'DISCOVERED', territoryNext: 'NEXT ZONE', territoryAll: 'ALL ZONES DISCOVERED', territoryProgress: 'DISCOVERED ZONES', territoryTest: 'VIRTUAL EXPEDITION · NO XP', territorySector: 'SECTOR', territoryMap: 'ADVENTURE MAP', territoryReward: 'SECTOR DISCOVERED',
+    territoryTitle: 'USG TERRITORIES', territoryIntro: 'Discover sectors on your virtual expedition.', territoryLocked: 'LOCKED', territoryOpen: 'DISCOVERED', territoryNext: 'NEXT ZONE', territoryAll: 'ALL ZONES DISCOVERED', territoryProgress: 'DISCOVERED ZONES', territoryTest: 'VIRTUAL EXPEDITION · NO XP', territorySector: 'SECTOR', territoryMap: 'ADVENTURE MAP', territoryReward: 'SECTOR DISCOVERED', expeditionComplete: 'EXPEDITION COMPLETE', expeditionSubtitle: 'All territories discovered!', expeditionTerritories: 'DISCOVERED TERRITORIES', expeditionBadges: 'VIRTUAL BADGES', expeditionAward: 'EXPLORER MEDAL', expeditionSafety: 'Demo rewards · 0 XP · no Supabase record', expeditionNext: 'NEW ADVENTURE',
     simTitle: 'GPS TEST MODE', realMode: 'REAL GPS', simMode: 'SIMULATION', simHelp: 'A demo route around the current position. No real XP or Supabase records.', simStart: 'START SIMULATION', simComplete: 'Test finished. No records or points awarded.', simLocation: 'Allow location to center the test route on the map.', simCheckpoint: 'CHECKPOINT', simNoRewards: 'TEST · 0 XP · NO RECORD', simDistance: 'VIRTUAL DISTANCE', simRestart: 'NEW TEST', confirm: 'FINISH AND REVIEW', resetHelp: 'New walk clears only this local test, not your Supabase records.',
   },
   it: {
@@ -40,7 +41,7 @@ const languageText = {
     limitation: 'Questa prima versione registra solo con l’app aperta. Mantieni lo schermo sbloccato durante la prova. Nessun XP automatico.',
     summary: 'Riepilogo passeggiata', review: 'INVIA AL MODULO ATTIVITÀ', short: 'Per ottenere punti servono almeno 5 minuti e 0,10 km. Puoi riprovare.',
     accuracy: 'La precisione dipende dal GPS. I dati imprecisi e i salti vengono ignorati.', back: 'TORNA ALL’ARENA', photo: 'USG', owner: 'Proprietario', current: 'Posizione attuale', noRoute: 'La traccia apparirà con le coordinate GPS.',
-    territoryTitle: 'TERRITORI USG', territoryIntro: 'Scopri i settori durante la spedizione virtuale.', territoryLocked: 'BLOCCATO', territoryOpen: 'SCOPERTO', territoryNext: 'PROSSIMA ZONA', territoryAll: 'TUTTE LE ZONE SCOPERTE', territoryProgress: 'ZONE SCOPERTE', territoryTest: 'SPEDIZIONE VIRTUALE · NESSUN XP', territorySector: 'SETTORE', territoryMap: 'MAPPA AVVENTURA', territoryReward: 'SETTORE SCOPERTO',
+    territoryTitle: 'TERRITORI USG', territoryIntro: 'Scopri i settori durante la spedizione virtuale.', territoryLocked: 'BLOCCATO', territoryOpen: 'SCOPERTO', territoryNext: 'PROSSIMA ZONA', territoryAll: 'TUTTE LE ZONE SCOPERTE', territoryProgress: 'ZONE SCOPERTE', territoryTest: 'SPEDIZIONE VIRTUALE · NESSUN XP', territorySector: 'SETTORE', territoryMap: 'MAPPA AVVENTURA', territoryReward: 'SETTORE SCOPERTO', expeditionComplete: 'SPEDIZIONE COMPLETATA', expeditionSubtitle: 'Tutti i territori sono stati scoperti!', expeditionTerritories: 'TERRITORI SCOPERTI', expeditionBadges: 'DISTINTIVI VIRTUALI', expeditionAward: 'MEDAGLIA ESPLORATORE', expeditionSafety: 'Premi dimostrativi · 0 XP · nessun dato Supabase', expeditionNext: 'NUOVA AVVENTURA',
     simTitle: 'MODALITÀ TEST GPS', realMode: 'GPS REALE', simMode: 'SIMULAZIONE', simHelp: 'Percorso dimostrativo intorno alla posizione attuale. Nessun XP reale o record Supabase.', simStart: 'AVVIA SIMULAZIONE', simComplete: 'Test terminato. Nessun dato o punto salvato.', simLocation: 'Consenti la posizione per centrare il percorso di prova sulla mappa.', simCheckpoint: 'CHECKPOINT', simNoRewards: 'TEST · 0 XP · NESSUN RECORD', simDistance: 'DISTANZA VIRTUALE', simRestart: 'NUOVO TEST', confirm: 'TERMINA E RIVEDI', resetHelp: 'Nuova passeggiata cancella solo il test locale, non i dati Supabase.',
   },
 };
@@ -89,6 +90,8 @@ export default function MyCorsoWalkTrackerScreen({ navigation, route }) {
   const unlockScale = useRef(new Animated.Value(0.85)).current;
   const unlockOpacity = useRef(new Animated.Value(0)).current;
   const unlockTimerRef = useRef(null);
+  const expeditionScale = useRef(new Animated.Value(0.88)).current;
+  const expeditionOpacity = useRef(new Animated.Value(0)).current;
   const lastCheckpointRef = useRef(0);
   const [simAnchor, setSimAnchor] = useState(null);
   const [trail, setTrail] = useState([]);
@@ -110,12 +113,27 @@ export default function MyCorsoWalkTrackerScreen({ navigation, route }) {
   const runningFromRef = useRef(null);
   const appStateRef = useRef(AppState.currentState);
   const mapRef = useRef(null);
+  const scrollRef = useRef(null);
+  const mapTopRef = useRef(0);
+  const [showBackToTop, setShowBackToTop] = useState(false);
   const aliveRef = useRef(true);
   const dog = route.params?.dog ?? {};
   const ownerName = route.params?.ownerName ?? '';
   const photoUri = route.params?.photoUri;
   const nextCheckpoint = simulationCheckpoints[checkpoint] ?? null;
   const territoryPercent = Math.round(checkpoint * 100 / simulationCheckpoints.length);
+  const expeditionComplete = testMode === 'simulation' && mode === 'finished' && checkpoint === simulationCheckpoints.length;
+
+  useEffect(() => {
+    if (!expeditionComplete) return undefined;
+    expeditionScale.setValue(0.88);
+    expeditionOpacity.setValue(0);
+    Animated.parallel([
+      Animated.spring(expeditionScale, { toValue: 1, friction: 5, tension: 75, useNativeDriver: true }),
+      Animated.timing(expeditionOpacity, { toValue: 1, duration: 550, useNativeDriver: true }),
+    ]).start();
+    return () => { expeditionScale.stopAnimation(); expeditionOpacity.stopAnimation(); };
+  }, [expeditionComplete, expeditionScale, expeditionOpacity]);
 
   useEffect(() => {
     if (testMode !== 'simulation' || mode === 'ready' || checkpoint <= lastCheckpointRef.current) {
@@ -211,6 +229,12 @@ export default function MyCorsoWalkTrackerScreen({ navigation, route }) {
     setInfo('');
   }
 
+  function scrollToMap() {
+    requestAnimationFrame(() => {
+      if (aliveRef.current) scrollRef.current?.scrollTo({ y: Math.max(0, mapTopRef.current - 12), animated: true });
+    });
+  }
+
   async function startTracking() {
     if (starting || locationPendingRef.current || modeRef.current === 'running') return;
     locationPendingRef.current = true;
@@ -232,6 +256,7 @@ export default function MyCorsoWalkTrackerScreen({ navigation, route }) {
       runningFromRef.current = Date.now();
       modeRef.current = 'running';
       setMode('running');
+      scrollToMap();
       const watcher = await Location.watchPositionAsync(
         { accuracy: Location.Accuracy.High, timeInterval: 2000, distanceInterval: 3 },
         processLocation,
@@ -273,6 +298,7 @@ export default function MyCorsoWalkTrackerScreen({ navigation, route }) {
       runningFromRef.current = Date.now();
       modeRef.current = 'running';
       setMode('running');
+      scrollToMap();
       setInfo(words.simHelp);
       if (trailRef.current.length === 0) {
         const point = simulationPosition(anchor, 0);
@@ -361,7 +387,13 @@ export default function MyCorsoWalkTrackerScreen({ navigation, route }) {
   const status = words[mode] || words.ready;
   return (
     <SafeAreaView style={styles.page} edges={['bottom']}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        onScroll={event => setShowBackToTop(event.nativeEvent.contentOffset.y > 200)}
+        scrollEventThrottle={32}
+      >
         <Text style={styles.kicker}>USG · TERRITORY WALK</Text>
         <Text style={styles.title}>{words.title}</Text>
         <Text style={styles.sub}>{words.subtitle}</Text>
@@ -378,7 +410,7 @@ export default function MyCorsoWalkTrackerScreen({ navigation, route }) {
             <Text style={styles.status}>{status}</Text>
           </View>
         </View>
-        <View style={styles.mapFrame}>
+        <View style={styles.mapFrame} onLayout={event => { mapTopRef.current = event.nativeEvent.layout.y; }}>
           {position ? <MapView ref={mapRef} provider={PROVIDER_GOOGLE} style={styles.map}
             initialRegion={{ latitude: position.latitude, longitude: position.longitude, latitudeDelta: 0.006, longitudeDelta: 0.006 }}
             showsUserLocation={testMode === 'real'} showsMyLocationButton={false} mapType="standard">
@@ -438,6 +470,25 @@ export default function MyCorsoWalkTrackerScreen({ navigation, route }) {
         {mode === 'ready' ? <Pressable disabled={starting} style={styles.primary} onPress={testMode === 'simulation' ? startSimulation : startTracking}><Text style={styles.primaryText}>{starting ? '…' : testMode === 'simulation' ? words.simStart : words.start}</Text></Pressable> : null}
         {mode === 'running' ? <View style={styles.actions}><Pressable style={styles.secondary} onPress={() => pauseTracking()}><Text style={styles.secondaryText}>{words.pause}</Text></Pressable><Pressable style={styles.primaryHalf} onPress={finish}><Text style={styles.primaryText}>{words.finish}</Text></Pressable></View> : null}
         {mode === 'paused' ? <View style={styles.actions}><Pressable disabled={starting} style={styles.primaryHalf} onPress={testMode === 'simulation' ? startSimulation : startTracking}><Text style={styles.primaryText}>{words.resume}</Text></Pressable><Pressable style={styles.secondary} onPress={finish}><Text style={styles.secondaryText}>{words.finish}</Text></Pressable></View> : null}
+        {expeditionComplete ? <Animated.View style={[styles.expeditionCard, { opacity: expeditionOpacity, transform: [{ scale: expeditionScale }] }]}>
+          <Text style={styles.expeditionKicker}>USG · TERRITORY REWARDS</Text>
+          <View style={styles.expeditionPortraitRow}>
+            {photoUri ? <Image source={{ uri: photoUri }} style={styles.expeditionPortrait} /> : <View style={[styles.expeditionPortrait, styles.expeditionPortraitFallback]}><Text style={styles.expeditionMedal}>★</Text></View>}
+            <View style={styles.expeditionIdentity}><Text numberOfLines={1} style={styles.expeditionDog}>{dog.name || 'Cane Corso'}</Text><Text numberOfLines={1} style={styles.expeditionOwner}>{ownerName}</Text></View>
+            <Text style={styles.expeditionMedal}>✦</Text>
+          </View>
+          <Text style={styles.expeditionTitle}>{words.expeditionComplete}</Text>
+          <Text style={styles.expeditionSubtitle}>{words.expeditionSubtitle}</Text>
+          <View style={styles.expeditionMetrics}>
+            <View style={styles.expeditionMetric}><Text style={styles.expeditionMetricValue}>{checkpoint}/{simulationCheckpoints.length}</Text><Text style={styles.expeditionMetricLabel}>{words.expeditionTerritories}</Text></View>
+            <View style={styles.expeditionMetric}><Text style={styles.expeditionMetricValue}>{(meters / 1000).toFixed(2)} km</Text><Text style={styles.expeditionMetricLabel}>{words.simDistance}</Text></View>
+          </View>
+          <Text style={styles.expeditionBadgesLabel}>{words.expeditionBadges}</Text>
+          <View style={styles.expeditionBadgeRow}>{simulationCheckpoints.map((point, index) => <View key={point} style={styles.expeditionBadge}><Text style={styles.expeditionBadgeIcon}>{territoryIcons[index]}</Text><Text style={styles.expeditionBadgeText}>{words.territorySector} {index + 1}</Text></View>)}</View>
+          <View style={styles.expeditionAward}><Text style={styles.expeditionAwardStar}>★</Text><Text style={styles.expeditionAwardText}>{words.expeditionAward}</Text></View>
+          <Text style={styles.expeditionSafety}>{words.expeditionSafety}</Text>
+          <Pressable accessibilityRole="button" style={styles.expeditionRestart} onPress={newWalk}><Text style={styles.expeditionRestartText}>{words.expeditionNext}</Text></Pressable>
+        </Animated.View> : null}
         {mode === 'finished' ? <View style={styles.summary}>
           <Text style={styles.heading}>{words.summary}</Text>
           <Text style={styles.sub}>{clock(elapsedRef.current)} · {(metersRef.current / 1000).toFixed(2)} km</Text>
@@ -449,6 +500,12 @@ export default function MyCorsoWalkTrackerScreen({ navigation, route }) {
         <Text style={styles.hint}>{words.accuracy}</Text>
         {mode !== 'running' ? <Pressable onPress={() => navigation.goBack()} style={styles.back}><Text style={styles.backText}>{words.back}</Text></Pressable> : null}
       </ScrollView>
+      <USGBackToTop
+        visible={showBackToTop}
+        language={language}
+        bottomOffset={72}
+        onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
+      />
     </SafeAreaView>
   );
 }
@@ -532,6 +589,32 @@ function createStyles(colors) {
     secondary: { flex: 1, borderWidth: 1, borderColor: colors.gold, padding: 15, alignItems: 'center', borderRadius: 12 },
     secondaryText: { color: colors.gold, fontSize: 14, fontWeight: '800', textAlign: 'center' },
     message: { color: '#F2C17E', fontSize: 13, lineHeight: 20 },
+    expeditionCard: { borderRadius: 20, borderWidth: 1.5, borderColor: '#D4AF37', backgroundColor: '#151615', padding: 15, gap: 12, alignItems: 'stretch' },
+    expeditionKicker: { color: '#D4AF37', textAlign: 'center', fontSize: 10, fontWeight: '900', letterSpacing: 1.5 },
+    expeditionPortraitRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    expeditionPortrait: { width: 64, height: 64, borderRadius: 32, borderWidth: 2, borderColor: '#D4AF37' },
+    expeditionPortraitFallback: { alignItems: 'center', justifyContent: 'center', backgroundColor: '#302716' },
+    expeditionIdentity: { flex: 1, minWidth: 0, gap: 3 },
+    expeditionDog: { color: '#F8E5B9', fontSize: 20, fontWeight: '900' },
+    expeditionOwner: { color: '#C8BDA9', fontSize: 12 },
+    expeditionMedal: { color: '#F3CC6E', fontSize: 28 },
+    expeditionTitle: { color: '#F3D485', textAlign: 'center', fontSize: 19, fontWeight: '900' },
+    expeditionSubtitle: { color: '#DDD5C3', textAlign: 'center', fontSize: 13 },
+    expeditionMetrics: { flexDirection: 'row', gap: 8 },
+    expeditionMetric: { flex: 1, minWidth: 0, backgroundColor: '#24231E', padding: 11, gap: 5, borderRadius: 12, alignItems: 'center' },
+    expeditionMetricValue: { color: '#F3D485', fontSize: 18, fontWeight: '900' },
+    expeditionMetricLabel: { color: '#D3C8AC', fontSize: 10, textAlign: 'center', fontWeight: '700' },
+    expeditionBadgesLabel: { color: '#E8CA78', fontSize: 11, fontWeight: '800', letterSpacing: 0.5 },
+    expeditionBadgeRow: { flexDirection: 'row', gap: 8 },
+    expeditionBadge: { flex: 1, minWidth: 0, backgroundColor: '#282519', borderWidth: 1, borderColor: '#806A32', borderRadius: 12, paddingVertical: 10, alignItems: 'center', gap: 5 },
+    expeditionBadgeIcon: { color: '#F1CE73', fontSize: 27, fontWeight: '900' },
+    expeditionBadgeText: { color: '#DFCB9D', fontSize: 10, fontWeight: '800' },
+    expeditionAward: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 9, padding: 10, backgroundColor: '#372B12', borderRadius: 12 },
+    expeditionAwardStar: { color: '#F3D485', fontSize: 24 },
+    expeditionAwardText: { color: '#F3D485', fontSize: 12, fontWeight: '900', flexShrink: 1 },
+    expeditionSafety: { color: '#C8B998', fontSize: 11, textAlign: 'center' },
+    expeditionRestart: { backgroundColor: '#D4AF37', borderRadius: 12, padding: 13, alignItems: 'center' },
+    expeditionRestartText: { color: '#111111', fontSize: 13, fontWeight: '900' },
     summary: { backgroundColor: colors.surface, borderRadius: 16, padding: 13, borderWidth: 1, borderColor: colors.border, gap: 12 },
     heading: { color: colors.gold, fontSize: 17, fontWeight: '800' },
     hint: { fontSize: 12, color: colors.textMuted, lineHeight: 18 },
