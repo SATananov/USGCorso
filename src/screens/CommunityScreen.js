@@ -16,12 +16,14 @@ import { getCommunityCorsos } from '../community/communityCorsoService';
 import USGProgressBar from '../components/USGProgressBar';
 import USGInteractiveHeroImage from '../components/USGInteractiveHeroImage';
 import { useLanguage } from '../i18n/LanguageContext';
+import USGBackToTop from '../components/USGBackToTop';
 import { getAvatarPreset } from '../profile/avatarPresets';
 import { radius, spacing } from '../styles/usgTheme';
 import { useTheme } from '../theme/ThemeContext';
 
 export default function CommunityScreen() {
   const scrollRef = useRef(null);
+  const [showBackToTop, setShowBackToTop] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -66,6 +68,11 @@ export default function CommunityScreen() {
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView
         ref={scrollRef}
+        onScroll={(event) => {
+          const visible = event.nativeEvent.contentOffset.y > 220;
+          setShowBackToTop((current) => current === visible ? current : visible);
+        }}
+        scrollEventThrottle={32}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
@@ -104,6 +111,11 @@ export default function CommunityScreen() {
           </View>
         ) : null}
       </ScrollView>
+      <USGBackToTop
+        visible={showBackToTop}
+        language={language}
+        onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
+      />
     </SafeAreaView>
   );
 }

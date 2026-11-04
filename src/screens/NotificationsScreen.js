@@ -12,6 +12,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useLanguage } from '../i18n/LanguageContext';
+import { useRef as useBackToTopRef, useState as useBackToTopState, useEffect as useBackToTopEffect } from 'react';
+import USGBackToTop from '../components/USGBackToTop';
 import {
   getNotifications,
   markAllNotificationsRead,
@@ -299,6 +301,9 @@ function getNotificationPresentation(item, language) {
 }
 
 export default function NotificationsScreen({ navigation }) {
+  const backToTopRef = useBackToTopRef(null);
+  const [backToTopVisible, setBackToTopVisible] = useBackToTopState(false);
+  const { language: backToTopLanguage } = useLanguage();
   const { language, t } = useLanguage();
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -397,6 +402,12 @@ export default function NotificationsScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView
+        ref={backToTopRef}
+        onScroll={(event) => {
+          const visible = event.nativeEvent.contentOffset.y > 220;
+          setBackToTopVisible((current) => current === visible ? current : visible);
+        }}
+        scrollEventThrottle={32}
         contentContainerStyle={styles.content}
         refreshControl={
           <RefreshControl
@@ -510,6 +521,12 @@ export default function NotificationsScreen({ navigation }) {
           })
         )}
       </ScrollView>
+      <USGBackToTop
+        visible={backToTopVisible}
+        language={backToTopLanguage}
+        bottomOffset={68}
+        onPress={() => backToTopRef.current?.scrollTo({ y: 0, animated: true })}
+      />
     </SafeAreaView>
   );
 }

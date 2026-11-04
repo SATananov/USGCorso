@@ -10,6 +10,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useLanguage } from '../i18n/LanguageContext';
+import { useRef as useBackToTopRef, useState as useBackToTopState } from 'react';
+import USGBackToTop from '../components/USGBackToTop';
 import { useTheme } from '../theme/ThemeContext';
 import {
   getAdminProfessionalApplications,
@@ -67,6 +69,9 @@ const copy = {
 };
 
 export default function AdminServicesScreen() {
+  const backToTopRef = useBackToTopRef(null);
+  const [backToTopVisible, setBackToTopVisible] = useBackToTopState(false);
+  const { language: backToTopLanguage } = useLanguage();
   const { language } = useLanguage();
   const { colors } = useTheme();
   const labels = copy[language] ?? copy.en;
@@ -127,6 +132,12 @@ export default function AdminServicesScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView
+        ref={backToTopRef}
+        onScroll={(event) => {
+          const visible = event.nativeEvent.contentOffset.y > 220;
+          setBackToTopVisible((current) => current === visible ? current : visible);
+        }}
+        scrollEventThrottle={32}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
@@ -221,6 +232,11 @@ export default function AdminServicesScreen() {
           <AdminServiceVisibility refreshToken={refreshToken} />
         </View>
       </ScrollView>
+      <USGBackToTop
+        visible={backToTopVisible}
+        language={backToTopLanguage}
+        onPress={() => backToTopRef.current?.scrollTo({ y: 0, animated: true })}
+      />
     </SafeAreaView>
   );
 }

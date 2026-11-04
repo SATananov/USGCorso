@@ -13,6 +13,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '../auth/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
+import { useRef as useBackToTopRef, useState as useBackToTopState } from 'react';
+import USGBackToTop from '../components/USGBackToTop';
 import {
   getNotificationPreferences,
   updateNotificationPreferences,
@@ -30,6 +32,9 @@ const defaults = {
 };
 
 export default function NotificationSettingsScreen({ navigation }) {
+  const backToTopRef = useBackToTopRef(null);
+  const [backToTopVisible, setBackToTopVisible] = useBackToTopState(false);
+  const { language: backToTopLanguage } = useLanguage();
   const { session } = useAuth();
   const { language, t } = useLanguage();
   const { colors } = useTheme();
@@ -129,7 +134,13 @@ export default function NotificationSettingsScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        ref={backToTopRef}
+        onScroll={(event) => {
+          const visible = event.nativeEvent.contentOffset.y > 220;
+          setBackToTopVisible((current) => current === visible ? current : visible);
+        }}
+        scrollEventThrottle={32} contentContainerStyle={styles.content}>
         <Text style={styles.intro}>{t('settings.notificationsIntro')}</Text>
 
         {session?.user?.id ? (
@@ -193,6 +204,11 @@ export default function NotificationSettingsScreen({ navigation }) {
             : t('settings.notificationsLocalNote')}
         </Text>
       </ScrollView>
+      <USGBackToTop
+        visible={backToTopVisible}
+        language={backToTopLanguage}
+        onPress={() => backToTopRef.current?.scrollTo({ y: 0, animated: true })}
+      />
     </SafeAreaView>
   );
 }

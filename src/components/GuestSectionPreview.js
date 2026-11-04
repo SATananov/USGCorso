@@ -18,6 +18,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { radius, spacing } from '../styles/usgTheme';
 import { useTheme } from '../theme/ThemeContext';
 import USGScrollHint from './USGScrollHint';
+import USGBackToTop from './USGBackToTop';
 
 const copy = {
   bg: {
@@ -183,6 +184,7 @@ sectionKey,
   const insets = useSafeAreaInsets();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [showScrollHint, setShowScrollHint] = useState(true);
+  const [showBackToTop, setShowBackToTop] = useState(false);
   const languageCopy = copy[language] ?? copy.en;
   const section = languageCopy[sectionKey] ?? languageCopy.about;
 
@@ -196,6 +198,8 @@ sectionKey,
         ]}
         showsVerticalScrollIndicator={false}
         onScroll={(event) => {
+          const visible = event.nativeEvent.contentOffset.y > 220;
+          setShowBackToTop((current) => current === visible ? current : visible);
           if (event.nativeEvent.contentOffset.y > 24 && showScrollHint) {
             setShowScrollHint(false);
           }
@@ -239,6 +243,13 @@ sectionKey,
           </View>
         </View>
       </ScrollView>
+
+      <USGBackToTop
+        visible={showBackToTop}
+        language={language}
+        bottomOffset={76}
+        onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
+      />
 
       <USGScrollHint
         visible={showScrollHint}

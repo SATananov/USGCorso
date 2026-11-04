@@ -16,6 +16,8 @@ import AuthWelcomeCarousel from '../auth/AuthWelcomeCarousel';
 import { radius, spacing } from '../styles/usgTheme';
 import { useTheme } from '../theme/ThemeContext';
 import USGScrollHint from './USGScrollHint';
+import USGBackToTop from './USGBackToTop';
+import { useLanguage } from '../i18n/LanguageContext';
 
 export default function USGSectionScreen({
   kicker,
@@ -29,6 +31,8 @@ export default function USGSectionScreen({
   resetScrollOnFocus = false,
 }) {
   const scrollRef = useRef(null);
+  const [showBackToTop, setShowBackToTop] = useState(false);
+  const { language } = useLanguage();
   const [isHeroOpen, setIsHeroOpen] = useState(false);
   const [isScrollHintVisible, setIsScrollHintVisible] = useState(showScrollHint);
   const [carouselResetKey, setCarouselResetKey] = useState(0);
@@ -102,6 +106,8 @@ export default function USGSectionScreen({
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         onScroll={(event) => {
+          const visible = event.nativeEvent.contentOffset.y > 220;
+          setShowBackToTop((current) => current === visible ? current : visible);
           if (
             event.nativeEvent.contentOffset.y > 24 &&
             isScrollHintVisible
@@ -158,6 +164,11 @@ export default function USGSectionScreen({
         <Text style={styles.footer}>USG — Unico Suo Genere™</Text>
       </ScrollView>
 
+      <USGBackToTop
+        visible={showBackToTop}
+        language={language}
+        onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
+      />
       <USGScrollHint
         visible={showScrollHint && isScrollHintVisible}
         bottom={Math.max(insets.bottom, 16) + 8}

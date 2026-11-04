@@ -1,10 +1,11 @@
 import USGDialog from '../components/USGDialog';
 import { useState as useUSGDialogState } from 'react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Image,
   Linking,
   Pressable,
+  Keyboard,
   ScrollView,
   StyleSheet,
   Text,
@@ -22,6 +23,7 @@ import {
   getAdminSharedContentItemDetails,
 } from '../governance/contentGovernanceService';
 import { useLanguage } from '../i18n/LanguageContext';
+import USGBackToTop from '../components/USGBackToTop';
 import { useTheme } from '../theme/ThemeContext';
 import USGProgressBar from '../components/USGProgressBar';
 
@@ -186,6 +188,18 @@ export default function AdminContentDetailsScreen({ route, navigation }) {
 
   const { itemId, sectionKey } = route.params;
   const { language } = useLanguage();
+  const scrollRef = useRef(null);
+  const [showBackToTop, setShowBackToTop] = useState(false);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const shown = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
+    const hidden = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
+    return () => {
+      shown.remove();
+      hidden.remove();
+    };
+  }, []);
   const { colors } = useTheme();
   const labels = copy[language] ?? copy.en;
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -356,6 +370,12 @@ export default function AdminContentDetailsScreen({ route, navigation }) {
         <>
           <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView
+        ref={scrollRef}
+        onScroll={(event) => {
+          const visible = event.nativeEvent.contentOffset.y > 220;
+          setShowBackToTop((previous) => previous === visible ? previous : visible);
+        }}
+        scrollEventThrottle={32}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
@@ -568,6 +588,12 @@ export default function AdminContentDetailsScreen({ route, navigation }) {
           </View>
         </View>
       </ScrollView>
+      <USGBackToTop
+        visible={showBackToTop && !keyboardVisible && !usgDialog}
+        language={language}
+        bottomOffset={68}
+        onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
+      />
     </SafeAreaView>
           <USGDialog
           visible={Boolean(usgDialog)}

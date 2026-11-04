@@ -9,6 +9,7 @@ import {
   Text,
   TextInput,
   View,
+  Keyboard,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -22,6 +23,8 @@ import {
 } from '../governance/contentGovernanceService';
 import { uploadMyContentImage } from '../governance/userContentMediaService';
 import { useLanguage } from '../i18n/LanguageContext';
+import { useRef as useBackToTopRef, useState as useBackToTopState, useEffect as useBackToTopEffect } from 'react';
+import USGBackToTop from '../components/USGBackToTop';
 import { radius, spacing } from '../styles/usgTheme';
 import { useTheme } from '../theme/ThemeContext';
 import ScanTextButton from '../components/ScanTextButton';
@@ -182,6 +185,15 @@ const copy = {
 };
 
 export default function AddMaterialScreen({ navigation }) {
+  const backToTopRef = useBackToTopRef(null);
+  const [backToTopVisible, setBackToTopVisible] = useBackToTopState(false);
+  const { language: backToTopLanguage } = useLanguage();
+  const [backToTopKeyboardVisible, setBackToTopKeyboardVisible] = useBackToTopState(false);
+  useBackToTopEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', () => setBackToTopKeyboardVisible(true));
+    const hide = Keyboard.addListener('keyboardDidHide', () => setBackToTopKeyboardVisible(false));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
   const { session } = useAuth();
   const { language, t } = useLanguage();
   const { colors } = useTheme();
@@ -406,6 +418,12 @@ export default function AddMaterialScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView
+        ref={backToTopRef}
+        onScroll={(event) => {
+          const visible = event.nativeEvent.contentOffset.y > 220;
+          setBackToTopVisible((current) => current === visible ? current : visible);
+        }}
+        scrollEventThrottle={32}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
@@ -690,6 +708,12 @@ export default function AddMaterialScreen({ navigation }) {
           )}
         </Pressable>
       </ScrollView>
+      <USGBackToTop
+        visible={backToTopVisible && !backToTopKeyboardVisible}
+        language={backToTopLanguage}
+        bottomOffset={68}
+        onPress={() => backToTopRef.current?.scrollTo({ y: 0, animated: true })}
+      />
 
       <Modal
         animationType="fade"

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -12,6 +12,9 @@ import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useLanguage } from '../i18n/LanguageContext';
+import { useAuth } from '../auth/AuthContext';
+import { getMyRole } from '../admin/adminService';
+import USGBackToTop from '../components/USGBackToTop';
 import {
   getMyProfessionalProfile,
   saveMyProfessionalProfile,
@@ -152,6 +155,10 @@ function normalizeValue(value) {
 
 export default function MyProfessionalProfileScreen({ navigation }) {
   const { language } = useLanguage();
+  const { user } = useAuth();
+  const scrollRef = useRef(null);
+  const [showBackToTop, setShowBackToTop] = useState(false);
+  const [hasAccess, setHasAccess] = useState(false);
   const { colors } = useTheme();
   const labels = copy[language] ?? copy.en;
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -166,6 +173,22 @@ export default function MyProfessionalProfileScreen({ navigation }) {
     setLoading(true);
     setErrorText('');
     setMessage('');
+
+    if (!user?.id) {
+      setHasAccess(false);
+      setLoading(false);
+      return;
+    }
+
+    const roleResult = await getMyRole(user.id);
+    const allowed = !roleResult.error &&
+      ['professional', 'organization'].includes(roleResult.data?.role);
+
+    setHasAccess(allowed);
+    if (!allowed) {
+      setLoading(false);
+      return;
+    }
 
     const { data, error } = await getMyProfessionalProfile();
 
@@ -199,7 +222,7 @@ export default function MyProfessionalProfileScreen({ navigation }) {
     }
 
     setLoading(false);
-  }, [labels.loadError]);
+  }, [labels.loadError, user?.id]);
 
   useFocusEffect(
     useCallback(() => {
@@ -278,9 +301,26 @@ export default function MyProfessionalProfileScreen({ navigation }) {
     );
   }
 
+  if (!hasAccess) {
+    return (
+      <SafeAreaView style={styles.container} edges={['bottom']}>
+        <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
+          <Text style={styles.backText}>‹ {labels.back}</Text>
+        </Pressable>
+        <Text style={{ color: colors.text, margin: 20 }}>{labels.noAccess}</Text>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView
+        ref={scrollRef}
+        onScroll={(event) => {
+          const visible = event.nativeEvent.contentOffset.y > 220;
+          setShowBackToTop((current) => current === visible ? current : visible);
+        }}
+        scrollEventThrottle={32}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -426,6 +466,11 @@ export default function MyProfessionalProfileScreen({ navigation }) {
           </Pressable>
         </View>
       </ScrollView>
+      <USGBackToTop
+        visible={showBackToTop}
+        language={language}
+        onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
+      />
     </SafeAreaView>
   );
 }

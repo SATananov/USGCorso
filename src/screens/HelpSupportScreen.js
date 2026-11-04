@@ -3,10 +3,15 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useLanguage } from '../i18n/LanguageContext';
+import { useRef as useBackToTopRef, useState as useBackToTopState } from 'react';
+import USGBackToTop from '../components/USGBackToTop';
 import { radius, spacing } from '../styles/usgTheme';
 import { useTheme } from '../theme/ThemeContext';
 
 export default function HelpSupportScreen() {
+  const backToTopRef = useBackToTopRef(null);
+  const [backToTopVisible, setBackToTopVisible] = useBackToTopState(false);
+  const { language: backToTopLanguage } = useLanguage();
   const { t } = useLanguage();
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -19,7 +24,13 @@ export default function HelpSupportScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        ref={backToTopRef}
+        onScroll={(event) => {
+          const visible = event.nativeEvent.contentOffset.y > 220;
+          setBackToTopVisible((current) => current === visible ? current : visible);
+        }}
+        scrollEventThrottle={32} contentContainerStyle={styles.content}>
         <View style={styles.hero}>
           <Text style={styles.kicker}>USG CORSO</Text>
           <Text style={styles.title}>{t('settings.help')}</Text>
@@ -38,6 +49,12 @@ export default function HelpSupportScreen() {
           <Text style={styles.answer}>{t('settings.supportText')}</Text>
         </View>
       </ScrollView>
+      <USGBackToTop
+        visible={backToTopVisible}
+        language={backToTopLanguage}
+        bottomOffset={68}
+        onPress={() => backToTopRef.current?.scrollTo({ y: 0, animated: true })}
+      />
     </SafeAreaView>
   );
 }

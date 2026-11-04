@@ -1,9 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useAuth } from '../auth/AuthContext';
+import USGBackToTop from '../components/USGBackToTop';
 import { useLanguage } from '../i18n/LanguageContext';
+import { getMyMapPresence, setMyMapDiscovery } from '../places/mapPresenceService';
 import { radius, spacing } from '../styles/usgTheme';
 import { useTheme } from '../theme/ThemeContext';
 
@@ -15,27 +19,96 @@ const defaults = {
 };
 
 export default function PrivacySettingsScreen() {
-  const { t } = useLanguage();
+  const { user } = useAuth();
+  const { t, language } = useLanguage();
+  const scrollRef = useRef(null);
+  const [showBackToTop, setShowBackToTop] = useState(false);
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [preferences, setPreferences] = useState(defaults);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [errorText, setErrorText] = useState('');
 
-  useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY)
-      .then((saved) => {
-        if (saved) {
-          setPreferences({ ...defaults, ...JSON.parse(saved) });
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+
+      async function loadPreferences() {
+        setLoading(true);
+        setErrorText('');
+
+        try {
+          const [saved, presence] = await Promise.all([
+            AsyncStorage.getItem(STORAGE_KEY),
+            getMyMapPresence(user?.id),
+          ]);
+
+          if (!active) {
+            return;
+          }
+
+          if (presence.error) {
+            setErrorText(t('settings.privacyLoadError'));
+            return;
+          }
+
+          const local = saved ? JSON.parse(saved) : {};
+
+          setPreferences({
+            publicProfile: typeof local.publicProfile === 'boolean'
+              ? local.publicProfile
+              : defaults.publicProfile,
+            locationDiscovery: Boolean(presence.data?.discovery_allowed),
+          });
+        } catch {
+          if (active) {
+            setErrorText(t('settings.privacyLoadError'));
+          }
+        } finally {
+          if (active) {
+            setLoading(false);
+          }
         }
-      })
-      .catch((error) => console.warn('Privacy preferences restore failed:', error));
-  }, []);
+      }
 
-  function updatePreference(key, value) {
-    const next = { ...preferences, [key]: value };
-    setPreferences(next);
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next)).catch((error) =>
-      console.warn('Privacy preferences save failed:', error)
-    );
+      loadPreferences();
+
+      return () => {
+        active = false;
+      };
+    }, [user?.id, t])
+  );
+
+  async function updatePreference(key, value) {
+    if (loading || saving) {
+      return;
+    }
+
+    setErrorText('');
+    setSaving(true);
+
+    try {
+      if (key === 'locationDiscovery') {
+        const result = await setMyMapDiscovery(user?.id, value);
+
+        if (result.error) {
+          setErrorText(t('settings.privacySaveError'));
+          return;
+        }
+      } else {
+        await AsyncStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({ publicProfile: value })
+        );
+      }
+
+      setPreferences((current) => ({ ...current, [key]: value }));
+    } catch {
+      setErrorText(t('settings.privacySaveError'));
+    } finally {
+      setSaving(false);
+    }
   }
 
   const items = [
@@ -45,7 +118,15 @@ export default function PrivacySettingsScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        ref={scrollRef}
+        onScroll={(event) => {
+          const visible = event.nativeEvent.contentOffset.y > 220;
+          setShowBackToTop((current) => current === visible ? current : visible);
+        }}
+        scrollEventThrottle={32}
+        contentContainerStyle={styles.content}
+      >
         <Text style={styles.intro}>{t('settings.privacyIntro')}</Text>
 
         <View style={styles.card}>
@@ -59,6 +140,7 @@ export default function PrivacySettingsScreen() {
                 </View>
                 <Switch
                   value={preferences[key]}
+                  disabled={loading || saving || (key === 'locationDiscovery' && !user?.id)}
                   onValueChange={(value) => updatePreference(key, value)}
                   trackColor={{
                     false: colors.border,
@@ -71,8 +153,15 @@ export default function PrivacySettingsScreen() {
           ))}
         </View>
 
+        {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
         <Text style={styles.note}>{t('settings.privacyLocalNote')}</Text>
       </ScrollView>
+      <USGBackToTop
+        visible={showBackToTop}
+        language={language}
+        bottomOffset={68}
+        onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
+      />
     </SafeAreaView>
   );
 }
@@ -128,6 +217,12 @@ function createStyles(colors) {
       color: colors.textMuted,
       fontSize: 11,
       lineHeight: 17,
+      marginTop: 12,
+    },
+    error: {
+      color: colors.error || '#f19c9c',
+      fontSize: 12,
+      lineHeight: 18,
       marginTop: 12,
     },
   });

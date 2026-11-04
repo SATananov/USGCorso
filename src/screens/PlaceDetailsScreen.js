@@ -1,8 +1,9 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Linking,
   Pressable,
+  Keyboard,
   ScrollView,
   StyleSheet,
   Text,
@@ -16,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { getMyRole } from '../admin/adminService';
 import { useAuth } from '../auth/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
+import USGBackToTop from '../components/USGBackToTop';
 import { placeCategories, placeCopy } from '../places/placeCopy';
 import PlacePhotoSection from '../places/PlacePhotoSection';
 import {
@@ -36,6 +38,18 @@ import { useTheme } from '../theme/ThemeContext';
 export default function PlaceDetailsScreen({ route }) {
   const { placeId } = route.params ?? {};
   const { language } = useLanguage();
+  const scrollRef = useRef(null);
+  const [showBackToTop, setShowBackToTop] = useState(false);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const shown = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
+    const hidden = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
+    return () => {
+      shown.remove();
+      hidden.remove();
+    };
+  }, []);
   const { user } = useAuth();
   const { colors } = useTheme();
   const copy = placeCopy[language] ?? placeCopy.en;
@@ -389,7 +403,15 @@ export default function PlaceDetailsScreen({ route }) {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        ref={scrollRef}
+        onScroll={(event) => {
+          const visible = event.nativeEvent.contentOffset.y > 220;
+          setShowBackToTop((previous) => previous === visible ? previous : visible);
+        }}
+        scrollEventThrottle={32}
+        contentContainerStyle={styles.content}
+      >
         <Text style={styles.kicker}>{copy.categories[place.category]}</Text>
         <Text style={styles.title}>{place.name}</Text>
 
@@ -801,6 +823,12 @@ export default function PlaceDetailsScreen({ route }) {
           </View>
         </View>
       </ScrollView>
+      <USGBackToTop
+        visible={showBackToTop && !keyboardVisible}
+        language={language}
+        bottomOffset={68}
+        onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
+      />
     </SafeAreaView>
   );
 }

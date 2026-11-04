@@ -1,4 +1,5 @@
 import USGDialog from '../components/USGDialog';
+import USGBackToTop from '../components/USGBackToTop';
 import { useState as useUSGDialogState } from 'react';
 ﻿import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import {
@@ -189,6 +190,7 @@ route, navigation }) {
 
 
   const scrollRef = useRef(null);
+  const [showBackToTop, setShowBackToTop] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -640,6 +642,11 @@ route, navigation }) {
       >
         <ScrollView
         ref={scrollRef}
+          onScroll={(event) => {
+            const visible = event.nativeEvent.contentOffset.y > 220;
+            setShowBackToTop((current) => current === visible ? current : visible);
+          }}
+          scrollEventThrottle={32}
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
@@ -739,6 +746,11 @@ route, navigation }) {
           ) : null}
         </ScrollView>
       </KeyboardAvoidingView>
+      <USGBackToTop
+        visible={showBackToTop}
+        language={language}
+        onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
+      />
     </SafeAreaView>
           <USGDialog
           visible={Boolean(usgDialog)}

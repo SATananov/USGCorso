@@ -11,6 +11,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '../auth/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
+import { useRef as useBackToTopRef, useState as useBackToTopState } from 'react';
+import USGBackToTop from '../components/USGBackToTop';
 import { useTheme } from '../theme/ThemeContext';
 import {
   getAdminInboxData,
@@ -81,6 +83,9 @@ function MetricCard({ label, value, styles, highlight = false }) {
 }
 
 export default function AdminInboxScreen({ navigation }) {
+  const backToTopRef = useBackToTopRef(null);
+  const [backToTopVisible, setBackToTopVisible] = useBackToTopState(false);
+  const { language: backToTopLanguage } = useLanguage();
   const { user } = useAuth();
   const { language } = useLanguage();
   const { colors } = useTheme();
@@ -129,6 +134,12 @@ export default function AdminInboxScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView
+        ref={backToTopRef}
+        onScroll={(event) => {
+          const visible = event.nativeEvent.contentOffset.y > 220;
+          setBackToTopVisible((current) => current === visible ? current : visible);
+        }}
+        scrollEventThrottle={32}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
@@ -213,6 +224,11 @@ export default function AdminInboxScreen({ navigation }) {
           <Text style={styles.adminButtonText}>{labels.openAdmin}</Text>
         </Pressable>
       </ScrollView>
+      <USGBackToTop
+        visible={backToTopVisible}
+        language={backToTopLanguage}
+        onPress={() => backToTopRef.current?.scrollTo({ y: 0, animated: true })}
+      />
     </SafeAreaView>
   );
 }

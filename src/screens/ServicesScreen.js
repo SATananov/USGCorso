@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
+  Image,
   Pressable,
   StyleSheet,
   Text,
@@ -32,6 +33,7 @@ const copy = {
     privateTitle: 'Privacy by default',
     privateText: 'Professional users can complete their own profile and contact data. Private data stays visible only to the profile owner and USG administration unless an administrator explicitly approves a field for public display.',
     accessTitle: 'Professional access',
+    manageProfile: 'MY PROFESSIONAL PROFILE',
     guestText: 'Sign in to apply for professional or organization access.',
     applyText: 'Only approved professional and organization accounts can create and manage profiles in this section.',
     type: 'Account type',
@@ -57,6 +59,7 @@ const copy = {
     privateTitle: 'Поверителност по подразбиране',
     privateText: 'Професионалистите могат да попълват своя профил и контактни данни. Личната информация остава видима само за собственика на профила и администрацията на USG, освен ако администратор изрично не разреши конкретно поле за публично показване.',
     accessTitle: 'Професионален достъп',
+    manageProfile: 'МОЯТ ПРОФЕСИОНАЛЕН ПРОФИЛ',
     guestText: 'Влезте в профила си, за да кандидатствате като професионалист или организация.',
     applyText: 'Само одобрени професионални и организационни акаунти могат да създават и управляват профили в тази секция.',
     type: 'Тип профил',
@@ -82,6 +85,7 @@ const copy = {
     privateTitle: 'Privacy predefinita',
     privateText: "Gli utenti professionali possono completare il proprio profilo e i dati di contatto. I dati privati restano visibili solo al proprietario del profilo e all'amministrazione USG, salvo approvazione esplicita di un campo per la visualizzazione pubblica.",
     accessTitle: 'Accesso professionale',
+    manageProfile: 'IL MIO PROFILO PROFESSIONALE',
     guestText: 'Accedi per candidarti come professionista o organizzazione.',
     applyText: 'Solo gli account professionali e organizzativi approvati possono creare e gestire profili in questa sezione.',
     type: 'Tipo di account',
@@ -384,6 +388,35 @@ export default function ServicesScreen({ navigation, route }) {
         <Text style={styles.noticeTitle}>{labels.privateTitle}</Text>
         <Text style={styles.noticeText}>{labels.privateText}</Text>
       </View>
+
+      {(role === 'professional' || role === 'organization') ? (
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => navigation.getParent()?.navigate('MyProfessionalProfile')}
+          style={{
+            marginHorizontal: 16,
+            marginTop: 12,
+            marginBottom: 14,
+            borderRadius: 18,
+            borderWidth: 1,
+            borderColor: colors.gold,
+            backgroundColor: colors.activeSurface,
+            flexDirection: 'row',
+            alignItems: 'center',
+            padding: 14,
+            gap: 12,
+          }}
+        >
+          <Image
+            source={require('../../assets/icons/services.png')}
+            style={{ width: 36, height: 36, borderRadius: 18 }}
+          />
+          <Text style={{ color: colors.gold, fontSize: 14, fontWeight: '800', flex: 1 }}>
+            {labels.manageProfile}
+          </Text>
+          <Text style={{ color: colors.gold, fontSize: 22 }}>›</Text>
+        </Pressable>
+      ) : null}
 
       {showApplicationArea ? (
         <View style={styles.accessCard}>

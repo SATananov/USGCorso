@@ -16,6 +16,7 @@ import { useAuth } from '../auth/AuthContext';
 import { dogCopy } from '../dogs/dogCopy';
 import { getMyDogs } from '../dogs/dogService';
 import { useLanguage } from '../i18n/LanguageContext';
+import USGBackToTop from '../components/USGBackToTop';
 import { profileCopy } from '../profile/profileCopy';
 import { getMyProfile, isLocalProfileReady } from '../profile/profileService';
 import { useTheme } from '../theme/ThemeContext';
@@ -37,6 +38,7 @@ const sectionConfig = [
 export default function HomeScreen({
 navigation }) {
   const scrollRef = useRef(null);
+  const [showBackToTop, setShowBackToTop] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -167,7 +169,14 @@ navigation }) {
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView
-        ref={scrollRef} contentContainerStyle={styles.content}>
+        ref={scrollRef}
+        onScroll={(event) => {
+          const visible = event.nativeEvent.contentOffset.y > 220;
+          setShowBackToTop((current) => current === visible ? current : visible);
+        }}
+        scrollEventThrottle={32}
+        contentContainerStyle={styles.content}
+      >
         <Pressable style={styles.heroBox} onPress={() => setShowHero(true)}>
           <Image
             source={require('../../assets/ecosystem-hero.png')}
@@ -351,6 +360,11 @@ navigation }) {
           <Text style={styles.footerRights}>{t('home.rights')}</Text>
         </View>
       </ScrollView>
+      <USGBackToTop
+        visible={showBackToTop}
+        language={language}
+        onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
+      />
 
       <Modal visible={showHero} transparent animationType="fade">
         <View style={styles.modalBackground}>

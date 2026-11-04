@@ -18,6 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '../auth/AuthContext';
 import USGInteractiveHeroImage from '../components/USGInteractiveHeroImage';
+import USGBackToTop from '../components/USGBackToTop';
 import { useLanguage } from '../i18n/LanguageContext';
 import { getCountryPosition } from '../profile/geoService';
 import { getAvatarPreset } from '../profile/avatarPresets';
@@ -1016,6 +1017,10 @@ const USG_MAP_STYLE = [
 export default function CorsoFriendlyScreen({
 navigation }) {
   const scrollRef = useRef(null);
+  const [showBackToTop, setShowBackToTop] = useState(false);
+  const modeRowBottomRef = useRef(0);
+  const filterBottomRef = useRef(0);
+  const [viewportHeight, setViewportHeight] = useState(0);
 
   useFocusEffect(
     useCallback(() => {
@@ -1346,6 +1351,13 @@ navigation }) {
       } else {
         setUserLocation(currentLocation);
         setMapSharingEnabled(true);
+        requestAnimationFrame(() => {
+          mapRef.current?.animateToRegion({
+            ...currentLocation,
+            latitudeDelta: 0.018,
+            longitudeDelta: 0.018,
+          }, 500);
+        });
 
         const visibleUsersResult = await getVisibleMapUsers();
 
@@ -1368,6 +1380,12 @@ navigation }) {
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView
         ref={scrollRef}
+        onScroll={(event) => {
+          const shouldShow = event.nativeEvent.contentOffset.y > 220;
+          setShowBackToTop((current) => current === shouldShow ? current : shouldShow);
+        }}
+        scrollEventThrottle={32}
+        onLayout={(event) => setViewportHeight(event.nativeEvent.layout.height)}
         contentContainerStyle={styles.screenScrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
@@ -1389,7 +1407,12 @@ navigation }) {
         <Text style={styles.subtitle}>{copy.subtitle}</Text>
       </View>
 
-      <View style={styles.modeRow}>
+      <View
+        style={styles.modeRow}
+        onLayout={(event) => {
+          modeRowBottomRef.current = event.nativeEvent.layout.y + event.nativeEvent.layout.height;
+        }}
+      >
         {[
           ['map', copy.map],
           ['list', copy.list],
@@ -1398,7 +1421,15 @@ navigation }) {
         ].map(([value, label]) => (
           <Pressable
             key={value}
-            onPress={() => setMode(value)}
+            onPress={() => {
+              setMode(value);
+              requestAnimationFrame(() => {
+                scrollRef.current?.scrollTo({
+                  y: Math.max(0, value === 'add' ? modeRowBottomRef.current : filterBottomRef.current),
+                  animated: true,
+                });
+              });
+            }}
             style={[styles.modeButton, mode === value && styles.modeButtonActive]}
           >
             <Text
@@ -1414,7 +1445,12 @@ navigation }) {
       </View>
 
       {mode !== 'add' ? (
-        <View style={styles.filterAccordion}>
+        <View
+          style={styles.filterAccordion}
+          onLayout={(event) => {
+            filterBottomRef.current = event.nativeEvent.layout.y + event.nativeEvent.layout.height;
+          }}
+        >
           <Pressable
             onPress={() => setFiltersOpen((current) => !current)}
             style={styles.filterSummary}
@@ -1498,7 +1534,9 @@ navigation }) {
                   mapSharingEnabled && styles.presenceControlTextActive,
                 ]}
               >
-                {mapSharingEnabled
+                {presenceSaving ? (
+                  <ActivityIndicator color={mapSharingEnabled ? '#111111' : '#d4af37'} size="small" />
+                ) : mapSharingEnabled
                   ? copy.mapPresence.disable
                   : copy.mapPresence.enable}
               </Text>
@@ -1746,7 +1784,7 @@ navigation }) {
       ) : null}
 
       {mode === 'list' || mode === 'favorites' ? (
-        <View style={styles.listContent}>
+        <View style={[styles.listContent, { minHeight: viewportHeight }]}>
           {loading ? (
             <Text style={styles.emptyText}>{copy.loading}</Text>
           ) : filteredPlaces.length === 0 ? (
@@ -1778,6 +1816,12 @@ navigation }) {
         />
       ) : null}
           </ScrollView>
+      <USGBackToTop
+        dock
+        visible={showBackToTop}
+        language={language}
+        onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
+      />
     </SafeAreaView>
   );
 }
@@ -1925,7 +1969,7 @@ function createStyles(colors) {
       color: colors.gold,
     },
     mapWrap: {
-      height: 520,
+      height: 565,
       marginTop: 0,
       marginHorizontal: 0,
       marginBottom: 0,

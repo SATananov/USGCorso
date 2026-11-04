@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 
 import { useLanguage } from '../i18n/LanguageContext';
+import USGBackToTop from './USGBackToTop';
 import {
   getServiceLabel,
   serviceCategoryGroups,
@@ -119,6 +120,8 @@ export default function ServicePublicProfileDetails({
   onBack,
 }) {
   const { language } = useLanguage();
+  const scrollRef = useRef(null);
+  const [showBackToTop, setShowBackToTop] = useState(false);
   const labels = copy[language] || copy.en;
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -165,7 +168,14 @@ export default function ServicePublicProfileDetails({
   const isLongName = (profile?.display_name?.length ?? 0) > 22;
 
   return (
+    <View style={{ flex: 1 }}>
     <ScrollView
+      ref={scrollRef}
+      onScroll={(event) => {
+        const visible = event.nativeEvent.contentOffset.y > 220;
+        setShowBackToTop((current) => current === visible ? current : visible);
+      }}
+      scrollEventThrottle={32}
       style={styles.screen}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
@@ -325,6 +335,13 @@ export default function ServicePublicProfileDetails({
         </>
       ) : null}
     </ScrollView>
+      <USGBackToTop
+        visible={showBackToTop}
+        language={language}
+        bottomOffset={68}
+        onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
+      />
+    </View>
   );
 }
 

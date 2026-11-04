@@ -13,6 +13,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAppControls } from '../app/AppControlContext';
 import { useLanguage } from '../i18n/LanguageContext';
+import { useRef as useBackToTopRef, useState as useBackToTopState } from 'react';
+import USGBackToTop from '../components/USGBackToTop';
 import { radius, spacing } from '../styles/usgTheme';
 import { useTheme } from '../theme/ThemeContext';
 
@@ -30,6 +32,9 @@ const RESET_KEYS = [
 ];
 
 export default function SettingsScreen({ navigation }) {
+  const backToTopRef = useBackToTopRef(null);
+  const [backToTopVisible, setBackToTopVisible] = useBackToTopState(false);
+  const { language: backToTopLanguage } = useLanguage();
   const { language, setLanguage, t } = useLanguage();
   const { themeName, setThemeName, colors } = useTheme();
   const { replayIntro } = useAppControls();
@@ -130,7 +135,13 @@ function confirmReset() {
     (
         <>
           <SafeAreaView style={styles.container} edges={['bottom']}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        ref={backToTopRef}
+        onScroll={(event) => {
+          const visible = event.nativeEvent.contentOffset.y > 220;
+          setBackToTopVisible((current) => current === visible ? current : visible);
+        }}
+        scrollEventThrottle={32} contentContainerStyle={styles.content}>
         <View style={styles.headerCard}>
           <Text style={styles.kicker}>USG CORSO</Text>
           <Text style={styles.title}>{t('settings.title')}</Text>
@@ -275,6 +286,11 @@ function confirmReset() {
 
         <Text style={styles.footer}>USG — Unico Suo Genere™</Text>
       </ScrollView>
+      <USGBackToTop
+        visible={backToTopVisible}
+        language={backToTopLanguage}
+        onPress={() => backToTopRef.current?.scrollTo({ y: 0, animated: true })}
+      />
     </SafeAreaView>
           <USGDialog
           visible={Boolean(usgDialog)}

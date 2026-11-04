@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -12,6 +12,7 @@ import {
 } from 'react-native-safe-area-context';
 
 import USGScrollHint from '../components/USGScrollHint';
+import USGBackToTop from '../components/USGBackToTop';
 import { useLanguage } from '../i18n/LanguageContext';
 import { radius, spacing } from '../styles/usgTheme';
 import { useTheme } from '../theme/ThemeContext';
@@ -29,16 +30,21 @@ export default function AuthAboutUSGScreen({
   const copy = authAboutUSGCopy[language] ?? authAboutUSGCopy.en;
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [showScrollHint, setShowScrollHint] = useState(true);
+  const scrollRef = useRef(null);
+  const [showBackToTop, setShowBackToTop] = useState(false);
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={[
           styles.content,
           { paddingBottom: Math.max(insets.bottom, 16) + 28 },
         ]}
         showsVerticalScrollIndicator={false}
         onScroll={(event) => {
+          const visible = event.nativeEvent.contentOffset.y > 220;
+          setShowBackToTop((current) => current === visible ? current : visible);
           if (event.nativeEvent.contentOffset.y > 24 && showScrollHint) {
             setShowScrollHint(false);
           }
@@ -82,6 +88,13 @@ export default function AuthAboutUSGScreen({
           </View>
         </View>
       </ScrollView>
+
+      <USGBackToTop
+        visible={showBackToTop}
+        language={language}
+        bottomOffset={76}
+        onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
+      />
 
       <USGScrollHint
         visible={showScrollHint}

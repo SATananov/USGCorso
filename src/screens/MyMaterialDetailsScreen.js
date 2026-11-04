@@ -8,6 +8,7 @@ Pressable,
   TextInput,
   View,
   Modal,
+  Keyboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -16,6 +17,8 @@ import {
   updateMyContentItem,
 } from '../governance/contentGovernanceService';
 import { useLanguage } from '../i18n/LanguageContext';
+import { useRef as useBackToTopRef, useState as useBackToTopState, useEffect as useBackToTopEffect } from 'react';
+import USGBackToTop from '../components/USGBackToTop';
 import { radius, spacing } from '../styles/usgTheme';
 import { useTheme } from '../theme/ThemeContext';
 
@@ -110,6 +113,15 @@ const deleteCopy = {
 };
 
 export default function MyMaterialDetailsScreen({ route, navigation }) {
+  const backToTopRef = useBackToTopRef(null);
+  const [backToTopVisible, setBackToTopVisible] = useBackToTopState(false);
+  const { language: backToTopLanguage } = useLanguage();
+  const [backToTopKeyboardVisible, setBackToTopKeyboardVisible] = useBackToTopState(false);
+  useBackToTopEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', () => setBackToTopKeyboardVisible(true));
+    const hide = Keyboard.addListener('keyboardDidHide', () => setBackToTopKeyboardVisible(false));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
   const item = route.params?.item;
   const { language, t } = useLanguage();
   const { colors } = useTheme();
@@ -228,7 +240,13 @@ export default function MyMaterialDetailsScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        ref={backToTopRef}
+        onScroll={(event) => {
+          const visible = event.nativeEvent.contentOffset.y > 220;
+          setBackToTopVisible((current) => current === visible ? current : visible);
+        }}
+        scrollEventThrottle={32} contentContainerStyle={styles.content}>
         <View style={styles.hero}>
           <Text style={styles.kicker}>
             {t(`myMaterials.sections.${item.section_key}`)}
@@ -385,6 +403,12 @@ export default function MyMaterialDetailsScreen({ route, navigation }) {
           )}
         </Pressable>
       </ScrollView>
+      <USGBackToTop
+        visible={backToTopVisible && !backToTopKeyboardVisible}
+        language={backToTopLanguage}
+        bottomOffset={68}
+        onPress={() => backToTopRef.current?.scrollTo({ y: 0, animated: true })}
+      />
       <Modal
         animationType="fade"
         transparent

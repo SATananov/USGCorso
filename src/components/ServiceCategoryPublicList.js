@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useLanguage } from '../i18n/LanguageContext';
 import { getServiceLabel, serviceCategoryGroups } from '../services/serviceCategories';
+import USGBackToTop from './USGBackToTop';
 import { getPublicProfessionalProfiles } from '../services/professionalProfileService';
 
 const copy = {
@@ -118,6 +119,7 @@ export default function ServiceCategoryPublicList({
   const [errorText, setErrorText] = useState('');
   const [heroOpen, setHeroOpen] = useState(false);
   const scrollRef = useRef(null);
+  const [showBackToTop, setShowBackToTop] = useState(false);
   const nextCategoryKey = getNextCategoryKey(categoryKey);
 
   const loadProfiles = useCallback(async () => {
@@ -155,8 +157,14 @@ export default function ServiceCategoryPublicList({
 
   return (
     <>
+      <View style={{ flex: 1 }}>
       <ScrollView
         ref={scrollRef}
+        onScroll={(event) => {
+          const visible = event.nativeEvent.contentOffset.y > 220;
+          setShowBackToTop((current) => current === visible ? current : visible);
+        }}
+        scrollEventThrottle={32}
         style={styles.screen}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -242,6 +250,13 @@ export default function ServiceCategoryPublicList({
           ))
         )}
       </ScrollView>
+      <USGBackToTop
+        visible={showBackToTop && !heroOpen}
+        language={language}
+        bottomOffset={68}
+        onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
+      />
+      </View>
 
       <Modal visible={heroOpen} transparent animationType="fade">
         <View style={styles.modalRoot}>

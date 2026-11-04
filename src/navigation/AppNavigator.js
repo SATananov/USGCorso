@@ -174,11 +174,6 @@ function MainTabs() {
       <Tab.Screen name="Knowledge" component={KnowledgeScreen} options={{ tabBarLabel: t('nav.knowledge') }} />
       <Tab.Screen name="Community" component={session ? CommunityScreen : GuestCommunityScreen} options={{ tabBarLabel: t('nav.community') }} />
       <Tab.Screen name="Services" component={session ? ServicesScreen : GuestServicesScreen} options={{ tabBarLabel: t('nav.services') }} />
-      <Stack.Screen
-        name="MyProfessionalProfile"
-        component={MyProfessionalProfileScreen}
-        options={{ headerShown: false }}
-      />
       <Tab.Screen name="Events" component={session ? EventsScreen : GuestEventsScreen} options={{ tabBarLabel: t('nav.events') }} />
       <Tab.Screen name="Corso Match" component={session ? CorsoMatchScreen : GuestCorsoMatchScreen} options={{ tabBarLabel: t('nav.corsoMatch') }} />
       <Tab.Screen name="About" component={session ? AboutScreen : GuestAboutScreen} options={{ tabBarLabel: t('nav.about') }} />
@@ -213,6 +208,11 @@ export default function AppNavigator() {
       <Stack.Screen
         name="Main"
         component={MainTabs}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="MyProfessionalProfile"
+        component={MyProfessionalProfileScreen}
         options={{ headerShown: false }}
       />
       <Stack.Screen
