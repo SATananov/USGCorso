@@ -105,6 +105,11 @@ navigation }) {
       return;
     }
 
+    if (sectionId === 'myCorso' && itemIndex === 1 && user) {
+      navigation.getParent()?.navigate('MyCorsoBehavior');
+      return;
+    }
+
     if (sectionId === 'knowledge') {
       const categoryKey = KNOWLEDGE_CATEGORY_KEYS[itemIndex];
 

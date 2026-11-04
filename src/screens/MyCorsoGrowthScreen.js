@@ -14,6 +14,7 @@ import { useTheme } from '../theme/ThemeContext';
 
 const copy = {
   bg: {
+    behaviorLink: 'ПОВЕДЕНИЕ',
     title: 'РАСТЕЖ И ГРИЖИ', careLink: 'ХРАНЕНЕ И ЕЖЕДНЕВНИ ГРИЖИ', intro: 'Лична история на измерванията за твоето Кане Корсо.',
     select: 'Избери куче', noDogs: 'Първо добави Кане Корсо в „Моето Корсо“.', addDog: 'ДОБАВИ КОРСО',
     measurement: 'НОВО ИЗМЕРВАНЕ', date: 'Дата (ГГГГ-ММ-ДД)', weight: 'Тегло (кг)',
@@ -38,6 +39,7 @@ const copy = {
     stageChart: 'ДИАГРАМА', stageTable: 'ТАБЛИЦА', stageRecords: 'ЗАПИСИ', stageMonth: 'МЕСЕЦИ', stageMeasured: 'РЕАЛНО ТЕГЛО (КГ)', stagePublished: 'ПУБЛИКУВАНА СРЕДНА (КГ)', stageNoData: 'Няма измервания за този етап.', stageAge: 'ДАТА', stageAdultNote: 'FCI №343: размерите на възрастните Cane Corso са породен ориентир, а не медицинска норма.', stageMale: 'Мъжко: 45–50 кг, 64–68 см при холката (±2 см).', stageFemale: 'Женско: 40–45 кг, 60–64 см при холката (±2 см).', stageNoBirth: 'Посочи дата на раждане в профила на кучето, за да определим етапа на измерванията.',
   },
   en: {
+    behaviorLink: 'BEHAVIOR',
     title: 'GROWTH & CARE', careLink: 'FEEDING & DAILY CARE', intro: 'A private record of measurements for your Cane Corso.',
     select: 'Choose a dog', noDogs: 'Add a Cane Corso in My Corso first.', addDog: 'ADD CORSO',
     measurement: 'NEW MEASUREMENT', date: 'Date (YYYY-MM-DD)', weight: 'Weight (kg)',
@@ -62,6 +64,7 @@ const copy = {
     stageChart: 'CHART', stageTable: 'TABLE', stageRecords: 'RECORDS', stageMonth: 'MONTHS', stageMeasured: 'ACTUAL WEIGHT (KG)', stagePublished: 'PUBLISHED MEAN (KG)', stageNoData: 'No measurements for this stage.', stageAge: 'DATE', stageAdultNote: 'FCI №343 adult conformation is a breed reference, not a medical target.', stageMale: 'Male: 45–50 kg, 64–68 cm at the withers (±2 cm).', stageFemale: 'Female: 40–45 kg, 60–64 cm at the withers (±2 cm).', stageNoBirth: 'Add a date of birth to the dog profile to place measurements by life stage.',
   },
   it: {
+    behaviorLink: 'COMPORTAMENTO',
     title: 'CRESCITA E CURA', careLink: 'ALIMENTAZIONE E CURE QUOTIDIANE', intro: 'Uno storico privato delle misurazioni del tuo Cane Corso.',
     select: 'Seleziona un cane', noDogs: 'Aggiungi prima un Cane Corso in My Corso.', addDog: 'AGGIUNGI CORSO',
     measurement: 'NUOVA MISURAZIONE', date: 'Data (AAAA-MM-GG)', weight: 'Peso (kg)',
@@ -362,6 +365,9 @@ export default function MyCorsoGrowthScreen({ navigation }) {
               </View>
             </View>
 
+            <Pressable accessibilityRole="button" style={styles.outline} onPress={() => navigation.navigate('MyCorsoBehavior')}>
+              <Text style={styles.outlineText}>{labels.behaviorLink}</Text>
+            </Pressable>
             {stageTab === 'chart' ? (
               shownStage === 'puppy' ? (
                 <USGGrowthComparisonChart dog={activeDog} history={history} language={language} display="chart" />
