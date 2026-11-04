@@ -10,6 +10,7 @@ import { getAvatarPreset } from '../profile/avatarPresets';
 import { getMyProfile } from '../profile/profileService';
 import { useTheme } from '../theme/ThemeContext';
 import USGHeaderPanels from './USGHeaderPanels';
+import USGHomeButton from './USGHomeButton';
 import { consumeHeaderPanel } from '../app/headerPanelRequest';
 
 export default function USGGlobalHeader({ navigation, route, title }) {
@@ -149,6 +150,7 @@ export default function USGGlobalHeader({ navigation, route, title }) {
         ]}
       >
         <View style={styles.header}>
+          <View style={styles.leadingActions}>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t('settings.title')}
@@ -161,6 +163,13 @@ export default function USGGlobalHeader({ navigation, route, title }) {
           >
             <Text style={styles.settingsIcon}>⚙</Text>
           </Pressable>
+          {route?.name !== 'Home' ? (
+            <USGHomeButton
+              label={t('nav.home')}
+              onPress={() => navigation.navigate('Home')}
+            />
+          ) : null}
+          </View>
 
           <View style={styles.center}>
             <Text style={styles.brand}>USG CORSO</Text>
@@ -238,6 +247,11 @@ function createStyles(colors) {
       alignItems: 'center',
       paddingHorizontal: 14,
       paddingBottom: 8,
+    },
+    leadingActions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
     },
     controlButton: {
       width: 42,

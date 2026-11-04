@@ -22,6 +22,7 @@ import HomeScreen from '../screens/HomeScreen';
 import KnowledgeScreen from '../screens/KnowledgeScreen';
 import KnowledgePublicDetailsScreen from '../screens/KnowledgePublicDetailsScreen';
 import MyCorsoScreen from '../screens/MyCorsoScreen';
+import MyCorsoGrowthScreen from '../screens/MyCorsoGrowthScreen';
 import PlaceDetailsScreen from '../screens/PlaceDetailsScreen';
 import ServicesScreen from '../screens/ServicesScreen';
 import MyProfessionalProfileScreen from '../screens/MyProfessionalProfileScreen';
@@ -37,6 +38,7 @@ import LegalScreen from '../screens/LegalScreen';
 import HelpSupportScreen from '../screens/HelpSupportScreen';
 import { useLanguage } from '../i18n/LanguageContext';
 import USGBackButton from '../components/USGBackButton';
+import USGHomeButton from '../components/USGHomeButton';
 import USGGlobalHeader from '../components/USGGlobalHeader';
 import { useTheme } from '../theme/ThemeContext';
 
@@ -203,12 +205,23 @@ export default function AppNavigator() {
         headerLeft: () => (
           <USGBackButton onPress={() => navigation.goBack()} />
         ),
+        headerRight: () => (
+          <USGHomeButton
+            label={t('nav.home')}
+            onPress={() => navigation.navigate('Main', { screen: 'Home' })}
+          />
+        ),
       })}
     >
       <Stack.Screen
         name="Main"
         component={MainTabs}
         options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="MyCorsoGrowth"
+        component={MyCorsoGrowthScreen}
+        options={{ title: t('nav.myCorso') }}
       />
       <Stack.Screen
         name="MyProfessionalProfile"

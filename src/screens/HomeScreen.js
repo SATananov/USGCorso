@@ -100,6 +100,11 @@ navigation }) {
   }
 
   function openItem(item, sectionId, itemIndex) {
+    if (sectionId === 'myCorso' && itemIndex === 0 && user) {
+      navigation.getParent()?.navigate('MyCorsoGrowth');
+      return;
+    }
+
     if (sectionId === 'knowledge') {
       const categoryKey = KNOWLEDGE_CATEGORY_KEYS[itemIndex];
 
