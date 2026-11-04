@@ -67,3 +67,10 @@ export function getDogAchievements(userId, dogId) {
     .eq('owner_id', userId).eq('dog_id', dogId)
     .order('unlocked_at', { ascending: false });
 }
+
+export function getArenaProgressSnapshot(dogId) {
+  return supabase.rpc('usg_arena_progress_snapshot', { p_dog_id: dogId }).then(result => ({
+    data: result.data?.[0] ?? null,
+    error: result.error,
+  }));
+}

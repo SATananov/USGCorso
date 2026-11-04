@@ -11,8 +11,8 @@ import { getDogPhotoUrl } from '../dogs/dogPhotoService';
 import { getMyProfile } from '../profile/profileService';
 import {
   createPersonalChallenge, getChallengeCatalog, getDogActivities,
-  getDogAchievements, getDogChallenges, getDogPointEvents,
-  getDogTimeline, getOwnerPointEvents, joinChallenge, recordActivity,
+  getArenaProgressSnapshot, getDogAchievements, getDogChallenges,
+  getDogTimeline, joinChallenge, recordActivity,
 } from '../challenges/challengeService';
 
 const dictionary = {
@@ -32,6 +32,7 @@ const dictionary = {
     invalidActivity: 'Въведи валидна продължителност от 5 до 120 минути (за игра/тренировка минимум 10). За разходка въведи от 0,10 до 5 км.',
     invalidGoal: 'Въведи име до 80 знака и цел от 1 до 30.', daily: 'Всяка категория се отчита веднъж дневно.',
     first_activity: 'Първа активност', first_challenge: 'Първа завършена мисия', challenge_completed: 'Мисия завършена',
+    progressActivities: 'ДЕЙНОСТИ', progressMissions: 'МИСИИ', progressBadges: 'ЗНАЧКИ',
     walk: 'РАЗХОДКА', play: 'ИГРА', training: 'ОБУЧЕНИЕ', scent: 'ОБОНЯНИЕ', social: 'СОЦИАЛИЗАЦИЯ',
     'first-three-walks': '3 разходки', 'three-play-sessions': '3 игри',
     'three-training-sessions': '3 тренировки', 'three-scent-games': '3 игри с обоняние',
@@ -53,6 +54,7 @@ const dictionary = {
     invalidActivity: 'Enter 5–120 minutes (at least 10 for non-walks). For a walk enter 0.10–5 km.',
     invalidGoal: 'Enter a name up to 80 characters and a target of 1–30.', daily: 'Each activity type can be recorded once per day.',
     first_activity: 'First activity', first_challenge: 'First completed mission', challenge_completed: 'Mission completed',
+    progressActivities: 'ACTIVITIES', progressMissions: 'MISSIONS', progressBadges: 'BADGES',
     walk: 'WALK', play: 'PLAY', training: 'TRAINING', scent: 'SCENT GAME', social: 'SOCIAL',
     'first-three-walks': '3 walks', 'three-play-sessions': '3 play sessions',
     'three-training-sessions': '3 training sessions', 'three-scent-games': '3 scent games',
@@ -74,6 +76,7 @@ const dictionary = {
     invalidActivity: 'Inserisci 5–120 minuti (almeno 10 per attività diverse dalla passeggiata). Per passeggiata inserisci 0,10–5 km.',
     invalidGoal: 'Inserisci un nome fino a 80 caratteri e un obiettivo di 1–30.', daily: 'Ogni tipo di attività può essere registrato una volta al giorno.',
     first_activity: 'Prima attività', first_challenge: 'Prima missione completata', challenge_completed: 'Missione completata',
+    progressActivities: 'ATTIVITÀ', progressMissions: 'MISSIONI', progressBadges: 'DISTINTIVI',
     walk: 'PASSEGGIATA', play: 'GIOCO', training: 'ADDESTRAMENTO', scent: 'OLFATTO', social: 'SOCIALIZZAZIONE',
     'first-three-walks': '3 passeggiate', 'three-play-sessions': '3 giochi',
     'three-training-sessions': '3 sessioni di addestramento', 'three-scent-games': '3 giochi olfattivi',
@@ -84,7 +87,7 @@ const dictionary = {
 const kinds = ['walk', 'play', 'training', 'scent', 'social'];
 const dateLabel = value => value ? new Date(value).toLocaleDateString() : '';
 const levelFor = xp => Math.floor(xp / 250) + 1;
-const total = (rows, key) => rows.reduce((sum, row) => sum + (Number(row[key]) || 0), 0);
+
 
 export default function MyCorsoChallengesScreen({ route, navigation }) {
   const { user } = useAuth();
@@ -98,8 +101,7 @@ export default function MyCorsoChallengesScreen({ route, navigation }) {
   const [photoUri, setPhotoUri] = useState(null);
   const [catalog, setCatalog] = useState([]);
   const [missions, setMissions] = useState([]);
-  const [points, setPoints] = useState([]);
-  const [ownerPoints, setOwnerPoints] = useState([]);
+  const [progress, setProgress] = useState(null);
   const [timeline, setTimeline] = useState([]);
   const [achievements, setAchievements] = useState([]);
   const [kind, setKind] = useState('walk');
@@ -133,41 +135,42 @@ export default function MyCorsoChallengesScreen({ route, navigation }) {
   }, [route?.params?.gpsDraft, navigation, selectedId, t.gpsDraft]);
 
   const selectedDog = dogs.find(d => d.id === selectedId);
-  const dogXp = total(points, 'dog_xp');
-  const ownerXp = total(ownerPoints, 'owner_xp');
+  const snapshot = progress?.dogId === selectedId ? progress.data : null;
+  const dogXp = Number(snapshot?.dog_xp ?? 0);
+  const ownerXp = Number(snapshot?.owner_xp ?? 0);
+  const arenaPoints = Number(snapshot?.arena_points ?? 0);
   const level = levelFor(dogXp);
-  const levelProgress = (dogXp % 250) / 250;
+  const levelProgress = snapshot ? (dogXp % 250) / 250 : 0;
   const ownerName = profile?.display_name || profile?.username || user?.email?.split('@')[0] || '';
 
   const loadOverview = useCallback(async () => {
     if (!user?.id) return;
     setLoading(true);
-    const [dogsResult, profileResult, catalogResult, ownerResult] = await Promise.all([
-      getMyDogs(user.id), getMyProfile(user.id), getChallengeCatalog(), getOwnerPointEvents(user.id),
+    const [dogsResult, profileResult, catalogResult] = await Promise.all([
+      getMyDogs(user.id), getMyProfile(user.id), getChallengeCatalog(),
     ]);
     setDogs(dogsResult.data ?? []);
     setSelectedId(current => (dogsResult.data ?? []).some(d => d.id === current) ? current : dogsResult.data?.[0]?.id ?? null);
     setProfile(profileResult.data ?? null);
     setCatalog(catalogResult.data ?? []);
-    setOwnerPoints(ownerResult.data ?? []);
-    setError(dogsResult.error || profileResult.error || catalogResult.error || ownerResult.error ? dictionary[language]?.error ?? dictionary.en.error : '');
+    setError(dogsResult.error || profileResult.error || catalogResult.error ? dictionary[language]?.error ?? dictionary.en.error : '');
     setLoading(false);
   }, [user?.id, language]);
 
   const loadDog = useCallback(async () => {
     if (!user?.id || !selectedId) {
-      setMissions([]); setPoints([]); setTimeline([]); setAchievements([]); setPhotoUri(null);
+      setMissions([]); setProgress(null); setTimeline([]); setAchievements([]); setPhotoUri(null);
       return;
     }
-    const [missionsResult, pointsResult, timelineResult, achievementsResult] = await Promise.all([
-      getDogChallenges(user.id, selectedId), getDogPointEvents(user.id, selectedId),
+    const [missionsResult, progressResult, timelineResult, achievementsResult] = await Promise.all([
+      getDogChallenges(user.id, selectedId), getArenaProgressSnapshot(selectedId),
       getDogTimeline(user.id, selectedId), getDogAchievements(user.id, selectedId),
     ]);
     setMissions(missionsResult.data ?? []);
-    setPoints(pointsResult.data ?? []);
+    setProgress(progressResult.error || !progressResult.data ? null : { dogId: selectedId, data: progressResult.data });
     setTimeline(timelineResult.data ?? []);
     setAchievements(achievementsResult.data ?? []);
-    if (missionsResult.error || pointsResult.error || timelineResult.error || achievementsResult.error) setError(t.error);
+    if (missionsResult.error || progressResult.error || !progressResult.data || timelineResult.error || achievementsResult.error) setError(t.error);
     const dog = dogs.find(item => item.id === selectedId);
     if (dog?.photo_path) {
       const response = await getDogPhotoUrl(dog.photo_path);
@@ -179,7 +182,7 @@ export default function MyCorsoChallengesScreen({ route, navigation }) {
   useFocusEffect(useCallback(() => { loadDog(); }, [loadDog]));
 
   async function refresh() {
-    await Promise.all([loadDog(), getOwnerPointEvents(user.id).then(result => setOwnerPoints(result.data ?? []))]);
+    await loadDog();
   }
 
   async function doJoin(id) {
@@ -248,15 +251,20 @@ export default function MyCorsoChallengesScreen({ route, navigation }) {
               <View style={styles.identityText}>
                 <Text style={styles.dogName}>{selectedDog?.name}</Text>
                 <Text style={styles.sub}>{ownerName}</Text>
-                <Text style={styles.sub}>{t.level} {level}</Text>
+                <Text style={styles.sub}>{t.level} {snapshot ? level : '—'}</Text>
               </View>
             </View>
             <View style={styles.stats}>
-              <View><Text style={styles.statValue}>{dogXp}</Text><Text style={styles.statLabel}>{t.dogXp}</Text></View>
-              <View><Text style={styles.statValue}>{ownerXp}</Text><Text style={styles.statLabel}>{t.ownerXp}</Text></View>
-              <View><Text style={styles.statValue}>0</Text><Text style={styles.statLabel}>{t.arena}</Text></View>
+              <View><Text style={styles.statValue}>{snapshot ? dogXp : '—'}</Text><Text style={styles.statLabel}>{t.dogXp}</Text></View>
+              <View><Text style={styles.statValue}>{snapshot ? ownerXp : '—'}</Text><Text style={styles.statLabel}>{t.ownerXp}</Text></View>
+              <View><Text style={styles.statValue}>{snapshot ? arenaPoints : '—'}</Text><Text style={styles.statLabel}>{t.arena}</Text></View>
             </View>
             <View style={styles.track}><View style={[styles.fill, {width: `${levelProgress * 100}%`}]} /></View>
+            <View style={styles.progressSummary}>
+              <View style={styles.progressItem}><Text style={styles.progressValue}>{snapshot ? Number(snapshot.activities_count) : '—'}</Text><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.55} style={styles.progressLabel}>{t.progressActivities}</Text></View>
+              <View style={styles.progressItem}><Text style={styles.progressValue}>{snapshot ? Number(snapshot.completed_missions) : '—'}</Text><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.55} style={styles.progressLabel}>{t.progressMissions}</Text></View>
+              <View style={styles.progressItem}><Text style={styles.progressValue}>{snapshot ? Number(snapshot.badges_count) : '—'}</Text><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.55} style={styles.progressLabel}>{t.progressBadges}</Text></View>
+            </View>
             <Text style={styles.small}>{t.noArena}</Text>
           </View>
           <View style={styles.card}>
@@ -336,6 +344,10 @@ function makeStyles(colors) {
     avatarText: {fontWeight: '800', color: colors.gold, fontSize: 19}, identityText: {flex: 1, gap: 3},
     dogName: {color: colors.text, fontSize: 21, fontWeight: '800'},
     stats: {flexDirection: 'row', justifyContent: 'space-between'},
+    progressSummary: {flexDirection: 'row', gap: 7},
+    progressItem: {flex: 1, minWidth: 0, minHeight: 76, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background, borderRadius: 10, paddingVertical: 9, paddingHorizontal: 3, gap: 5},
+    progressValue: {color: colors.gold, fontSize: 18, fontWeight: '800'},
+    progressLabel: {width: '100%', color: colors.textMuted, fontSize: 10, lineHeight: 14, fontWeight: '700', textAlign: 'center'},
     statValue: {color: colors.gold, fontWeight: '800', fontSize: 22}, statLabel: {color: colors.textMuted, fontSize: 10},
     track: {height: 8, borderRadius: 4, backgroundColor: colors.border, overflow: 'hidden'},
     fill: {height: 8, borderRadius: 4, backgroundColor: colors.gold},
