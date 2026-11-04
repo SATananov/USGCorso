@@ -109,6 +109,10 @@ navigation }) {
       navigation.getParent()?.navigate('MyCorsoBehavior');
       return;
     }
+    if (sectionId === 'myCorso' && itemIndex === 2 && user) {
+      navigation.getParent()?.navigate('MyCorsoChallenges');
+      return;
+    }
 
     if (sectionId === 'knowledge') {
       const categoryKey = KNOWLEDGE_CATEGORY_KEYS[itemIndex];

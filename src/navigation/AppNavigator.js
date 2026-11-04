@@ -1,4 +1,4 @@
-﻿import { useMemo } from 'react';
+import { useMemo } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -25,6 +25,8 @@ import MyCorsoScreen from '../screens/MyCorsoScreen';
 import MyCorsoGrowthScreen from '../screens/MyCorsoGrowthScreen';
 import MyCorsoCareScreen from '../screens/MyCorsoCareScreen';
 import MyCorsoBehaviorScreen from '../screens/MyCorsoBehaviorScreen';
+import MyCorsoChallengesScreen from '../screens/MyCorsoChallengesScreen';
+import MyCorsoWalkTrackerScreen from '../screens/MyCorsoWalkTrackerScreen';
 import PlaceDetailsScreen from '../screens/PlaceDetailsScreen';
 import ServicesScreen from '../screens/ServicesScreen';
 import MyProfessionalProfileScreen from '../screens/MyProfessionalProfileScreen';
@@ -233,6 +235,16 @@ export default function AppNavigator() {
       <Stack.Screen
         name="MyCorsoBehavior"
         component={MyCorsoBehaviorScreen}
+        options={{ title: t('nav.myCorso') }}
+      />
+      <Stack.Screen
+        name="MyCorsoChallenges"
+        component={MyCorsoChallengesScreen}
+        options={{ title: t('nav.myCorso') }}
+      />
+      <Stack.Screen
+        name="MyCorsoWalkTracker"
+        component={MyCorsoWalkTrackerScreen}
         options={{ title: t('nav.myCorso') }}
       />
       <Stack.Screen
