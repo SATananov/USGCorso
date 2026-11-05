@@ -4,6 +4,10 @@ from math import asin, cos, isfinite, radians, sin, sqrt
 from statistics import median
 
 
+MAX_FIX_GAP_SECONDS = 180
+MAX_TIMESTAMP_CHARS = 64
+
+
 @dataclass(frozen=True)
 class VerificationResult:
     decision: str
@@ -18,6 +22,8 @@ def _instant(value):
     if isinstance(value, datetime):
         moment = value
     elif isinstance(value, str):
+        if len(value) > MAX_TIMESTAMP_CHARS:
+            raise ValueError('INVALID_TIMESTAMP')
         moment = datetime.fromisoformat(value.replace('Z', '+00:00'))
     else:
         raise ValueError('INVALID_TIMESTAMP')
@@ -87,6 +93,8 @@ def assess_route(started_at, ended_at, reported_distance_m, reported_duration_s,
     for a, b in zip(usable, usable[1:]):
         segment_distance = _distance_m(a, b)
         delta = (b[0] - a[0]).total_seconds()
+        if delta > MAX_FIX_GAP_SECONDS and 'GPS_SIGNAL_GAP' not in reasons:
+            reasons.append('GPS_SIGNAL_GAP')
         maximum_speed = max(maximum_speed, segment_distance / delta)
         distance += segment_distance
     if maximum_speed > 8:

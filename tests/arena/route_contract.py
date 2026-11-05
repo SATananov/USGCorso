@@ -6,6 +6,9 @@ from route_fair_play import assess_fair_play
 
 MAX_HISTORY_SESSIONS = 1000
 MAX_HISTORY_SAMPLES = 6000
+MAX_HISTORY_FIELD_CHARS = 128
+MAX_HISTORY_FIELD_BYTES = 128
+MAX_HISTORY_BYTES = 262144
 
 
 @dataclass(frozen=True)
@@ -25,6 +28,49 @@ def _review(reason, route_decision, usable_samples, calculated_distance_m, compa
         'REVIEW_REQUIRED', (reason,), route_decision, 'NOT_RUN',
         usable_samples, calculated_distance_m, compared_sessions
     )
+
+
+def _bounded_history(previous_sessions):
+    total_samples = 0
+    total_bytes = 0
+    for prior in previous_sessions:
+        if not isinstance(prior, dict):
+            continue
+        total_bytes += 256
+        if len(prior) > 12:
+            return False
+        for key, value in prior.items():
+            if not isinstance(key, str) or len(key) > MAX_HISTORY_FIELD_CHARS:
+                return False
+            if isinstance(value, str):
+                if len(value) > MAX_HISTORY_FIELD_CHARS or len(value.encode('utf-8')) > MAX_HISTORY_FIELD_BYTES:
+                    return False
+            elif key != 'samples' and not isinstance(value, (int, float, bool, type(None))):
+                return False
+        sample_list = prior.get('samples')
+        if isinstance(sample_list, (list, tuple)):
+            total_samples += len(sample_list)
+            if total_samples > MAX_HISTORY_SAMPLES:
+                return False
+            for sample in sample_list:
+                total_bytes += 160
+                if total_bytes > MAX_HISTORY_BYTES:
+                    return False
+                if not isinstance(sample, dict):
+                    continue
+                if len(sample) > 8:
+                    return False
+                for key, value in sample.items():
+                    if not isinstance(key, str) or len(key) > MAX_HISTORY_FIELD_CHARS:
+                        return False
+                    if isinstance(value, str):
+                        if len(value) > MAX_HISTORY_FIELD_CHARS or len(value.encode('utf-8')) > MAX_HISTORY_FIELD_BYTES:
+                            return False
+                    elif not isinstance(value, (int, float, bool, type(None))):
+                        return False
+        if total_bytes > MAX_HISTORY_BYTES:
+            return False
+    return True
 
 
 def assess_contract(candidate, previous_sessions):
@@ -62,15 +108,8 @@ def assess_contract(candidate, previous_sessions):
         return _review('HISTORY_BUDGET_EXCEEDED', route.decision, route.usable_samples, route.calculated_distance_m)
 
     try:
-        total_samples = 0
-        for prior in previous_sessions:
-            if not isinstance(prior, dict):
-                continue
-            prior_samples = prior.get('samples')
-            if isinstance(prior_samples, (list, tuple)):
-                total_samples += len(prior_samples)
-                if total_samples > MAX_HISTORY_SAMPLES:
-                    return _review('HISTORY_BUDGET_EXCEEDED', route.decision, route.usable_samples, route.calculated_distance_m)
+        if not _bounded_history(previous_sessions):
+            return _review('HISTORY_BUDGET_EXCEEDED', route.decision, route.usable_samples, route.calculated_distance_m)
 
         fair = assess_fair_play(candidate, previous_sessions)
         if fair.decision not in ('REJECT', 'REVIEW_REQUIRED', 'CANDIDATE_ONLY'):
