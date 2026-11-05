@@ -1,52 +1,25 @@
-import { recognizeWithExpoOcr } from './providers/expoOcrProvider';
 import { recognizeWithTesseract } from './providers/tesseractProvider';
 
-const PRIMARY_TIMEOUT_MS = 18000;
-const FALLBACK_TIMEOUT_MS = 15000;
-
-function timeoutAfter(ms, code) {
-  return new Promise((_, reject) => {
-    setTimeout(() => reject(new Error(code)), ms);
-  });
-}
+const OCR_TIMEOUT_MS = 25000;
 
 function languageForApp(language) {
-  if (language === 'bg') {
-    return 'bul+eng';
-  }
-
-  if (language === 'it') {
-    return 'ita+eng';
-  }
-
+  if (language === 'bg') return 'bul';
+  if (language === 'it') return 'ita';
   return 'eng';
 }
 
-async function runWithTimeout(task, ms, code) {
-  return Promise.race([
-    task,
-    timeoutAfter(ms, code),
-  ]);
+function withTimeout(task, ms) {
+  let timer;
+  const deadline = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error('OCR_TIMEOUT')), ms);
+  });
+  return Promise.race([task, deadline]).finally(() => clearTimeout(timer));
 }
 
 export async function recognizeTextFromImage(uri, language = 'en') {
-  if (!uri) {
-    throw new Error('Missing image URI');
-  }
-
-  const ocrLanguage = languageForApp(language);
-
-  try {
-    return await runWithTimeout(
-      recognizeWithTesseract(uri, ocrLanguage),
-      PRIMARY_TIMEOUT_MS,
-      'TESSERACT_TIMEOUT'
-    );
-  } catch {
-    return runWithTimeout(
-      recognizeWithExpoOcr(uri),
-      FALLBACK_TIMEOUT_MS,
-      'EXPO_OCR_TIMEOUT'
-    );
-  }
+  if (!uri) throw new Error('Missing image URI');
+  return withTimeout(
+    recognizeWithTesseract(uri, languageForApp(language)),
+    OCR_TIMEOUT_MS
+  );
 }

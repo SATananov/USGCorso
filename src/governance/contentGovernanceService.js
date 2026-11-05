@@ -10,13 +10,14 @@ export async function getIsAdmin() {
 }
 
 export async function createContentItem(values) {
-  return supabase.rpc('create_content_item', {
+  return supabase.rpc('create_content_item_v2', {
     target_section: values.section,
     target_content_type: values.contentType,
     target_title: values.title?.trim() || null,
     target_body: values.body?.trim() || null,
     target_context_type: values.contextType || null,
     target_context_id: values.contextId || null,
+    target_source_language: values.sourceLanguage,
   });
 }
 

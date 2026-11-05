@@ -80,6 +80,8 @@ const copy = {
     publishSuccessTitle: 'Материалът е публикуван',
     publishSuccessText: 'Материалът е публикуван директно като одобрен администраторски материал.',
     done: 'OK',
+    sourceLanguage: 'Език на оригиналния материал',
+    sourceLanguageHint: 'Избери езика на текста, не езика на менюто.',
     scanButton: 'СКАНИРАЙ ТЕКСТ',
     scanResultTitle: 'Разпознат текст',
     scanResultText: 'Провери текста и го редактирай преди добавяне.',
@@ -127,6 +129,8 @@ const copy = {
     publishSuccessTitle: 'Material published',
     publishSuccessText: 'The material was published directly as approved administrator content.',
     done: 'OK',
+    sourceLanguage: 'Original material language',
+    sourceLanguageHint: 'Choose the text language, not the menu language.',
     scanButton: 'SCAN TEXT',
     scanResultTitle: 'Recognized text',
     scanResultText: 'Review and edit the text before adding it.',
@@ -174,6 +178,8 @@ const copy = {
     publishSuccessTitle: 'Materiale pubblicato',
     publishSuccessText: 'Il materiale è stato pubblicato direttamente come contenuto amministrativo approvato.',
     done: 'OK',
+    sourceLanguage: 'Lingua del contenuto originale',
+    sourceLanguageHint: 'Seleziona la lingua del testo, non quella del menu.',
     scanButton: 'SCANSIONA TESTO',
     scanResultTitle: 'Testo riconosciuto',
     scanResultText: 'Controlla e modifica il testo prima di aggiungerlo.',
@@ -203,6 +209,7 @@ export default function AddMaterialScreen({ navigation }) {
   const [section, setSection] = useState('knowledge');
   const [contentType, setContentType] = useState('article');
   const [knowledgeCategory, setKnowledgeCategory] = useState('basics');
+  const [sourceLanguage, setSourceLanguage] = useState(language);
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [imageAsset, setImageAsset] = useState(null);
@@ -359,6 +366,7 @@ export default function AddMaterialScreen({ navigation }) {
         title: cleanTitle,
         body: cleanBody,
         contextType: section === 'knowledge' ? knowledgeCategory : null,
+        sourceLanguage,
       });
 
       if (created.error) {
@@ -431,6 +439,27 @@ export default function AddMaterialScreen({ navigation }) {
           <Text style={styles.kicker}>USG CORSO</Text>
           <Text style={styles.title}>{t('addMaterial.title')}</Text>
           <Text style={styles.subtitle}>{t('addMaterial.subtitle')}</Text>
+        </View>
+
+        <Text style={styles.sectionLabel}>{labels.sourceLanguage}</Text>
+        <Text style={{ color: colors.textSoft, fontSize: 12, marginBottom: 8 }}>
+          {labels.sourceLanguageHint}
+        </Text>
+        <View style={[styles.chipRow, { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 12 }]}>
+          {['bg', 'en', 'it'].map((code) => (
+            <Pressable
+              key={code}
+              onPress={() => setSourceLanguage(code)}
+              disabled={saving}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: sourceLanguage === code }}
+              style={[styles.chip, sourceLanguage === code && styles.chipActive]}
+            >
+              <Text style={[styles.chipText, sourceLanguage === code && styles.chipTextActive]}>
+                {code.toUpperCase()}
+              </Text>
+            </Pressable>
+          ))}
         </View>
 
         <Text style={styles.sectionLabel}>{t('addMaterial.section')}</Text>

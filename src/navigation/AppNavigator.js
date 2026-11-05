@@ -37,6 +37,7 @@ import NotificationsScreen from '../screens/NotificationsScreen';
 import MyMaterialsScreen from '../screens/MyMaterialsScreen';
 import MyMaterialDetailsScreen from '../screens/MyMaterialDetailsScreen';
 import AddMaterialScreen from '../screens/AddMaterialScreen';
+import OcrTestLabScreen from '../screens/OcrTestLabScreen';
 import PrivacySettingsScreen from '../screens/PrivacySettingsScreen';
 import AccountSettingsScreen from '../screens/AccountSettingsScreen';
 import LegalScreen from '../screens/LegalScreen';
@@ -318,6 +319,11 @@ export default function AppNavigator() {
         name="MyMaterialDetails"
         component={MyMaterialDetailsScreen}
         options={{ title: t('myMaterials.detailsTitle') }}
+      />
+      <Stack.Screen
+        name="OcrTestLab"
+        component={OcrTestLabScreen}
+        options={{ title: "OCR Test Lab" }}
       />
       <Stack.Screen
         name="AddMaterial"
