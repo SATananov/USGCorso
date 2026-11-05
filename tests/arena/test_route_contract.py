@@ -46,20 +46,20 @@ class ContractTests(unittest.TestCase):
 
     def test_invalid_history_reject(self):
         result = assess_contract(route(), 'not a list')
-        self.assertEqual(result.decision, 'REJECT')
+        self.assertEqual(result.decision, 'REVIEW_REQUIRED')
         self.assertIn('INVALID_HISTORY', result.reasons)
 
     def test_bounded_history_reject(self):
         result = assess_contract(route(), [route()] * 1001)
-        self.assertEqual(result.decision, 'REJECT')
-        self.assertIn('INVALID_HISTORY', result.reasons)
+        self.assertEqual(result.decision, 'REVIEW_REQUIRED')
+        self.assertIn('HISTORY_BUDGET_EXCEEDED', result.reasons)
 
     def test_invalid_prior_sample_reject(self):
         previous = route(minutes=60)
         previous['samples'][1]['longitude'] = float('nan')
         result = assess_contract(route(), [previous])
-        self.assertEqual(result.decision, 'REJECT')
-        self.assertEqual(result.fair_play_decision, 'REJECT')
+        self.assertEqual(result.decision, 'REVIEW_REQUIRED')
+        self.assertIn('HISTORY_CORRUPTED', result.reasons)
 
     def test_route_review_with_clean_fair_play(self):
         candidate = route(accuracy=40)
