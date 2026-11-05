@@ -6,6 +6,7 @@ import { useAuth } from '../auth/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useTheme } from '../theme/ThemeContext';
 import USGBackToTop from '../components/USGBackToTop';
+import ArenaConsentCard from '../components/ArenaConsentCard';
 import { getMyDogs } from '../dogs/dogService';
 import { getDogPhotoUrl } from '../dogs/dogPhotoService';
 import { getMyProfile } from '../profile/profileService';
@@ -267,6 +268,7 @@ export default function MyCorsoChallengesScreen({ route, navigation }) {
             </View>
             <Text style={styles.small}>{t.noArena}</Text>
           </View>
+          <ArenaConsentCard userId={user?.id} dogId={selectedId} dogName={selectedDog?.name} language={language} colors={colors} />
           <View style={styles.card}>
             <Text style={styles.heading}>{t.missions}</Text>
             {catalog.map(item => {
@@ -320,7 +322,7 @@ export default function MyCorsoChallengesScreen({ route, navigation }) {
           </View>
         </> : null}
       </ScrollView>
-      <USGBackToTop visible={showBackToTop} language={language} bottomOffset={22} onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })} />
+      <USGBackToTop visible={showBackToTop} language={language} bottomOffset={90} onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })} />
     </SafeAreaView>
   );
 }
