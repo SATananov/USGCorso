@@ -7,6 +7,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { useTheme } from '../theme/ThemeContext';
 import USGBackToTop from '../components/USGBackToTop';
 import ArenaConsentCard from '../components/ArenaConsentCard';
+import ArenaQuickNavigation, { ArenaQuickSectionsDock } from '../components/ArenaQuickNavigation';
 import { getMyDogs } from '../dogs/dogService';
 import { getDogPhotoUrl } from '../dogs/dogPhotoService';
 import { getMyProfile } from '../profile/profileService';
@@ -27,7 +28,7 @@ const dictionary = {
     personal: 'ЛИЧНА ЦЕЛ', personalName: 'Име на целта', target: 'Брой активности (1–30)', add: 'СЪЗДАЙ ЦЕЛ',
     gpsWalk: 'GPS РАЗХОДКА · ОТВОРИ КАРТАТА', gpsHelp: 'Проследи реална разходка с GPS на Samsung, после прегледай измерванията тук. GPS не начислява точки автоматично.', gpsDraft: 'GPS данните са прехвърлени. Прегледай ги и натисни „ЗАПИШИ“, ако са верни.',
     activity: 'ЗАПИШИ АКТИВНОСТ', minutes: 'Продължителност (минути)', km: 'Разстояние (км)',
-    notes: 'Бележка (незадължително)', save: 'ЗАПИШИ', timeline: 'TIMELINE', empty: 'Още няма събития.',
+    notes: 'Бележка (незадължително)', save: 'ЗАПИШИ', timeline: 'ХРОНОЛОГИЯ', empty: 'Още няма събития.',
     achievements: 'ЗНАЧКИ', error: 'Неуспешна операция. Провери връзката и данните.',
     saved: 'Активността е записана и точките са обновени.', created: 'Целта е добавена.', joinedText: 'Мисията е активирана.',
     invalidActivity: 'Въведи валидна продължителност от 5 до 120 минути (за игра/тренировка минимум 10). За разходка въведи от 0,10 до 5 км.',
@@ -118,6 +119,7 @@ export default function MyCorsoChallengesScreen({ route, navigation }) {
   const [notice, setNotice] = useState('');
   const scrollRef = useRef(null);
   const activityY = useRef(0);
+  const sectionY = useRef({});
   const [showBackToTop, setShowBackToTop] = useState(false);
 
   useEffect(() => {
@@ -200,6 +202,15 @@ export default function MyCorsoChallengesScreen({ route, navigation }) {
     scrollRef.current?.scrollTo({ y: Math.max(0, activityY.current - 16), animated: true });
   }
 
+  function jumpToSection(section) {
+    if (section === 'ranking') {
+      navigation.navigate('ArenaRankingPreview');
+      return;
+    }
+    const y = sectionY.current[section];
+    if (typeof y === 'number') scrollRef.current?.scrollTo({ y: Math.max(0, y - 14), animated: true });
+  }
+
   async function doGoal() {
     if (busy || !selectedId) return;
     const target = Number(goalTarget);
@@ -268,8 +279,15 @@ export default function MyCorsoChallengesScreen({ route, navigation }) {
             </View>
             <Text style={styles.small}>{t.noArena}</Text>
           </View>
+          <ArenaQuickNavigation language={language} colors={colors} onSelect={jumpToSection} />
           <ArenaConsentCard userId={user?.id} dogId={selectedId} dogName={selectedDog?.name} language={language} colors={colors} />
           <View style={styles.card}>
+            <Text style={styles.heading}>{language === 'bg' ? 'USG ARENA · КЛАСАЦИИ' : language === 'it' ? 'USG ARENA · CLASSIFICHE' : 'USG ARENA · RANKINGS'}</Text>
+            <Pressable accessibilityRole="button" onPress={() => navigation.navigate('ArenaRankingPreview')} style={styles.button}>
+              <Text style={styles.buttonText}>{language === 'bg' ? 'ВИЖ КЛАСАЦИИТЕ' : language === 'it' ? 'VEDI LE CLASSIFICHE' : 'VIEW RANKINGS'}</Text>
+            </Pressable>
+          </View>
+          <View style={styles.card} onLayout={event => { sectionY.current.missions = event.nativeEvent.layout.y; }}>
             <Text style={styles.heading}>{t.missions}</Text>
             {catalog.map(item => {
               const entry = missions.find(m => m.challenge_id === item.id);
@@ -290,14 +308,14 @@ export default function MyCorsoChallengesScreen({ route, navigation }) {
               <Text style={styles.small}>{m.progress_count}/{m.target_count} · {m.status === 'completed' ? t.done : t.joined}</Text>
             </View>)}
           </View>
-          <View style={styles.card}>
+          <View style={styles.card} onLayout={event => { sectionY.current.personal = event.nativeEvent.layout.y; }}>
             <Text style={styles.heading}>{t.personal}</Text>
             <TextInput value={goalTitle} onChangeText={setGoalTitle} placeholder={t.personalName} placeholderTextColor={colors.textMuted} style={styles.input} maxLength={80}/>
             <View style={styles.wrap}>{kinds.map(value => <Pressable key={value} onPress={() => setGoalKind(value)} style={[styles.chip, goalKind === value && styles.activeChip]}><Text style={[styles.chipText, goalKind === value && styles.gold]}>{t[value]}</Text></Pressable>)}</View>
             <TextInput value={goalTarget} onChangeText={setGoalTarget} placeholder={t.target} placeholderTextColor={colors.textMuted} style={styles.input} keyboardType="numeric" />
             <Pressable disabled={busy} onPress={doGoal} style={styles.button}><Text style={styles.buttonText}>{t.add}</Text></Pressable>
           </View>
-          <View style={styles.card} onLayout={event => { activityY.current = event.nativeEvent.layout.y; }}>
+          <View style={styles.card} onLayout={event => { activityY.current = event.nativeEvent.layout.y; sectionY.current.activity = event.nativeEvent.layout.y; }}>
             <Text style={styles.heading}>{t.activity}</Text>
             <Text style={styles.small}>{t.gpsHelp}</Text>
             <Pressable accessibilityRole="button" onPress={() => navigation.navigate('MyCorsoWalkTracker', { dog: { id: selectedDog.id, name: selectedDog.name }, ownerName, photoUri })} style={styles.button}>
@@ -312,16 +330,17 @@ export default function MyCorsoChallengesScreen({ route, navigation }) {
             <Text style={styles.small}>{t.daily}</Text>
             <Pressable disabled={busy} onPress={doActivity} style={styles.button}><Text style={styles.buttonText}>{busy ? '…' : t.save}</Text></Pressable>
           </View>
-          <View style={styles.card}>
+          <View style={styles.card} onLayout={event => { sectionY.current.achievements = event.nativeEvent.layout.y; }}>
             <Text style={styles.heading}>{t.achievements}</Text>
             {achievements.length ? achievements.map(a => <View key={a.id} style={styles.mission}><Text style={styles.gold}>★ {t[a.code] || a.code}</Text><Text style={styles.small}>{dateLabel(a.unlocked_at)}</Text></View>) : <Text style={styles.small}>{t.empty}</Text>}
           </View>
-          <View style={styles.card}>
+          <View style={styles.card} onLayout={event => { sectionY.current.timeline = event.nativeEvent.layout.y; }}>
             <Text style={styles.heading}>{t.timeline}</Text>
             {timeline.length ? timeline.map(event => <View key={event.id} style={styles.timelineItem}><View style={styles.dot}/><View style={{flex: 1}}><Text style={styles.body}>{t[event.event_code] || t[event.event_code?.toLowerCase()] || event.event_code}</Text><Text style={styles.small}>{dateLabel(event.occurred_at)}</Text></View></View>) : <Text style={styles.small}>{t.empty}</Text>}
           </View>
         </> : null}
       </ScrollView>
+      <ArenaQuickSectionsDock visible={showBackToTop} language={language} colors={colors} onSelect={jumpToSection} />
       <USGBackToTop visible={showBackToTop} language={language} bottomOffset={90} onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })} />
     </SafeAreaView>
   );

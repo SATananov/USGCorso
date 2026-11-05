@@ -26,6 +26,7 @@ import MyCorsoGrowthScreen from '../screens/MyCorsoGrowthScreen';
 import MyCorsoCareScreen from '../screens/MyCorsoCareScreen';
 import MyCorsoBehaviorScreen from '../screens/MyCorsoBehaviorScreen';
 import MyCorsoChallengesScreen from '../screens/MyCorsoChallengesScreen';
+import ArenaRankingPreviewScreen from '../screens/ArenaRankingPreviewScreen';
 import MyCorsoWalkTrackerScreen from '../screens/MyCorsoWalkTrackerScreen';
 import PlaceDetailsScreen from '../screens/PlaceDetailsScreen';
 import ServicesScreen from '../screens/ServicesScreen';
@@ -241,6 +242,11 @@ export default function AppNavigator() {
         name="MyCorsoChallenges"
         component={MyCorsoChallengesScreen}
         options={{ title: t('nav.myCorso') }}
+      />
+      <Stack.Screen
+        name="ArenaRankingPreview"
+        component={ArenaRankingPreviewScreen}
+        options={{ title: 'USG ARENA' }}
       />
       <Stack.Screen
         name="MyCorsoWalkTracker"
