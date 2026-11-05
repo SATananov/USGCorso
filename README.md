@@ -22,6 +22,7 @@ https://usg-cane-corso-platform.com/
 - [Exam Status](#exam-status)
 - [Visual Project Scheme](#visual-project-scheme)
 - [Functional Guide](#functional-guide)
+- [OCR & On-Device Translation](#ocr--on-device-translation)
 - [Technology](#technology)
 - [Run Instructions](#run-instructions)
 - [Development Status](#development-status)
@@ -31,7 +32,7 @@ https://usg-cane-corso-platform.com/
 ## APK
 
 **Final Exam APK:**  
-The final APK download link will be added here before submission.
+The final APK download link is **not documented in this repository snapshot** and must be added before submission. Android development builds have been tested, but they are not a substitute for a published final exam APK link.
 
 The SoftUni requirements state that the project must include a working APK link in the README.
 
@@ -52,7 +53,9 @@ Current status:
 - Forms and validation: implemented
 - Native mobile features: implemented
 - Functional Guide: included below
-- Final exam APK: pending final build
+- Final exam APK/download link: pending verification and publication
+- Android on-device Knowledge translation: implemented (manual action, BG/EN/IT)
+- Tesseract OCR and OCR Test Lab: implemented and tested; document accuracy varies
 
 ---
 
@@ -99,7 +102,9 @@ flowchart TD
     AD --> SB
 
     CF --> MAP[Google Maps and Location]
-    MD --> MEDIA[Camera, Image Picker, OCR and QR]
+    MD --> MEDIA[Camera, Image Picker, Tesseract OCR and QR]
+    D --> OCRLAB[OCR Test Lab]
+    KD --> TRANSLATE[Android ML Kit On-Device Translation]
 
     SB --> AUTH[Auth and Session]
     SB --> DB[Database]
@@ -111,7 +116,7 @@ The application uses a Bottom Tab Navigator for the main areas and a Stack Navig
 
 Knowledge is public educational content. Other public tabs can show limited guest previews, while personal actions and user-owned data require authentication.
 
-Supabase provides authentication, database data, storage and Edge Functions. Native mobile features include Google Maps, device location, camera, image selection, OCR and QR support.
+Supabase provides authentication, database data, storage and Edge Functions. Native mobile features include Google Maps, device location, camera, image selection, Tesseract OCR, QR support and Android ML Kit translation.
 
 ---
 
@@ -328,9 +333,11 @@ Camera and Image Picker are used for photos and materials.
 
 Location and Google Maps are used in the Corso Friendly place workflow.
 
-OCR can extract text from selected images.
+OCR uses a custom native Tesseract integration to extract text from captured or selected images.
 
-The OCR workflow supports Bulgarian, English and Italian.
+The recognition workflow explicitly supports Bulgarian (`bul`), English (`eng`) and Italian (`ita`) and has a 25-second application timeout. The OCR Test Lab provides a separate local testing screen for camera/gallery input and recognition results; it does not publish the scanned text. OCR accuracy depends on the source image and may require manual correction.
+
+Knowledge details can request Google ML Kit **on-device** translation when the content language differs from the selected BG/EN/IT app language and no stored translation is available. The Android native module downloads language models when needed, with Wi-Fi required for the model download by the current implementation. Translations are machine-generated and displayed as such; they are not presented as reviewed editorial translations.
 
 ---
 
@@ -366,11 +373,11 @@ Normal application feedback uses the USG visual style.
 
 ## 12. APK / Build
 
-The project is tested with an Android Development Build during development.
+The project is tested with an Android Development Build during development, including the native Tesseract and Google ML Kit integrations.
 
 A standalone Android preview build profile is also configured.
 
-The final exam APK link will be added at the top of this README before submission.
+The final exam APK link must be added at the top of this README before submission; it is not present in this audited snapshot.
 
 The project will not be submitted without the APK link.
 
@@ -378,7 +385,7 @@ The project will not be submitted without the APK link.
 
 # Current Implementation
 
-The current version includes:
+The current version includes (as reflected in the source snapshot at commit `ae91d36`):
 
 - 3D USG intro
 - dark and light themes
@@ -403,7 +410,10 @@ The current version includes:
 - material editing and deletion
 - admin content moderation
 - camera and image selection
-- OCR-assisted text capture
+- native Tesseract OCR-assisted text capture (BG/EN/IT)
+- local OCR Test Lab for image recognition testing
+- Google ML Kit on-device Knowledge translation (BG/EN/IT)
+- original language selector when submitting text materials
 - QR detection
 - native Android Google Map
 - current device location
@@ -463,6 +473,8 @@ It contains Cane Corso information and uses a list-to-details flow.
 
 This section is intentionally accessible without login because it contains public educational content.
 
+Knowledge loads public content through the `list_public_knowledge_items_v4` Supabase RPC. Materials can retain their `source_language`, separate from the interface language. Knowledge details prefer an available stored translation; otherwise, when the original language differs from the selected interface language, a user can request an on-device machine translation on Android. The original text remains available if translation is not requested or fails.
+
 ---
 
 ## Community
@@ -520,9 +532,30 @@ This area explains the idea and philosophy behind USG.
 
 ---
 
+# OCR & On-Device Translation
+
+## Tesseract OCR
+
+- The native Tesseract bridge is implemented under `modules/usg-ocr/`, with the application service in `src/ocr/ocrService.js`.
+- Recognizer language selection is mapped to `bul`, `eng` and `ita` from BG/EN/IT.
+- The OCR service and the independent OCR Test Lab enforce a 25-second timeout at the JavaScript level.
+- The test screen is `src/screens/OcrTestLabScreen.js` and is registered as `OcrTestLab` in the stack navigator. It is a development/diagnostic facility, not a production accuracy guarantee.
+- OCR text should be reviewed and corrected before publication. A recognized character count is not proof of correct transcription.
+
+## Google ML Kit Translation
+
+- `modules/usg-translate/` contains the native Android `USGTranslate` module using Google ML Kit Translate.
+- `src/translation/mlkitTranslationService.js` exposes the JavaScript bridge and validates `bg`, `en` and `it`.
+- `KnowledgePublicDetailsScreen.js` provides an explicit **Translate on this device** action, with status, fallback and machine-translation notices in BG/EN/IT.
+- Language models are downloaded as needed on Wi-Fi by the current native implementation; translation happens on the Android device after the models are available.
+- The manual ML Kit path is distinct from the earlier experimental Supabase translation job queue. The repository retains `supabase/migrations/translation_03c_fix_fail_rpc.sql` as database migration history, not evidence of a deployed cloud translator.
+- A new native Android build is required when changing native translation or OCR modules. Metro alone cannot add native modules to an already installed binary.
+
+---
+
 # Technology
 
-The project currently uses:
+The project currently uses (verified against `package.json` and native module sources):
 
 - [React Native](https://reactnative.dev/)
 - Expo
@@ -541,7 +574,9 @@ The project currently uses:
 - Expo Image Picker
 - Expo Camera
 - Expo File System
-- Expo OCR Kit
+- Native Tesseract OCR (custom Expo module)
+- Google ML Kit Translate (custom Android Expo module)
+- TypeScript tooling and Expo base configuration (application code remains primarily JavaScript)
 - Expo Linking
 - Expo Dev Client
 - EAS Build
@@ -553,7 +588,7 @@ The project currently uses:
 
 # Environment Configuration
 
-The repository contains `.env.example`.
+The repository contains `.env.example` with empty placeholder values.
 
 Create a local `.env` file with:
 
@@ -591,21 +626,36 @@ npm install
 
 Create the local `.env` file from `.env.example`.
 
-Start Expo:
+Start Expo for an installed Android development build:
 
 ```bash
-npx expo start
+npx expo start --dev-client
 ```
 
 For a clean Metro start:
 
 ```bash
-npx expo start -c
+npx expo start --dev-client -c
+```
+
+Create or refresh the native Android development build after native module or dependency changes:
+
+```bash
+npx expo run:android
 ```
 
 Native Android functionality should be tested with the configured Android Development Build or preview build.
 
 Expo Go is not the main verification environment for the native project features.
+
+---
+
+# Verified Source Baseline
+
+- Source baseline: `ae91d364e4f4d0f37ff7040f251f3118bee9d519` (`main`, November 5, 2026).
+- Git tree: `6fb6709f979a04ae65c43381704cfe56243327be`.
+- The working Android development build and OCR/translation flows were manually tested during the cleanup sequence; this is not a claim of comprehensive automated release certification.
+- This README update changes documentation only. Supabase RPCs, migration history and native build configuration remain unchanged.
 
 ---
 
@@ -628,6 +678,9 @@ The project currently has working:
 - moderation
 - Android Development Build support
 - standalone preview build support
+- Tesseract OCR (BG/EN/IT) and local OCR Test Lab
+- user-selected original language for text materials
+- Google ML Kit on-device translation in public Knowledge details
 
 ## Still in Development
 
@@ -640,7 +693,10 @@ Planned or incomplete areas include:
 - wider events directory
 - full Corso Match logic
 - wider community interaction
-- final exam APK
+- final exam APK and its public download link
+- improving OCR recognition quality on complex documents
+- production access policy for the OCR diagnostic screen
+- broader editorial review and translation coverage for historical Knowledge content
 - integration with the wider USG Cane Corso Platform
 
 ---
