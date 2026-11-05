@@ -15,6 +15,9 @@ const translations = {
     dogCopy: 'Тук ще се показват само Cane Corso с разрешено участие и проверени състезателни точки.',
     ownerCopy: 'Тук ще се показват само собственици с разрешено участие и проверени състезателни точки.',
     verify: 'Проверени точки в Арената', consent: 'Доброволно участие', fair: 'Честна игра',
+    verifyInfo: 'В класациите ще се отчитат само точки, присъдени след реална проверка. Личният XP и симулираните активности не се броят. Присъждането на проверени точки още не е активирано.',
+    consentInfo: 'Участието е по желание. Собственикът и всяко Cane Corso имат отделно разрешение, което може да се променя в Предизвикателства. Самото разрешение не публикува профила.',
+    fairInfo: 'Публичното класиране ще изисква разрешено участие, одобрен публичен профил и проверени точки. Не може да се печелят състезателни точки само чрез ръчно въвеждане или симулации.',
     privacy: 'Няма публични профили или резултати в този преглед. Симулациите и личният XP не участват в класирането.',
     back: 'НАЗАД КЪМ ПРЕДИЗВИКАТЕЛСТВА',
   },
@@ -27,6 +30,9 @@ const translations = {
     dogCopy: 'Only opted-in Cane Corso with verified competition points will appear here.',
     ownerCopy: 'Only opted-in owners with verified competition points will appear here.',
     verify: 'Verified Arena points', consent: 'Opt-in participation', fair: 'Fair play',
+    verifyInfo: 'Rankings will count only points awarded after verification. Personal XP and simulated activities do not count. Verified point awards are not active yet.',
+    consentInfo: 'Participation is optional. The owner and each Cane Corso have separate consent settings in Challenges. Granting consent alone does not publish a profile.',
+    fairInfo: 'Public ranking will require consent, an approved public profile and verified points. Manual activity entries and simulations cannot earn competitive points on their own.',
     privacy: 'No public profiles or rankings are shown in this preview. Simulation and personal XP do not count.',
     back: 'BACK TO CHALLENGES',
   },
@@ -39,6 +45,9 @@ const translations = {
     dogCopy: 'Saranno mostrati solo Cane Corso iscritti con punti competitivi verificati.',
     ownerCopy: 'Saranno mostrati solo proprietari iscritti con punti competitivi verificati.',
     verify: 'Punti Arena verificati', consent: 'Adesione volontaria', fair: 'Gioco corretto',
+    verifyInfo: 'Le classifiche conteranno solo i punti assegnati dopo verifica. XP personali e simulazioni sono esclusi. L’assegnazione dei punti verificati non è ancora attiva.',
+    consentInfo: 'La partecipazione è facoltativa. Il proprietario e ogni Cane Corso hanno consensi separati nelle Sfide. Il consenso da solo non rende pubblico il profilo.',
+    fairInfo: 'La classifica pubblica richiederà consenso, un profilo pubblico approvato e punti verificati. Attività inserite a mano e simulazioni non assegnano da sole punti competitivi.',
     privacy: 'Questa anteprima non mostra profili o risultati pubblici. Simulazioni ed XP personali non contano.',
     back: 'TORNA ALLE SFIDE',
   },
@@ -50,6 +59,7 @@ export default function ArenaRankingPreviewScreen({ navigation }) {
   const t = translations[language] ?? translations.en;
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [tab, setTab] = useState('dog');
+  const [expandedInfo, setExpandedInfo] = useState(null);
   const scrollRef = useRef(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
   return (
@@ -73,8 +83,19 @@ export default function ArenaRankingPreviewScreen({ navigation }) {
           <Text style={styles.coming}>{t.coming}</Text>
           <Text style={styles.copy}>{tab === 'dog' ? t.dogCopy : t.ownerCopy}</Text>
           <View style={styles.pillRow}>
-            {[t.verify, t.consent, t.fair].map(value => <View key={value} style={styles.pill}><Text style={styles.pillText}>{value}</Text></View>)}
+            {['verify', 'consent', 'fair'].map(key => (
+              <Pressable
+                key={key}
+                accessibilityRole="button"
+                accessibilityState={{ expanded: expandedInfo === key }}
+                onPress={() => setExpandedInfo(current => current === key ? null : key)}
+                style={[styles.pill, expandedInfo === key && styles.pillSelected]}
+              >
+                <Text style={styles.pillText}>{t[key]}</Text>
+              </Pressable>
+            ))}
           </View>
+          {expandedInfo ? <View style={styles.infoPanel}><Text style={styles.infoText}>{t[`${expandedInfo}Info`]}</Text></View> : null}
         </View>
         <View style={styles.notice}><Text style={styles.noticeText}>{t.privacy}</Text></View>
         <Pressable accessibilityRole="button" onPress={() => navigation.goBack()} style={styles.back}><Text style={styles.backText}>{t.back}</Text></Pressable>
@@ -106,6 +127,9 @@ function makeStyles(colors) {
     pillRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 7, marginTop: 6 },
     pill: { backgroundColor: colors.activeSurface, borderWidth: 1, borderColor: colors.border, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 8 },
     pillText: { color: colors.gold, fontSize: 11, fontWeight: '700' },
+    pillSelected: { borderColor: colors.gold, backgroundColor: colors.surface },
+    infoPanel: { alignSelf: 'stretch', backgroundColor: colors.activeSurface, borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 13 },
+    infoText: { color: colors.text, fontSize: 12, lineHeight: 19 },
     notice: { borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, borderRadius: 14, padding: 14 },
     noticeText: { color: colors.textMuted, fontSize: 12, lineHeight: 19 },
     back: { borderWidth: 1, borderColor: colors.gold, borderRadius: 12, padding: 15, alignItems: 'center' },
