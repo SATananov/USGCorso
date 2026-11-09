@@ -24,6 +24,8 @@ import KnowledgePublicDetailsScreen from '../screens/KnowledgePublicDetailsScree
 import MyCorsoScreen from '../screens/MyCorsoScreen';
 import MyCorsoGrowthScreen from '../screens/MyCorsoGrowthScreen';
 import MyCorsoCareScreen from '../screens/MyCorsoCareScreen';
+import MyCorsoDiaryScreen from '../screens/MyCorsoDiaryScreen';
+import CorsoCareRemindersScreen from '../screens/CorsoCareRemindersScreen';
 import MyCorsoBehaviorScreen from '../screens/MyCorsoBehaviorScreen';
 import MyCorsoChallengesScreen from '../screens/MyCorsoChallengesScreen';
 import ArenaRankingPreviewScreen from '../screens/ArenaRankingPreviewScreen';
@@ -232,6 +234,21 @@ export default function AppNavigator({ initialTab = 'Home' }) {
       <Stack.Screen
         name="MyCorsoCare"
         component={MyCorsoCareScreen}
+        options={{ title: t('nav.myCorso') }}
+      />
+      <Stack.Screen
+        name="MyCorsoQuickAdd"
+        component={MyCorsoScreen}
+        options={{ title: t('nav.myCorso') }}
+      />
+      <Stack.Screen
+        name="MyCorsoDiary"
+        component={MyCorsoDiaryScreen}
+        options={{ title: t('nav.myCorso') }}
+      />
+      <Stack.Screen
+        name="CorsoCareReminders"
+        component={CorsoCareRemindersScreen}
         options={{ title: t('nav.myCorso') }}
       />
       <Stack.Screen

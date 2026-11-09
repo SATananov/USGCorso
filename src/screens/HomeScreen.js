@@ -114,6 +114,11 @@ navigation }) {
       return;
     }
 
+    if (sectionId === 'myCorso' && itemIndex === 3 && user) {
+      navigation.getParent()?.navigate('MyCorsoDiary');
+      return;
+    }
+
     if (sectionId === 'knowledge') {
       const categoryKey = KNOWLEDGE_CATEGORY_KEYS[itemIndex];
 

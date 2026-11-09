@@ -510,6 +510,9 @@ route, navigation }) {
     setOpenFormSection('basic');
     setFormOpen(false);
     await loadDogs();
+    if (!editingId && route?.params?.quickAddForCare && savedDogId && navigation.canGoBack()) {
+      navigation.goBack();
+    }
   }
 
   async function handlePhotoUpload(dog) {
