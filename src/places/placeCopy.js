@@ -15,6 +15,7 @@ export const placeCopy = {
       privacy: 'Другите членове се виждат само ако изрично са включили споделянето.',
       error: 'Местоположението не можа да се сподели.',
     },
+    locationSettingsHint: 'Ако достъпът е отказан: Настройки на телефона > Приложения > USG Corso > Разрешения > Местоположение > Разреши при използване. Ако вече е разрешен, провери GPS и интернет връзката.',
     refresh: 'ОБНОВИ',
     ratingSummary: {
       reviews: 'мнения',
@@ -147,6 +148,7 @@ export const placeCopy = {
       privacy: 'Other members appear only when they explicitly enable sharing.',
       error: 'Location sharing could not be updated.',
     },
+    locationSettingsHint: 'If permission was denied: Phone Settings > Apps > USG Corso > Permissions > Location > Allow while using. Otherwise check GPS and internet connectivity.',
     refresh: 'REFRESH',
     ratingSummary: {
       reviews: 'reviews',
@@ -279,6 +281,7 @@ export const placeCopy = {
       privacy: 'Gli altri membri appaiono solo se attivano esplicitamente la condivisione.',
       error: 'Impossibile aggiornare la condivisione della posizione.',
     },
+    locationSettingsHint: 'Se il permesso e stato negato: Impostazioni > App > USG Corso > Autorizzazioni > Posizione > Consenti durante utilizzo. Altrimenti controlla GPS e connessione internet.',
     refresh: 'AGGIORNA',
     ratingSummary: {
       reviews: 'recensioni',

@@ -1778,6 +1778,7 @@ navigation }) {
           {errorText ? (
             <View style={styles.errorBanner}>
               <Text style={styles.errorText}>{errorText}</Text>
+              <Text style={styles.errorHelp}>{copy.locationSettingsHint}</Text>
             </View>
           ) : null}
         </View>
@@ -2195,7 +2196,7 @@ function createStyles(colors) {
     },
     mapActions: {
       position: 'absolute',
-      top: 12,
+      top: 24,
       left: 12,
       right: 12,
       flexDirection: 'row',
@@ -2260,7 +2261,7 @@ function createStyles(colors) {
       position: 'absolute',
       left: 12,
       right: 12,
-      bottom: 12,
+      bottom: 64,
       borderWidth: 1,
       borderColor: colors.border,
       borderRadius: 12,
@@ -2273,6 +2274,13 @@ function createStyles(colors) {
       fontSize: 12,
       lineHeight: 17,
       textAlign: 'center',
+    },
+    errorHelp: {
+      color: colors.textSoft,
+      fontSize: 10,
+      lineHeight: 15,
+      textAlign: 'center',
+      marginTop: 5,
     },
     listContent: {
       paddingHorizontal: 14,
