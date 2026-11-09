@@ -2,6 +2,7 @@ import { StatusBar } from 'expo-status-bar';
 import * as Linking from 'expo-linking';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useCallback, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   DarkTheme,
   DefaultTheme,
@@ -16,16 +17,18 @@ import AuthGateway from './src/auth/AuthGateway';
 import AuthLoadingScreen from './src/auth/AuthLoadingScreen';
 import AuthResetPasswordScreen from './src/auth/AuthResetPasswordScreen';
 import AuthSignedInBanner from './src/auth/AuthSignedInBanner';
-import { LanguageProvider } from './src/i18n/LanguageContext';
+import { LanguageProvider, useLanguage } from './src/i18n/LanguageContext';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 
 function AppContent() {
   const [showIntro, setShowIntro] = useState(true);
   const [guestMode, setGuestMode] = useState(false);
+  const [demoGuest, setDemoGuest] = useState(false);
   const recoveryUrl = Linking.useLinkingURL();
   const [completedRecoveryUrl, setCompletedRecoveryUrl] = useState(null);
   const { isDark, colors } = useTheme();
   const { session, loading } = useAuth();
+  const { language } = useLanguage();
 
   const replayIntro = useCallback(() => {
     setShowIntro(true);
@@ -82,7 +85,12 @@ function AppContent() {
     return (
       <AppControlProvider replayIntro={replayIntro} leaveGuestMode={leaveGuestMode}>
         <StatusBar style={isDark ? 'light' : 'dark'} />
-        <AuthGateway onContinueGuest={() => setGuestMode(true)} />
+        <AuthGateway
+          initialScreen={demoGuest ? 'softuni-demo' : 'welcome'}
+          onContinueGuest={() => { setDemoGuest(false); setGuestMode(true); }}
+          onOpenDemoKnowledge={() => { setDemoGuest(true); setGuestMode(true); }}
+          onDemoLogin={() => setDemoGuest(false)}
+        />
       </AppControlProvider>
     );
   }
@@ -105,11 +113,30 @@ function AppContent() {
 
   return (
     <AppControlProvider replayIntro={replayIntro} leaveGuestMode={leaveGuestMode}>
-      <NavigationContainer theme={navigationTheme}>
-        <StatusBar style={isDark ? 'light' : 'dark'} />
-        <AuthSignedInBanner />
-        <AppNavigator />
-      </NavigationContainer>
+      <View style={demoReturnStyles.container}>
+        <NavigationContainer theme={navigationTheme}>
+          <StatusBar style={isDark ? 'light' : 'dark'} />
+          <AuthSignedInBanner />
+          <AppNavigator />
+        </NavigationContainer>
+        {demoGuest && !session && (
+          <View pointerEvents="box-none" style={demoReturnStyles.bar}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={language === 'bg' ? 'Към СофтУни' : language === 'it' ? 'Torna a SoftUni' : 'Back to SoftUni'}
+              onPress={() => {
+                setGuestMode(false);
+                setShowIntro(false);
+              }}
+              style={[demoReturnStyles.button, { backgroundColor: colors.surface, borderColor: colors.gold }]}
+            >
+              <Text style={[demoReturnStyles.label, { color: colors.gold }]}>
+                {language === 'bg' ? '← КЪМ СОФТУНИ' : language === 'it' ? '← TORNA A SOFTUNI' : '← BACK TO SOFTUNI'}
+              </Text>
+            </Pressable>
+          </View>
+        )}
+      </View>
     </AppControlProvider>
   );
 }
@@ -127,3 +154,26 @@ export default function App() {
     </SafeAreaProvider>
   );
 }
+
+const demoReturnStyles = StyleSheet.create({
+  container: { flex: 1 },
+  bar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 112,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  button: {
+    borderWidth: 1,
+    borderRadius: 22,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    elevation: 8,
+    maxWidth: '76%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  label: { fontSize: 11, fontWeight: '800', textAlign: 'center' },
+});

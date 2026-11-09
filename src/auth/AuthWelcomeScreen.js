@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import {
   Pressable,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -20,16 +21,40 @@ import { authCopy } from './authCopy';
 import AuthLanguageSelector from './AuthLanguageSelector';
 import AuthWelcomeCarousel from './AuthWelcomeCarousel';
 
+const softUniLogo = require('../../assets/icons/softuni-mark-orange.png');
+
+
+const demoCopy = {
+  bg: {
+    accessibilityLabel: 'SoftUni Demo',
+    title: 'СофтУни',
+    subtitle: 'ИЗПИТНА ДЕМОНСТРАЦИЯ',
+  },
+  en: {
+    accessibilityLabel: 'SoftUni Demo',
+    title: 'SoftUni',
+    subtitle: 'EXAM DEMONSTRATION',
+  },
+  it: {
+    accessibilityLabel: 'SoftUni Demo',
+    title: 'SoftUni',
+    subtitle: 'DIMOSTRAZIONE D’ESAME',
+  },
+};
+
+
 export default function AuthWelcomeScreen({
   onLogin,
   onRegister,
   onContinueGuest,
   onAboutUSG,
+  onSoftUniDemo,
 }) {
   const { language } = useLanguage();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const copy = authCopy[language] ?? authCopy.en;
+  const demo = demoCopy[language] ?? demoCopy.en;
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [showScrollHint, setShowScrollHint] = useState(true);
   const scrollRef = useRef(null);
@@ -54,6 +79,31 @@ export default function AuthWelcomeScreen({
         scrollEventThrottle={16}
       >
         <AuthLanguageSelector />
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={demo.accessibilityLabel}
+          onPress={onSoftUniDemo}
+          style={styles.topDemoButton}
+        >
+          <View style={styles.demoHeaderRow}>
+            <View style={styles.softUniBrand}>
+              <Image source={softUniLogo} style={styles.softUniLogo} resizeMode="contain" />
+              <View style={styles.softUniBrandWords}>
+                <Text style={styles.softUniBrandText} numberOfLines={1}>Software</Text>
+                <Text style={styles.softUniBrandText} numberOfLines={1}>University</Text>
+              </View>
+            </View>
+            <View style={styles.demoMessage}>
+              <Text style={styles.topDemoTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.82}>{demo.title}</Text>
+              <Text style={styles.topDemoSubtitle}>{demo.subtitle}</Text>
+            </View>
+          </View>
+          <View style={styles.demoArrowBadge}>
+            <View style={styles.demoArrowLine} />
+            <View style={styles.demoArrowHeadGold} />
+          </View>
+        </Pressable>
 
         <AuthWelcomeCarousel colors={colors} />
 
@@ -191,6 +241,101 @@ function createStyles(colors) {
       justifyContent: 'center',
       paddingHorizontal: 18,
       gap: 10,
+    },
+    topDemoButton: {
+      backgroundColor: '#251B0D',
+      borderWidth: 2,
+      borderColor: colors.gold,
+      borderRadius: radius.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+      alignSelf: 'stretch',
+      width: '100%',
+      paddingHorizontal: 12,
+      paddingVertical: 7,
+      marginBottom: 12,
+      minHeight: 92,
+    },
+    demoHeaderRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      alignSelf: 'center',
+      maxWidth: '100%',
+      gap: 10,
+    },
+    softUniBrand: {
+      width: 80,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    softUniLogo: {
+      width: 62,
+      height: 38,
+    },
+    softUniBrandWords: {
+      width: 80,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 1,
+    },
+    softUniBrandText: {
+      color: '#F59A16',
+      fontSize: 9,
+      lineHeight: 10,
+      fontWeight: '700',
+      textAlign: 'center',
+      includeFontPadding: false,
+    },
+    demoMessage: {
+      width: 150,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    topDemoTitle: {
+      color: colors.gold,
+      fontSize: 20,
+      lineHeight: 23,
+      fontWeight: '900',
+      letterSpacing: 0.1,
+      textAlign: 'center',
+    },
+    topDemoSubtitle: {
+      color: colors.gold,
+      fontSize: 10,
+      lineHeight: 14,
+      fontWeight: '800',
+      letterSpacing: 0.1,
+      marginTop: 2,
+      textAlign: 'center',
+    },
+    demoArrowBadge: {
+      width: 26,
+      height: 26,
+      borderRadius: 13,
+      borderWidth: 1,
+      borderColor: colors.gold,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 3,
+      backgroundColor: 'rgba(214, 176, 68, 0.08)',
+    },
+    demoArrowLine: {
+      width: 10,
+      height: 2,
+      borderRadius: 1,
+      backgroundColor: colors.gold,
+      marginLeft: -2,
+    },
+    demoArrowHeadGold: {
+      position: 'absolute',
+      right: 8,
+      width: 6,
+      height: 6,
+      borderTopWidth: 2,
+      borderRightWidth: 2,
+      borderColor: colors.gold,
+      transform: [{ rotate: '45deg' }],
     },
     primaryIconRing: {
       ...iconRing,

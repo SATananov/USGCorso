@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import USGBackToTop from '../components/USGBackToTop';
 import USGProgressBar from '../components/USGProgressBar';
 import { useLanguage } from '../i18n/LanguageContext';
 import { radius, spacing } from '../styles/usgTheme';
@@ -41,6 +42,8 @@ export default function AuthFormScreen({ mode, onBack, onSwitch, onForgotPasswor
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [showBackToTop, setShowBackToTop] = useState(false);
+  const scrollRef = useRef(null);
 
   const passwordRules = getPasswordRules(password);
 
@@ -122,10 +125,16 @@ export default function AuthFormScreen({ mode, onBack, onSwitch, onForgotPasswor
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView
+          ref={scrollRef}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
           automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+          onScroll={(event) => {
+            const visible = event.nativeEvent.contentOffset.y > 180;
+            setShowBackToTop((current) => current === visible ? current : visible);
+          }}
+          scrollEventThrottle={16}
         >
           <AuthLanguageSelector />
 
@@ -317,6 +326,12 @@ export default function AuthFormScreen({ mode, onBack, onSwitch, onForgotPasswor
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      <USGBackToTop
+        visible={showBackToTop}
+        language={language}
+        bottomOffset={88}
+        onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
+      />
     </SafeAreaView>
   );
 }

@@ -152,7 +152,7 @@ const GuestEventsScreen = createGuestTabScreen('events');
 const GuestCorsoMatchScreen = createGuestTabScreen('corsoMatch');
 const GuestAboutScreen = createGuestTabScreen('about');
 
-function MainTabs() {
+function MainTabs({ route }) {
   const { t } = useLanguage();
   const { session } = useAuth();
 
@@ -189,7 +189,7 @@ function MainTabs() {
   );
 }
 
-export default function AppNavigator() {
+export default function AppNavigator({ initialTab = 'Home' }) {
   const { t } = useLanguage();
   const { colors } = useTheme();
 

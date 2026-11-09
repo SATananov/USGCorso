@@ -5,9 +5,23 @@ import AuthCheckEmailScreen from './AuthCheckEmailScreen';
 import AuthForgotPasswordScreen from './AuthForgotPasswordScreen';
 import AuthFormScreen from './AuthFormScreen';
 import AuthWelcomeScreen from './AuthWelcomeScreen';
+import AuthSoftUniDemoScreen from './AuthSoftUniDemoScreen';
 
-export default function AuthGateway({ onContinueGuest }) {
-  const [screen, setScreen] = useState('welcome');
+export default function AuthGateway({ onContinueGuest, onOpenDemoKnowledge, initialScreen = 'welcome', onDemoLogin }) {
+  const [screen, setScreen] = useState(initialScreen);
+  const [demoAuthFlow, setDemoAuthFlow] = useState(false);
+
+  if (screen === 'softuni-demo') {
+    return (
+      <AuthSoftUniDemoScreen
+        onBack={() => setScreen('welcome')}
+        onLogin={() => { onDemoLogin?.(); setScreen('login'); }}
+        onOpenKnowledge={onOpenDemoKnowledge}
+        onOpenAuthLogin={() => { setDemoAuthFlow(true); setScreen('login'); }}
+        onOpenAuthRegister={() => { setDemoAuthFlow(true); setScreen('register'); }}
+      />
+    );
+  }
 
   if (screen === 'about-usg') {
     return (
@@ -22,7 +36,7 @@ export default function AuthGateway({ onContinueGuest }) {
     return (
       <AuthFormScreen
         mode="login"
-        onBack={() => setScreen('welcome')}
+        onBack={() => setScreen(demoAuthFlow ? 'softuni-demo' : 'welcome')}
         onSwitch={() => setScreen('register')}
         onForgotPassword={() => setScreen('forgot-password')}
         onRegistered={() => setScreen('check-email')}
@@ -42,7 +56,7 @@ export default function AuthGateway({ onContinueGuest }) {
     return (
       <AuthFormScreen
         mode="register"
-        onBack={() => setScreen('welcome')}
+        onBack={() => setScreen(demoAuthFlow ? 'softuni-demo' : 'welcome')}
         onSwitch={() => setScreen('login')}
         onRegistered={() => setScreen('check-email')}
       />
@@ -55,10 +69,11 @@ export default function AuthGateway({ onContinueGuest }) {
 
   return (
     <AuthWelcomeScreen
-      onLogin={() => setScreen('login')}
-      onRegister={() => setScreen('register')}
+      onLogin={() => { setDemoAuthFlow(false); setScreen('login'); }}
+      onRegister={() => { setDemoAuthFlow(false); setScreen('register'); }}
       onContinueGuest={onContinueGuest}
       onAboutUSG={() => setScreen('about-usg')}
+      onSoftUniDemo={() => setScreen('softuni-demo')}
     />
   );
 }
