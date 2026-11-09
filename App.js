@@ -1,4 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
+import * as Notifications from 'expo-notifications';
+import { recordCareNotification } from './src/care/corsoCareInbox';
 import * as Linking from 'expo-linking';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -42,6 +44,15 @@ function AppContent() {
     (session?.user?.email || '').trim().toLowerCase()
   );
   const { language } = useLanguage();
+
+  useEffect(() => {
+    if (!session?.user?.id) return undefined;
+    const userId = session.user.id;
+    const subscription = Notifications.addNotificationReceivedListener(notification => {
+      recordCareNotification(notification, userId).catch(() => {});
+    });
+    return () => subscription.remove();
+  }, [session?.user?.id]);
 
   const replayIntro = useCallback(() => {
     setShowIntro(true);

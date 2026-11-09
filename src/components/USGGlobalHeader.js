@@ -6,6 +6,7 @@ import { useAuth } from '../auth/AuthContext';
 import { getAdminNotificationSummary } from '../admin/adminNotificationService';
 import { useLanguage } from '../i18n/LanguageContext';
 import { getUnreadNotificationCount } from '../notifications/notificationService';
+import { getUnreadCareCount, subscribeCareInbox } from '../care/corsoCareInbox';
 import { getAvatarPreset } from '../profile/avatarPresets';
 import { getMyProfile } from '../profile/profileService';
 import { useTheme } from '../theme/ThemeContext';
@@ -23,6 +24,7 @@ export default function USGGlobalHeader({ navigation, route, title }) {
   const [profile, setProfile] = useState(null);
   const [adminNotifications, setAdminNotifications] = useState(null);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  const [unreadCareCount, setUnreadCareCount] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -82,6 +84,23 @@ export default function USGGlobalHeader({ navigation, route, title }) {
       active = false;
       unsubscribe();
     };
+  }, [navigation, user?.id]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadCareCount() {
+      if (!user?.id) { if (active) setUnreadCareCount(0); return; }
+      try {
+        const count = await getUnreadCareCount(user.id);
+        if (active) setUnreadCareCount(count);
+      } catch { if (active) setUnreadCareCount(0); }
+    }
+
+    loadCareCount();
+    const unsubscribeFocus = navigation.addListener('focus', loadCareCount);
+    const unsubscribeInbox = subscribeCareInbox(loadCareCount);
+    return () => { active = false; unsubscribeFocus(); unsubscribeInbox(); };
   }, [navigation, user?.id]);
 
   useEffect(() => {
@@ -182,7 +201,7 @@ export default function USGGlobalHeader({ navigation, route, title }) {
             {user ? (
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={`Notifications: ${unreadNotificationCount} unread`}
+                accessibilityLabel={`Notifications: ${unreadNotificationCount + unreadCareCount} unread`}
                 onPress={() => navigation.getParent()?.navigate('Notifications')}
                 style={({ pressed }) => [
                   styles.notificationButton,
@@ -190,10 +209,10 @@ export default function USGGlobalHeader({ navigation, route, title }) {
                 ]}
               >
                 <Text style={styles.notificationIcon}>{'\uD83D\uDD14'}</Text>
-                {unreadNotificationCount > 0 ? (
+                {unreadNotificationCount + unreadCareCount > 0 ? (
                   <View style={styles.notificationBadge}>
                     <Text style={styles.notificationBadgeText}>
-                      {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
+                      {unreadNotificationCount + unreadCareCount > 9 ? '9+' : unreadNotificationCount + unreadCareCount}
                     </Text>
                   </View>
                 ) : null}

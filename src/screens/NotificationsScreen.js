@@ -10,6 +10,8 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuth } from '../auth/AuthContext';
+import { getCareInbox, getCareInboxTarget, markCareInboxRead, markAllCareInboxRead } from '../care/corsoCareInbox';
 
 import { useLanguage } from '../i18n/LanguageContext';
 import { useRef as useBackToTopRef, useState as useBackToTopState, useEffect as useBackToTopEffect } from 'react';
@@ -305,9 +307,16 @@ export default function NotificationsScreen({ navigation }) {
   const [backToTopVisible, setBackToTopVisible] = useBackToTopState(false);
   const { language: backToTopLanguage } = useLanguage();
   const { language, t } = useLanguage();
+  const { user } = useAuth();
+  const careText = {
+    bg: { heading: 'ГРИЖИ ЗА КОРСО', action: 'ОТВОРИ В КАЛЕНДАРА', history: 'Този запис вече не съществува.' },
+    en: { heading: 'CORSO CARE', action: 'OPEN IN CALENDAR', history: 'This care entry no longer exists.' },
+    it: { heading: 'CURA DEL CORSO', action: 'APRI NEL CALENDARIO', history: 'Questa voce non esiste più.' },
+  }[language] || { heading: 'CORSO CARE', action: 'OPEN IN CALENDAR', history: 'This care entry no longer exists.' };
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [items, setItems] = useState([]);
+  const [careItems, setCareItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
@@ -322,14 +331,18 @@ export default function NotificationsScreen({ navigation }) {
     setError('');
 
     try {
-      setItems(await getNotifications());
+      const [serverResult, careResult] = await Promise.allSettled([getNotifications(), getCareInbox(user?.id)]);
+      if (serverResult.status === 'fulfilled') setItems(serverResult.value);
+      else setError(t('settings.notificationsInboxLoadFailed'));
+      if (careResult.status === 'fulfilled') setCareItems(careResult.value);
+      else setError(t('settings.notificationsInboxLoadFailed'));
     } catch {
       setError(t('settings.notificationsInboxLoadFailed'));
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [t]);
+  }, [t, user?.id]);
 
   useFocusEffect(
     useCallback(() => {
@@ -382,10 +395,22 @@ export default function NotificationsScreen({ navigation }) {
     }
   }
 
+  async function openCareItem(item) {
+    if (!user?.id) return;
+    try {
+      await markCareInboxRead(user.id, item.id);
+      setCareItems(current => current.map(entry => entry.id === item.id ? { ...entry, readAt: entry.readAt || new Date().toISOString() } : entry));
+      const target = await getCareInboxTarget(user.id, item.itemId);
+      if (target) navigation.navigate('CorsoCareReminders', target);
+      else setError(careText.history);
+    } catch { setError(t('settings.notificationsMarkReadFailed')); }
+  }
+
   async function markAllRead() {
     try {
-      await markAllNotificationsRead();
+      await Promise.all([markAllNotificationsRead(), markAllCareInboxRead(user?.id)]);
       const now = new Date().toISOString();
+      setCareItems(current => current.map(entry => ({ ...entry, readAt: entry.readAt || now })));
       setItems((current) =>
         current.map((entry) => ({
           ...entry,
@@ -397,7 +422,7 @@ export default function NotificationsScreen({ navigation }) {
     }
   }
 
-  const unreadCount = items.filter((item) => !item.read_at).length;
+  const unreadCount = items.filter((item) => !item.read_at).length + careItems.filter(item => !item.readAt).length;
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -450,6 +475,24 @@ export default function NotificationsScreen({ navigation }) {
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
+        {careItems.length > 0 ? (
+          <View style={styles.careSection}>
+            <Text style={styles.careSectionTitle}>{careText.heading}</Text>
+            {careItems.map(item => (
+              <Pressable key={item.id} onPress={() => openCareItem(item)} style={[styles.notificationCard, !item.readAt && styles.notificationCardUnread]}>
+                <View style={styles.cardTopRow}>
+                  <Text style={styles.category}>{careText.heading}</Text>
+                  {!item.readAt ? <View style={styles.unreadDot} /> : null}
+                </View>
+                <Text style={styles.notificationTitle}>{item.title}</Text>
+                <Text style={styles.notificationBody}>{item.body}</Text>
+                <Text style={styles.careAction}>{careText.action}</Text>
+                <Text style={styles.date}>{formatDate(item.createdAt, language)}</Text>
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
+
         {loading ? (
           <View style={styles.loadingBox}>
             <ActivityIndicator color={colors.gold} />
@@ -457,7 +500,7 @@ export default function NotificationsScreen({ navigation }) {
               {t('settings.notificationsLoading')}
             </Text>
           </View>
-        ) : items.length === 0 ? (
+        ) : items.length === 0 && careItems.length === 0 ? (
           <View style={styles.emptyCard}>
             <Text style={styles.emptyTitle}>
               {t('settings.notificationsEmptyTitle')}
@@ -533,6 +576,9 @@ export default function NotificationsScreen({ navigation }) {
 
 function createStyles(colors) {
   return StyleSheet.create({
+    careSection: { marginBottom: 12 },
+    careSectionTitle: { color: colors.gold, fontSize: 14, fontWeight: '900', marginBottom: 10 },
+    careAction: { color: colors.gold, fontWeight: '800', fontSize: 11, marginTop: 10 },
     container: {
       flex: 1,
       backgroundColor: colors.background,
