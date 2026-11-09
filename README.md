@@ -18,6 +18,8 @@ https://usg-cane-corso-platform.com/
 
 ## Jump to
 
+- [SoftUni Demo](#softuni-demo)
+
 - [APK](#apk)
 - [Exam Status](#exam-status)
 - [Visual Project Scheme](#visual-project-scheme)
@@ -29,6 +31,29 @@ https://usg-cane-corso-platform.com/
 
 ---
 
+## SoftUni Demo
+
+The application includes a **SoftUni exam demonstration menu (01-06)** with direct navigation to implemented features. After launching the Android app, tap **SOFTUNI 01-06** at the bottom of the screen.
+
+**Demo accounts for exam evaluation only:**
+
+| Role | Email | Password |
+| --- | --- | --- |
+| Administrator | `SoftUniAdmin@demo.com` | `SoftUniAdmin123!@#` |
+| Regular User | `SoftUniUser@demo.com` | `SoftUniUser123!@#` |
+
+**Exam walkthrough:**
+
+1. **01 - Navigation:** main screens and navigation.
+2. **02 - Authentication:** login, registration, protected access and persistent sessions.
+3. **03 - CRUD:** create, read, update and delete real application content.
+4. **04 - Forms:** validation and user input flows.
+5. **05 - Mobile Features:** camera, image selection, OCR and location/map features.
+6. **06 - Build & Presentation:** project repository and build information (extra demonstration section).
+
+The administrator account is for admin moderation features; the regular user account is for user-level actions. These must be dedicated demo accounts without real personal data or reused passwords. The demo menu supplements the real application functionality.
+
+---
 ## APK
 
 **Final Exam APK:**  
