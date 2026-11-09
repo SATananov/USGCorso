@@ -290,11 +290,11 @@ function createStyles(colors) {
     },
     notificationBadge: {
       position: 'absolute',
-      top: -3,
-      right: -3,
-      minWidth: 17,
-      height: 17,
-      paddingHorizontal: 4,
+      top: -4,
+      right: -4,
+      minWidth: 19,
+      height: 19,
+      paddingHorizontal: 3,
       borderRadius: 9,
       backgroundColor: colors.gold,
       borderWidth: 1,
@@ -305,6 +305,10 @@ function createStyles(colors) {
     notificationBadgeText: {
       color: colors.background,
       fontSize: 9,
+      lineHeight: 16,
+      includeFontPadding: false,
+      textAlign: 'center',
+      textAlignVertical: 'center',
       fontWeight: '900',
     },
     avatarButton: {

@@ -570,7 +570,19 @@ export default function AddMaterialScreen({ navigation }) {
               style={styles.input}
             />
 
-            <Text style={styles.fieldLabel}>{labels.photoDescription}</Text>
+            <View style={styles.keyboardFieldHeader}>
+              <Text style={styles.keyboardFieldLabel}>{labels.photoDescription}</Text>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={language === 'bg' ? 'Готово' : language === 'it' ? 'Fatto' : 'Done'}
+                onPress={() => Keyboard.dismiss()}
+                style={styles.keyboardDoneButton}
+              >
+                <Text style={styles.keyboardDoneText}>
+                  {language === 'bg' ? 'ГОТОВО' : language === 'it' ? 'FATTO' : 'DONE'}
+                </Text>
+              </Pressable>
+            </View>
             <TextInput
               value={body}
               onChangeText={setBody}
@@ -631,7 +643,19 @@ export default function AddMaterialScreen({ navigation }) {
               style={styles.input}
             />
 
-            <Text style={styles.fieldLabel}>{labels.articleBody}</Text>
+            <View style={styles.keyboardFieldHeader}>
+              <Text style={styles.keyboardFieldLabel}>{labels.articleBody}</Text>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={language === 'bg' ? 'Готово' : language === 'it' ? 'Fatto' : 'Done'}
+                onPress={() => Keyboard.dismiss()}
+                style={styles.keyboardDoneButton}
+              >
+                <Text style={styles.keyboardDoneText}>
+                  {language === 'bg' ? 'ГОТОВО' : language === 'it' ? 'FATTO' : 'DONE'}
+                </Text>
+              </Pressable>
+            </View>
             <TextInput
               value={body}
               onChangeText={setBody}
@@ -877,6 +901,36 @@ function createStyles(colors) {
     container: {
       flex: 1,
       backgroundColor: colors.background,
+    },
+    keyboardFieldHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 12,
+      marginTop: 4,
+      marginBottom: 9,
+    },
+    keyboardFieldLabel: {
+      color: colors.text,
+      fontSize: 14,
+      fontWeight: '800',
+      flexShrink: 1,
+    },
+    keyboardDoneButton: {
+      minWidth: 108,
+      minHeight: 40,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.gold,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 16,
+    },
+    keyboardDoneText: {
+      color: colors.gold,
+      fontSize: 13,
+      fontWeight: '800',
+      letterSpacing: 0.4,
     },
     content: {
       padding: spacing.md,

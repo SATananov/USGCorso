@@ -1,5 +1,6 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -44,6 +45,72 @@ export default function AuthFormScreen({ mode, onBack, onSwitch, onForgotPasswor
   const [submitting, setSubmitting] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const scrollRef = useRef(null);
+  const emailInputRef = useRef(null);
+  const passwordInputRef = useRef(null);
+  const confirmInputRef = useRef(null);
+  const focusedInputRef = useRef(null);
+  const scrollOffsetRef = useRef(0);
+  const keyboardTopRef = useRef(null);
+  const focusScrollTimerRef = useRef(null);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  function revealFocusedInput() {
+    if (Platform.OS !== 'android' || keyboardTopRef.current === null) {
+      return;
+    }
+
+    focusedInputRef.current?.measureInWindow?.((x, y, width, height) => {
+      if (y <= 0 || height <= 0) {
+        return;
+      }
+
+      const overlap = y + height + 28 - keyboardTopRef.current;
+      if (overlap > 0) {
+        scrollRef.current?.scrollTo({
+          y: Math.max(0, scrollOffsetRef.current + overlap),
+          animated: true,
+        });
+      }
+    });
+  }
+
+  function handleInputFocus(ref) {
+    if (Platform.OS !== 'android') {
+      return;
+    }
+
+    focusedInputRef.current = ref.current;
+    if (focusScrollTimerRef.current) {
+      clearTimeout(focusScrollTimerRef.current);
+    }
+    focusScrollTimerRef.current = setTimeout(revealFocusedInput, 320);
+  }
+
+  useEffect(() => {
+    if (Platform.OS !== 'android') {
+      return undefined;
+    }
+
+    const shown = Keyboard.addListener('keyboardDidShow', (event) => {
+      keyboardTopRef.current = event.endCoordinates.screenY;
+      setKeyboardHeight(event.endCoordinates.height);
+      if (focusScrollTimerRef.current) {
+        clearTimeout(focusScrollTimerRef.current);
+      }
+      focusScrollTimerRef.current = setTimeout(revealFocusedInput, 120);
+    });
+    const hidden = Keyboard.addListener('keyboardDidHide', () => {
+      keyboardTopRef.current = null;
+      setKeyboardHeight(0);
+    });
+    return () => {
+      shown.remove();
+      hidden.remove();
+      if (focusScrollTimerRef.current) {
+        clearTimeout(focusScrollTimerRef.current);
+      }
+    };
+  }, []);
 
   const passwordRules = getPasswordRules(password);
 
@@ -78,6 +145,7 @@ export default function AuthFormScreen({ mode, onBack, onSwitch, onForgotPasswor
     setServerError('');
 
     if (!validate()) {
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
       return;
     }
 
@@ -126,11 +194,18 @@ export default function AuthFormScreen({ mode, onBack, onSwitch, onForgotPasswor
       >
         <ScrollView
           ref={scrollRef}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            keyboardHeight > 0 && {
+              justifyContent: 'flex-start',
+              paddingBottom: keyboardHeight + 48,
+            },
+          ]}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
           automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
           onScroll={(event) => {
+            scrollOffsetRef.current = event.nativeEvent.contentOffset.y;
             const visible = event.nativeEvent.contentOffset.y > 180;
             setShowBackToTop((current) => current === visible ? current : visible);
           }}
@@ -151,10 +226,23 @@ export default function AuthFormScreen({ mode, onBack, onSwitch, onForgotPasswor
             <Text style={styles.label}>{copy.email}</Text>
             <TextInput
               value={email}
+              ref={emailInputRef}
+              onFocus={() => handleInputFocus(emailInputRef)}
               onChangeText={(value) => {
                 setEmail(value);
-                setErrors((current) => ({ ...current, email: '' }));
+                setErrors((current) => ({
+                  ...current,
+                  email: value.trim() && !isEmailValid(value) ? copy.emailInvalid : '',
+                }));
                 setServerError('');
+              }}
+              onBlur={() => {
+                setErrors((current) => ({
+                  ...current,
+                  email: !email.trim()
+                    ? copy.emailRequired
+                    : !isEmailValid(email) ? copy.emailInvalid : '',
+                }));
               }}
               style={[styles.input, errors.email && styles.inputError]}
               autoCapitalize="none"
@@ -169,6 +257,8 @@ export default function AuthFormScreen({ mode, onBack, onSwitch, onForgotPasswor
             <View style={[styles.passwordRow, errors.password && styles.inputError]}>
               <TextInput
                 value={password}
+                ref={passwordInputRef}
+                onFocus={() => handleInputFocus(passwordInputRef)}
                 onChangeText={(value) => {
                   setPassword(value);
                   setErrors((current) => ({ ...current, password: '' }));
@@ -269,6 +359,8 @@ export default function AuthFormScreen({ mode, onBack, onSwitch, onForgotPasswor
                 >
                   <TextInput
                     value={confirmPassword}
+                    ref={confirmInputRef}
+                    onFocus={() => handleInputFocus(confirmInputRef)}
                     onChangeText={(value) => {
                       setConfirmPassword(value);
                       setErrors((current) => ({

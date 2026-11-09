@@ -22,6 +22,7 @@ import {
   getAdminSharedContentAssets,
   getAdminSharedContentItemDetails,
 } from '../governance/contentGovernanceService';
+import { getAdminUsers } from '../admin/adminService';
 import { useLanguage } from '../i18n/LanguageContext';
 import USGBackToTop from '../components/USGBackToTop';
 import { useTheme } from '../theme/ThemeContext';
@@ -65,6 +66,35 @@ const sectionLabels = {
   },
 };
 
+const contentTypes = {
+  article: { bg: 'Статия', en: 'Article', it: 'Articolo' },
+  photo: { bg: 'Снимка', en: 'Photo', it: 'Foto' },
+  image: { bg: 'Снимка', en: 'Image', it: 'Immagine' },
+  document: { bg: 'Документ', en: 'Document', it: 'Documento' },
+};
+
+const contentStatuses = {
+  pending: { bg: 'Чакащ', en: 'Pending', it: 'In attesa' },
+  approved: { bg: 'Одобрен', en: 'Approved', it: 'Approvato' },
+  rejected: { bg: 'Отхвърлен', en: 'Rejected', it: 'Rifiutato' },
+  archived: { bg: 'Архивиран', en: 'Archived', it: 'Archiviato' },
+};
+
+function localizeValue(dictionary, value, language) {
+  if (!value) return '';
+  return dictionary[value]?.[language] || dictionary[value]?.en || value;
+}
+
+function formatAdminDate(value, language) {
+  if (!value) return '';
+  const locale = language === 'bg' ? 'bg-BG' : language === 'it' ? 'it-IT' : 'en-GB';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '' : new Intl.DateTimeFormat(locale, {
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+  }).format(date);
+}
+
 const copy = {
   bg: {
     management: 'Управление',
@@ -94,6 +124,9 @@ const copy = {
     created: 'Създадено',
     updated: 'Обновено',
     user: 'Потребител',
+    email: 'Имейл',
+    userId: 'ID на потребител',
+    unknownUser: 'Непосочен потребител',
     noAssets: 'Няма свързани снимки или документи.',
   },
   en: {
@@ -124,6 +157,9 @@ const copy = {
     created: 'Created',
     updated: 'Updated',
     user: 'User',
+    email: 'Email',
+    userId: 'User ID',
+    unknownUser: 'Unknown user',
     noAssets: 'There are no related photos or documents.',
   },
   it: {
@@ -154,6 +190,9 @@ const copy = {
     created: 'Creato',
     updated: 'Aggiornato',
     user: 'Utente',
+    email: 'Email',
+    userId: 'ID utente',
+    unknownUser: 'Utente sconosciuto',
     noAssets: 'Non ci sono foto o documenti collegati.',
   },
 };
@@ -209,6 +248,7 @@ export default function AdminContentDetailsScreen({ route, navigation }) {
     sectionKey;
 
   const [item, setItem] = useState(null);
+  const [authorInfo, setAuthorInfo] = useState(null);
   const [assets, setAssets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState(false);
@@ -221,9 +261,10 @@ export default function AdminContentDetailsScreen({ route, navigation }) {
     setLoading(true);
     setError('');
 
-    const [itemResult, assetResult] = await Promise.all([
+    const [itemResult, assetResult, usersResult] = await Promise.all([
       getAdminSharedContentItemDetails(itemId),
       getAdminSharedContentAssets(itemId),
+      getAdminUsers().catch(() => ({ data: null, error: true })),
     ]);
 
     if (itemResult.error || assetResult.error) {
@@ -244,6 +285,8 @@ export default function AdminContentDetailsScreen({ route, navigation }) {
       return;
     }
 
+    const adminUsers = Array.isArray(usersResult.data) ? usersResult.data : [];
+    setAuthorInfo(adminUsers.find((user) => user.user_id === detail.owner_user_id) ?? null);
     setItem(detail);
     setAssets(assetResult.data ?? []);
     setLoading(false);
@@ -307,7 +350,7 @@ export default function AdminContentDetailsScreen({ route, navigation }) {
       title: labels.removeTitle,
       message: labels.removeMessage,
       cancelText: labels.cancel,
-      confirmText: labels.remove,
+      confirmText: language === 'bg' ? 'ИЗТРИЙ' : language === 'it' ? 'ELIMINA' : 'DELETE',
       onConfirm: async () => {
         setWorking(true);
                   const result = await adminDeleteSharedContentItem(item.id);
@@ -383,9 +426,9 @@ export default function AdminContentDetailsScreen({ route, navigation }) {
           <Text style={styles.kicker}>USG CORSO ADMIN</Text>
           <Text style={styles.section}>{sectionTitle}</Text>
           <Text style={styles.title}>
-            {item.title || item.content_type}
+            {item.title || localizeValue(contentTypes, item.content_type, language)}
           </Text>
-          <Text style={styles.status}>{item.status}</Text>
+          <Text style={styles.status}>{localizeValue(contentStatuses, item.status, language)}</Text>
         </View>
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -432,7 +475,7 @@ export default function AdminContentDetailsScreen({ route, navigation }) {
             </>
           ) : (
             <>
-              <Info label={labels.type} value={item.content_type} styles={styles} />
+              <Info label={labels.type} value={localizeValue(contentTypes, item.content_type, language)} styles={styles} />
 
               {item.body ? (
                 <Text style={styles.body}>{item.body}</Text>
@@ -440,12 +483,12 @@ export default function AdminContentDetailsScreen({ route, navigation }) {
 
               <Info
                 label={labels.created}
-                value={new Date(item.created_at).toLocaleString()}
+                value={formatAdminDate(item.created_at, language)}
                 styles={styles}
               />
               <Info
                 label={labels.updated}
-                value={new Date(item.updated_at).toLocaleString()}
+                value={formatAdminDate(item.updated_at, language)}
                 styles={styles}
               />
 
@@ -470,10 +513,19 @@ export default function AdminContentDetailsScreen({ route, navigation }) {
             value={
               item.owner_display_name ||
               item.owner_username ||
-              'USG Member'
+              authorInfo?.display_name ||
+              authorInfo?.username ||
+              authorInfo?.email ||
+              labels.unknownUser
             }
             styles={styles}
           />
+          {authorInfo?.email ? (
+            <Info label={labels.email} value={authorInfo.email} styles={styles} />
+          ) : null}
+          {item.owner_user_id ? (
+            <Info label={labels.userId} value={item.owner_user_id} styles={styles} />
+          ) : null}
         </View>
 
         <View style={styles.card}>

@@ -170,16 +170,6 @@ export default function MyMaterialsScreen({ navigation }) {
         </View>
 
         <Pressable
-          onPress={() => navigation.navigate('OcrTestLab')}
-          style={({ pressed }) => [
-            styles.addButton,
-            { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.gold },
-            pressed && styles.addButtonPressed,
-          ]}
-        >
-          <Text style={[styles.addButtonText, { color: colors.gold }]}>OCR TEST LAB</Text>
-        </Pressable>
-        <Pressable
           onPress={() => navigation.navigate('AddMaterial')}
           style={({ pressed }) => [
             styles.addButton,
