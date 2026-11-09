@@ -38,6 +38,9 @@ function AppContent() {
   const [completedRecoveryUrl, setCompletedRecoveryUrl] = useState(null);
   const { isDark, colors } = useTheme();
   const { session, loading, signOut } = useAuth();
+  const isSoftUniDemoUser = ['softuniadmin@demo.com', 'softuniuser@demo.com'].includes(
+    (session?.user?.email || '').trim().toLowerCase()
+  );
   const { language } = useLanguage();
 
   const replayIntro = useCallback(() => {
@@ -155,7 +158,7 @@ function AppContent() {
           <AuthSignedInBanner />
           <AppNavigator />
         </NavigationContainer>
-        {!demoPanel ? (
+        {isSoftUniDemoUser && !demoPanel ? (
           <View pointerEvents="box-none" style={demoReturnStyles.floatingLayer}>
             <Pressable
               accessibilityRole="button"
@@ -182,7 +185,7 @@ function AppContent() {
           </View>
         ) : null}
         <Modal
-          visible={Boolean(session && demoPanel && !demoAuthPrompt)}
+          visible={Boolean(isSoftUniDemoUser && demoPanel && !demoAuthPrompt)}
           animationType="fade"
           onRequestClose={() => setDemoPanel(false)}
         >
