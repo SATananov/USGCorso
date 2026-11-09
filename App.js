@@ -1,6 +1,8 @@
 import { StatusBar } from 'expo-status-bar';
 import * as Notifications from 'expo-notifications';
 import { recordCareNotification } from './src/care/corsoCareInbox';
+import { getMyDogs } from './src/dogs/dogService';
+import { activateCareReminderSession, clearInactiveCareReminders, reconcileCareReminders } from './src/care/corsoCareReminderSync';
 import * as Linking from 'expo-linking';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -44,6 +46,24 @@ function AppContent() {
     (session?.user?.email || '').trim().toLowerCase()
   );
   const { language } = useLanguage();
+
+  useEffect(() => {
+    if (loading) return undefined;
+    let active = true;
+    const userId = session?.user?.id || null;
+    activateCareReminderSession(userId);
+    async function synchronize() {
+      try {
+        await clearInactiveCareReminders(userId);
+        if (!active || !userId) return;
+        const { data, error } = await getMyDogs(userId);
+        if (!active || error) return;
+        await reconcileCareReminders({ userId, dogs: data || [], language });
+      } catch {}
+    }
+    synchronize();
+    return () => { active = false; };
+  }, [loading, session?.user?.id, language]);
 
   useEffect(() => {
     if (!session?.user?.id) return undefined;

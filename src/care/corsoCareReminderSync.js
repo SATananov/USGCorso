@@ -23,6 +23,36 @@ function scheduledTime(item) {
 }
 
 let inFlight = Promise.resolve();
+let activeCareUserId;
+
+export function activateCareReminderSession(userId) {
+  activeCareUserId = userId || null;
+}
+
+export function clearInactiveCareReminders(userId) {
+  const allowedUserId = userId || null;
+  const job = inFlight.catch(() => {}).then(async () => {
+    if (activeCareUserId !== allowedUserId) return { failed: false };
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    const presented = await Notifications.getPresentedNotificationsAsync();
+    let failed = false;
+    for (const notification of scheduled) {
+      const data = notification.content?.data;
+      if (data?.usgCorsoCare !== true || (allowedUserId && String(data.userId) === String(allowedUserId))) continue;
+      try { await Notifications.cancelScheduledNotificationAsync(notification.identifier); }
+      catch { failed = true; }
+    }
+    for (const notification of presented) {
+      const data = notification.request?.content?.data;
+      if (data?.usgCorsoCare !== true || (allowedUserId && String(data.userId) === String(allowedUserId))) continue;
+      try { await Notifications.dismissNotificationAsync(notification.request.identifier); }
+      catch { failed = true; }
+    }
+    return { failed };
+  });
+  inFlight = job.catch(() => {});
+  return job;
+}
 
 export function reconcileCareReminders(input) {
   const job = inFlight.catch(() => {}).then(() => reconcile(input));
@@ -31,7 +61,7 @@ export function reconcileCareReminders(input) {
 }
 
 async function reconcile({ userId, dogs, language, records }) {
-  if (!userId) return { failed: false };
+  if (!userId || (activeCareUserId !== undefined && activeCareUserId !== userId)) return { failed: false };
   const all = records || JSON.parse((await AsyncStorage.getItem(storageKey(userId))) || '[]');
   if (!Array.isArray(all)) throw new Error('Invalid Corso Care records');
   const dogNames = new Map((dogs || []).map(dog => [String(dog.id), dog.name]));
@@ -53,6 +83,7 @@ async function reconcile({ userId, dogs, language, records }) {
   );
   const permission = await getCareNotificationPermission();
   const kept = new Set();
+  const blocked = new Set();
   let failed = false;
   for (const notification of scheduled) {
     const data = notification.content.data || {};
@@ -62,11 +93,14 @@ async function reconcile({ userId, dogs, language, records }) {
       continue;
     }
     try { await Notifications.cancelScheduledNotificationAsync(notification.identifier); }
-    catch { failed = true; }
+    catch {
+      failed = true;
+      if (String(data.userId) === String(userId) && data.itemId) blocked.add(String(data.itemId));
+    }
   }
   if (!permission || desired.size === 0) return { failed };
   for (const [id, entry] of desired) {
-    if (kept.has(id)) continue;
+    if (kept.has(id) || blocked.has(id) || (activeCareUserId !== undefined && activeCareUserId !== userId)) continue;
     try {
       await Notifications.scheduleNotificationAsync({
         content: {
