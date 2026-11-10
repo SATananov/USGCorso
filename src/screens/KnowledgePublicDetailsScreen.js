@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -16,6 +16,7 @@ import { useRef as useBackToTopRef, useState as useBackToTopState } from 'react'
 import USGBackToTop from '../components/USGBackToTop';
 import { radius, spacing } from '../styles/usgTheme';
 import { useTheme } from '../theme/ThemeContext';
+import { formatTimestamp } from '../utils/dateTime';
 
 const copy = {
   en: {
@@ -87,19 +88,8 @@ function getContentTypeLabel(type, language) {
   return labels[language]?.[type] ?? labels.en[type] ?? type ?? labels.en.article;
 }
 
-function formatDate(value, language) {
-  if (!value) {
-    return '';
-  }
-
-  try {
-    return new Intl.DateTimeFormat(
-      language === 'bg' ? 'bg-BG' : language === 'it' ? 'it-IT' : 'en-GB',
-      { dateStyle: 'medium' }
-    ).format(new Date(value));
-  } catch {
-    return '';
-  }
+function formatDate(value) {
+  return formatTimestamp(value, undefined, { dateStyle: 'medium' });
 }
 
 export default function KnowledgePublicDetailsScreen({ route }) {
@@ -171,7 +161,7 @@ export default function KnowledgePublicDetailsScreen({ route }) {
     );
   }
 
-  const updated = formatDate(current.updated_at, language);
+  const updated = formatDate(current.updated_at);
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>

@@ -70,20 +70,15 @@ export const accountSettingsCopy = {
   },
 };
 
-export function formatMemberSince(value, language) {
+import { formatTimestamp } from '../utils/dateTime';
+
+export function formatMemberSince(value, _language) {
   if (!value) {
-    return '—';
+    return '\u2014';
   }
 
-  const locale =
-    language === 'bg'
-      ? 'bg-BG'
-      : language === 'it'
-        ? 'it-IT'
-        : 'en-US';
-
-  return new Intl.DateTimeFormat(locale, {
+  return formatTimestamp(value, undefined, {
     year: 'numeric',
     month: 'long',
-  }).format(new Date(value));
+  }) || '\u2014';
 }

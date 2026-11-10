@@ -18,6 +18,7 @@ import { useRef as useBackToTopRef, useState as useBackToTopState, useEffect as 
 import USGBackToTop from '../components/USGBackToTop';
 import { radius, spacing } from '../styles/usgTheme';
 import { useTheme } from '../theme/ThemeContext';
+import { formatTimestamp } from '../utils/dateTime';
 
 const STATUS_FILTERS = ['all', 'pending', 'approved', 'rejected', 'archived'];
 const SECTION_FILTERS = [
@@ -29,21 +30,8 @@ const SECTION_FILTERS = [
   'corso_match',
 ];
 
-function formatDate(value, language) {
-  if (!value) {
-    return '';
-  }
-
-  const locale =
-    language === 'bg'
-      ? 'bg-BG'
-      : language === 'it'
-        ? 'it-IT'
-        : 'en-GB';
-
-  return new Intl.DateTimeFormat(locale, {
-    dateStyle: 'medium',
-  }).format(new Date(value));
+function formatDate(value) {
+  return formatTimestamp(value, undefined, { dateStyle: 'medium' });
 }
 
 export default function MyMaterialsScreen({ navigation }) {
@@ -306,7 +294,7 @@ export default function MyMaterialsScreen({ navigation }) {
                 </Text>
                 <Text style={styles.metaDot}>•</Text>
                 <Text style={styles.metaText}>
-                  {formatDate(item.updated_at || item.created_at, language)}
+                  {formatDate(item.updated_at || item.created_at)}
                 </Text>
               </View>
 

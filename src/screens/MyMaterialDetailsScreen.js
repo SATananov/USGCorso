@@ -21,23 +21,10 @@ import { useRef as useBackToTopRef, useState as useBackToTopState, useEffect as 
 import USGBackToTop from '../components/USGBackToTop';
 import { radius, spacing } from '../styles/usgTheme';
 import { useTheme } from '../theme/ThemeContext';
+import { formatTimestamp } from '../utils/dateTime';
 
-function formatDate(value, language) {
-  if (!value) {
-    return '';
-  }
-
-  const locale =
-    language === 'bg'
-      ? 'bg-BG'
-      : language === 'it'
-        ? 'it-IT'
-        : 'en-GB';
-
-  return new Intl.DateTimeFormat(locale, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(value));
+function formatDate(value) {
+  return formatTimestamp(value, undefined, { dateStyle: 'medium', timeStyle: 'short' });
 }
 
 const editCopy = {
@@ -347,7 +334,7 @@ export default function MyMaterialDetailsScreen({ route, navigation }) {
           <View style={styles.metaItem}>
             <Text style={styles.label}>{t('myMaterials.created')}</Text>
             <Text style={styles.metaValue}>
-              {formatDate(item.created_at, language)}
+              {formatDate(item.created_at)}
             </Text>
           </View>
 
@@ -356,7 +343,7 @@ export default function MyMaterialDetailsScreen({ route, navigation }) {
           <View style={styles.metaItem}>
             <Text style={styles.label}>{t('myMaterials.updated')}</Text>
             <Text style={styles.metaValue}>
-              {formatDate(item.updated_at, language)}
+              {formatDate(item.updated_at)}
             </Text>
           </View>
 
@@ -366,7 +353,7 @@ export default function MyMaterialDetailsScreen({ route, navigation }) {
               <View style={styles.metaItem}>
                 <Text style={styles.label}>{t('myMaterials.approvedAt')}</Text>
                 <Text style={styles.metaValue}>
-                  {formatDate(item.approved_at, language)}
+                  {formatDate(item.approved_at)}
                 </Text>
               </View>
             </>

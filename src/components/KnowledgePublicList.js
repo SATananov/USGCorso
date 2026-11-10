@@ -1,4 +1,4 @@
-﻿import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -12,6 +12,7 @@ import { getKnowledgeCategoryLabel } from '../knowledge/knowledgeCategories';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useTheme } from '../theme/ThemeContext';
 import { radius, spacing } from '../styles/usgTheme';
+import { formatTimestamp } from '../utils/dateTime';
 
 const copy = {
   en: {
@@ -74,19 +75,8 @@ function getContentTypeLabel(type, language) {
   return labels[language]?.[type] ?? labels.en[type] ?? type ?? labels.en.article;
 }
 
-function formatDate(value, language) {
-  if (!value) {
-    return '';
-  }
-
-  try {
-    return new Intl.DateTimeFormat(
-      language === 'bg' ? 'bg-BG' : language === 'it' ? 'it-IT' : 'en-GB',
-      { year: 'numeric', month: 'short', day: 'numeric' }
-    ).format(new Date(value));
-  } catch {
-    return '';
-  }
+function formatDate(value) {
+  return formatTimestamp(value, undefined, { dateStyle: 'medium' });
 }
 
 export default function KnowledgePublicList({ categoryKey = null }) {
@@ -157,7 +147,7 @@ export default function KnowledgePublicList({ categoryKey = null }) {
 
       {state === 'ready' &&
         items.map((item) => {
-          const updated = formatDate(item.updated_at, language);
+          const updated = formatDate(item.updated_at);
 
           return (
             <Pressable

@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../auth/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useTheme } from '../theme/ThemeContext';
+import { formatTimestamp } from '../utils/dateTime';
 import USGBackToTop from '../components/USGBackToTop';
 import ArenaConsentCard from '../components/ArenaConsentCard';
 import ArenaQuickNavigation, { ArenaQuickSectionsDock } from '../components/ArenaQuickNavigation';
@@ -87,7 +88,13 @@ const dictionary = {
 };
 
 const kinds = ['walk', 'play', 'training', 'scent', 'social'];
-const dateLabel = value => value ? new Date(value).toLocaleDateString() : '';
+const dateLabel = value => value
+  ? formatTimestamp(value, undefined, {
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+    })
+  : '';
 const levelFor = xp => Math.floor(xp / 250) + 1;
 
 
