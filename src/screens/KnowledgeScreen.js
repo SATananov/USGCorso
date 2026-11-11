@@ -17,7 +17,7 @@ export default function KnowledgeScreen({ route }) {
 
   return (
     <USGSectionScreen
-      key={"knowledge-${heroResetKey}"}
+      key={`knowledge-${heroResetKey}`}
       heroImage={require('../../assets/knowledge-hero.png')}
       heroCarousel
       showScrollHint
