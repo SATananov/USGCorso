@@ -153,9 +153,9 @@ function AppContent() {
           initialScreen={demoAuthTarget || (demoGuest ? 'softuni-demo' : 'welcome')}
           onContinueGuest={() => { setDemoDestination(null); setDemoGuest(false); setGuestMode(true); }}
           onOpenDemoKnowledge={() => { setDemoDestination(null); setDemoGuest(true); setGuestMode(true); }}
-          onDemoLogin={() => { setDemoDestination(null); setDemoGuest(false); }}
+          onDemoLogin={() => { setDemoDestination(null); setDemoGuest(true); }}
           onCancelDemoFeature={() => setDemoDestination(null)}
-          onOpenDemoFeature={(destination) => { setDemoDestination(destination); setDemoGuest(false); setDemoNavigationReady(false); }}
+          onOpenDemoFeature={(destination) => { setDemoDestination(destination); setDemoGuest(true); setDemoNavigationReady(false); }}
         />
       </AppControlProvider>
     );
@@ -189,7 +189,7 @@ function AppContent() {
           <AuthSignedInBanner />
           <AppNavigator />
         </NavigationContainer>
-        {isSoftUniDemoUser && !demoPanel ? (
+        {(isSoftUniDemoUser || (demoGuest && (guestMode || Boolean(session)))) && !demoPanel ? (
           <View pointerEvents="box-none" style={demoReturnStyles.floatingLayer}>
             <Pressable
               accessibilityRole="button"

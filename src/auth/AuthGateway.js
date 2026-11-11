@@ -7,14 +7,14 @@ import AuthFormScreen from './AuthFormScreen';
 import AuthWelcomeScreen from './AuthWelcomeScreen';
 import AuthSoftUniDemoScreen from './AuthSoftUniDemoScreen';
 
-export default function AuthGateway({ onContinueGuest, onOpenDemoKnowledge, initialScreen = 'welcome', onDemoLogin, onOpenDemoFeature, onCancelDemoFeature }) {
+export default function AuthGateway({ onContinueGuest, onOpenDemoKnowledge, initialScreen = 'welcome', onDemoLogin, onOpenDemoFeature, onCancelDemoFeature, onSetDemoContext }) {
   const [screen, setScreen] = useState(initialScreen);
   const [demoAuthFlow, setDemoAuthFlow] = useState(false);
 
   if (screen === 'softuni-demo') {
     return (
       <AuthSoftUniDemoScreen
-        onBack={() => { onCancelDemoFeature?.(); setScreen('welcome'); }}
+        onBack={() => { onCancelDemoFeature?.(); onSetDemoContext?.(false); setScreen('welcome'); }}
         onLogin={() => { onCancelDemoFeature?.(); onDemoLogin?.(); setDemoAuthFlow(true); setScreen('login'); }}
         onOpenKnowledge={onOpenDemoKnowledge}
         onOpenFeature={(destination) => {
@@ -74,11 +74,11 @@ export default function AuthGateway({ onContinueGuest, onOpenDemoKnowledge, init
 
   return (
     <AuthWelcomeScreen
-      onLogin={() => { onCancelDemoFeature?.(); setDemoAuthFlow(false); setScreen('login'); }}
-      onRegister={() => { onCancelDemoFeature?.(); setDemoAuthFlow(false); setScreen('register'); }}
+      onLogin={() => { onCancelDemoFeature?.(); onSetDemoContext?.(false); setDemoAuthFlow(false); setScreen('login'); }}
+      onRegister={() => { onCancelDemoFeature?.(); onSetDemoContext?.(false); setDemoAuthFlow(false); setScreen('register'); }}
       onContinueGuest={() => { onCancelDemoFeature?.(); onContinueGuest?.(); }}
       onAboutUSG={() => setScreen('about-usg')}
-      onSoftUniDemo={() => setScreen('softuni-demo')}
+      onSoftUniDemo={() => { onSetDemoContext?.(true); setScreen('softuni-demo'); }}
     />
   );
 }
