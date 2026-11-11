@@ -4,6 +4,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { communityQuestionsCopy } from '../community/communityQuestionsCopy';
+import USGBackToTop from '../components/USGBackToTop';
+import { useAuth } from '../auth/AuthContext';
 import { getCommunityQuestions } from '../community/communityQuestionsService';
 import { useLanguage } from '../i18n/LanguageContext';
 import { radius, spacing } from '../styles/usgTheme';
@@ -16,9 +18,8 @@ const categories = [
   { key: 'support', value: 'app_help', icon: require('../../assets/community/circle-help.png') },
 ];
 
-const arrowUpIcon = require('../../assets/community/arrow-up.png');
-
-export default function CommunityQuestionsScreen() {
+export default function CommunityQuestionsScreen({ navigation }) {
+  const { session } = useAuth();
   const { language } = useLanguage();
   const { colors } = useTheme();
   const copy = communityQuestionsCopy[language] ?? communityQuestionsCopy.en;
@@ -104,6 +105,17 @@ export default function CommunityQuestionsScreen() {
           ))}
         </View>
 
+        {session?.user?.id ? (
+          <Pressable
+            accessibilityRole="button"
+            style={styles.askButton}
+            onPress={() => navigation.navigate('CommunityNewQuestion', { category })}
+          >
+            <Text style={styles.askButtonText}>{copy.askQuestion}</Text>
+          </Pressable>
+        ) : (
+          <Text style={styles.signInNote}>{copy.signInToAsk}</Text>
+        )}
         <View style={styles.questionsHeader}>
           <Text style={styles.questionsSectionTitle}>{copy.questionsTitle}</Text>
           {category ? (
@@ -147,16 +159,12 @@ export default function CommunityQuestionsScreen() {
         <Text style={styles.note}>{copy.refreshHint}</Text>
         <Text style={styles.healthNote}>{copy.healthNote}</Text>
       </ScrollView>
-      {showBackToTop ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={copy.backToTop}
-          onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
-          style={styles.backToTop}
-        >
-          <Image source={arrowUpIcon} style={styles.backToTopIcon} resizeMode="contain" />
-        </Pressable>
-      ) : null}
+      <USGBackToTop
+        visible={showBackToTop}
+        language={language}
+        bottomOffset={68}
+        onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
+      />
     </SafeAreaView>
   );
 }
@@ -175,6 +183,9 @@ function createStyles(colors) {
     categorySelected: { borderColor: colors.gold, borderWidth: 2, backgroundColor: colors.activeSurface },
     categoryIcon: { width: 36, height: 36, tintColor: colors.gold },
     categoryTitle: { color: colors.text, textAlign: 'center', fontSize: 13, fontWeight: '700', marginTop: 8 },
+    askButton: { marginTop: 24, backgroundColor: colors.gold, borderRadius: radius.md, padding: 14, alignItems: 'center' },
+    askButtonText: { color: colors.background, fontWeight: '800', fontSize: 15 },
+    signInNote: { color: colors.textSoft, marginTop: 24, fontSize: 12 },
     questionsHeader: { alignItems: 'stretch', marginTop: 24, gap: 12 },
     questionsSectionTitle: { color: colors.gold, fontSize: 17, fontWeight: '800', flexShrink: 1 },
     allButton: { alignSelf: 'flex-end', maxWidth: '100%', borderColor: colors.goldDark, borderWidth: 1, borderRadius: radius.md, paddingVertical: 7, paddingHorizontal: 12 },
@@ -191,7 +202,5 @@ function createStyles(colors) {
     retryText: { color: colors.gold, fontWeight: '700' },
     note: { color: colors.textMuted, fontSize: 11, lineHeight: 17, marginTop: 15 },
     healthNote: { color: colors.textMuted, fontSize: 11, lineHeight: 17, marginTop: 20 },
-    backToTop: { position: 'absolute', right: 18, bottom: 18, width: 52, height: 52, borderRadius: 26, backgroundColor: colors.surface, borderWidth: 2, borderColor: colors.gold, alignItems: 'center', justifyContent: 'center', elevation: 5 },
-    backToTopIcon: { width: 26, height: 26, tintColor: colors.gold },
   });
 }
