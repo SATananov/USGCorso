@@ -60,6 +60,7 @@ const content = {
     create: 'CREATE — ДОБАВИ МАТЕРИАЛ', read: 'READ — МОИТЕ МАТЕРИАЛИ', update: 'UPDATE — ИЗБЕРИ МАТЕРИАЛ ЗА РЕДАКЦИЯ', remove: 'DELETE — ИЗБЕРИ МАТЕРИАЛ ЗА ИЗТРИВАНЕ',
     formRegister: 'ФОРМА ЗА РЕГИСТРАЦИЯ', formMaterial: 'ФОРМА ЗА МАТЕРИАЛ И ВАЛИДАЦИЯ',
     camera: 'КАМЕРА / ГАЛЕРИЯ / OCR', location: 'МЕСТОПОЛОЖЕНИЕ И КАРТА',
+    translation: 'ML KIT ПРЕВОД — ЗНАНИЕ', careCalendar: 'КАЛЕНДАР И ИСТОРИЯ НА ГРИЖИТЕ',
     github: 'ОТВОРИ GITHUB ХРАНИЛИЩЕТО',
   },
   en: {
@@ -76,6 +77,7 @@ const content = {
     create: 'CREATE — ADD MATERIAL', read: 'READ — MY MATERIALS', update: 'UPDATE — SELECT MATERIAL TO EDIT', remove: 'DELETE — SELECT MATERIAL TO REMOVE',
     formRegister: 'REGISTRATION FORM', formMaterial: 'MATERIAL FORM AND VALIDATION',
     camera: 'CAMERA / GALLERY / OCR', location: 'LOCATION AND MAP',
+    translation: 'ML KIT TRANSLATION — KNOWLEDGE', careCalendar: 'CARE CALENDAR AND HISTORY',
     github: 'OPEN GITHUB REPOSITORY',
   },
   it: {
@@ -92,6 +94,7 @@ const content = {
     create: 'CREATE — AGGIUNGI MATERIALE', read: 'READ — I MIEI MATERIALI', update: 'UPDATE — SELEZIONA MATERIALE DA MODIFICARE', remove: 'DELETE — SELEZIONA MATERIALE DA ELIMINARE',
     formRegister: 'MODULO DI REGISTRAZIONE', formMaterial: 'MODULO MATERIALE E VALIDAZIONE',
     camera: 'FOTOCAMERA / GALLERIA / OCR', location: 'POSIZIONE E MAPPA',
+    translation: 'TRADUZIONE ML KIT — CONOSCENZE', careCalendar: 'CALENDARIO E STORICO DELLE CURE',
     github: 'APRI REPOSITORY GITHUB',
   },
 };
@@ -188,11 +191,13 @@ export default function AuthSoftUniDemoScreen({ onBack, onLogin, onOpenKnowledge
                         ] : [
                           [copy.camera, 'AddMaterial'],
                           [copy.location, 'CorsoFriendly'],
+                          [copy.translation, 'softuni-knowledge'],
+                          [copy.careCalendar, 'MyCorsoCare'],
                         ]).map(([label, destination]) => (
                           <Pressable
                             key={label}
                             accessibilityRole="button"
-                            onPress={() => destination === 'register' ? onOpenAuthRegister?.() : onOpenFeature(destination)}
+                            onPress={() => destination === 'register' ? onOpenAuthRegister?.() : destination === 'softuni-knowledge' ? onOpenKnowledge?.() : onOpenFeature(destination)}
                             style={styles.realDemoButton}
                           >
                             <Text style={styles.realDemoText}>{label} →</Text>
