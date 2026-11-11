@@ -11,7 +11,7 @@ Two real database connections call `usg_arena_ingest_gps_evidence_server` concur
 ## Safe environment and prerequisites
 
 1. Create a **separate, isolated Supabase test project** with the relevant USG Arena migrations and synthetic auth user, dog and both opt-in consent records. Do **not** clone real GPS or personal data.
-2. In the **test project only**, run `ISOLATED_TEST_ONLY_SETUP.sql` to mark it as a test environment. Never run this setup SQL in production.
+2. In the **test project only**, run `arena-isolated-test-setup.sql` to mark it as a test environment. Never run this setup SQL in production.
 3. On your developer PC install Python 3.11+ and `psycopg[binary]`: `py -m pip install "psycopg[binary]"`.
 4. Obtain a direct database connection string from the isolated project. Keep it secret; never paste it in chat, Git, logs, or the app. It needs a database role capable of executing the server function, selecting and deleting the synthetic test sessions. **Never embed the service-role key in mobile code.**
 5. In PowerShell set `$env:TEST_DATABASE_URL = '<your-isolated-project-connection-string>'` privately and `$env:USG_ARENA_ISOLATED_TEST = 'YES'`.
