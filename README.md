@@ -410,7 +410,7 @@ The project will not be submitted without the APK link.
 
 # Current Implementation
 
-The current version includes (as reflected in the source snapshot at commit `ae91d36`):
+The following features were documented in the Android-tested source baseline `ae91d36`. Later repository commits include documentation and SQL-file naming maintenance; those changes do not, by themselves, constitute a new Android build verification:
 
 - 3D USG intro
 - dark and light themes
@@ -677,8 +677,9 @@ Expo Go is not the main verification environment for the native project features
 
 # Verified Source Baseline
 
-- Source baseline: `ae91d364e4f4d0f37ff7040f251f3118bee9d519` (`main`, November 5, 2026).
-- Git tree: `6fb6709f979a04ae65c43381704cfe56243327be`.
+- Android-tested historical source baseline: `ae91d364e4f4d0f37ff7040f251f3118bee9d519` (`main`, November 5, 2026).
+- Historical Git tree: `6fb6709f979a04ae65c43381704cfe56243327be`.
+- Post-naming Git checkpoint before this README-only update: `04d4a6f` (`main`, November 11, 2026). This is a repository checkpoint, not a newly verified Android APK.
 - The working Android development build and OCR/translation flows were manually tested during the cleanup sequence; this is not a claim of comprehensive automated release certification.
 - This README update changes documentation only. Supabase RPCs, migration history and native build configuration remain unchanged.
 
