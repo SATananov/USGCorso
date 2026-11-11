@@ -2,7 +2,7 @@
 
 **Mode:** Read-only source audit, no deployed functionality changed.
 **Source checkpoint:** `2833a3c40d6b6d93cb0b7e2715f2a2c7e9439796`.
-**Scope:** `tests/arena/route_verifier.py`, `route_fair_play.py`, `route_contract.py`, `test_route_audit_fix02.py`, `README_AUDIT_FIX02.md`, `README_AUDIT_FIX01.md`, `README_CONTRACT01.md`, and prior audit document, inspected at the checkpoint.
+**Scope:** `tests/arena/route_verifier.py`, `route_fair_play.py`, `route_contract.py`, `test_route_audit_fix02.py`, `route-audit-contract-validation.md`, `route-audit-input-validation.md`, `route-contract-test-guide.md`, and prior audit document, inspected at the checkpoint.
 **Testing evidence:** User reported `OK` after the AUDIT FIX02 unittest run. The expected suite is 76 tests (61 previous + 15 new), but the provided final excerpt does not independently show `Ran 76 tests`. This audit is a source review, not a fresh execution of the full test suite.
 
 ## Executive decision
@@ -40,7 +40,7 @@ All three analyzers remain local and pure, with no service credentials, database
 
 ### P2 — Documentation and test completeness
 
-- **Outdated README:** `tests/arena/README_CONTRACT01.md` describes invalid history as `REJECT`, whereas FIX01/FIX02 changed current `assess_contract` behavior to `REVIEW_REQUIRED`. Keep older historical notes labeled by version or add a current contract document so readers do not mistake an old contract for the live one.
+- **Outdated README:** `tests/arena/route-contract-test-guide.md` describes invalid history as `REJECT`, whereas FIX01/FIX02 changed current `assess_contract` behavior to `REVIEW_REQUIRED`. Keep older historical notes labeled by version or add a current contract document so readers do not mistake an old contract for the live one.
 - **Test breadth:** 76 is the expected cumulative test count; user output confirms `OK`, not the exact count in the last excerpt. Synthetic tests are not a replacement for fuzz/property-based testing, replay variants, latency measurements or Android field trials.
 
 ## Readiness table

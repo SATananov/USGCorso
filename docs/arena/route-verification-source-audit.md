@@ -2,7 +2,7 @@
 
 **Mode:** READ-ONLY source audit. No runtime, SQL, Android, award or ranking changes.
 **Source checkpoint:** `a7fac5ea5a018c261a278543ed47234c08fcb4a3`
-**Review inputs:** `tests/arena/route_verifier.py`, `route_fair_play.py`, `route_contract.py`, the three corresponding test files, and `README_CONTRACT01.md`, retrieved from the repository at this commit.
+**Review inputs:** `tests/arena/route_verifier.py`, `route_fair_play.py`, `route_contract.py`, the three corresponding test files, and `route-contract-test-guide.md`, retrieved from the repository at this commit.
 
 ## Executive finding
 

@@ -113,7 +113,7 @@ No second Supabase test project required for DESIGN 01 or offline CONTRACT TEST 
 
 - `tests/arena/route_verifier.py`
 - `tests/arena/route_fair_play.py`
-- `tests/arena/README_VERIFIER02.md`
+- `tests/arena/route-verification-follow-up.md`
 - `supabase/arena-gps-evidence-ingestion-retry-safety.sql`
 - `supabase/arena-gps-evidence-retention-cleanup.sql`
 - `supabase/arena-verified-awards-ranking-readiness.sql`
