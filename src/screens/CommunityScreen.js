@@ -12,6 +12,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { communityCorsoCopy } from '../community/communityCorsoCopy';
+import { communityQuestionsCopy } from '../community/communityQuestionsCopy';
 import { getCommunityCorsos } from '../community/communityCorsoService';
 import USGProgressBar from '../components/USGProgressBar';
 import USGInteractiveHeroImage from '../components/USGInteractiveHeroImage';
@@ -21,7 +22,7 @@ import { getAvatarPreset } from '../profile/avatarPresets';
 import { radius, spacing } from '../styles/usgTheme';
 import { useTheme } from '../theme/ThemeContext';
 
-export default function CommunityScreen() {
+export default function CommunityScreen({ navigation }) {
   const scrollRef = useRef(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
 
@@ -36,6 +37,7 @@ export default function CommunityScreen() {
   const { language } = useLanguage();
   const { colors } = useTheme();
   const copy = communityCorsoCopy[language] ?? communityCorsoCopy.en;
+  const questionsCopy = communityQuestionsCopy[language] ?? communityQuestionsCopy.en;
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [corsos, setCorsos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -85,6 +87,19 @@ export default function CommunityScreen() {
           <Text style={styles.kicker}>{copy.kicker}</Text>
           <Text style={styles.title}>{copy.title}</Text>
           <Text style={styles.subtitle}>{copy.subtitle}</Text>
+        </View>
+
+        <View style={styles.questionsEntry}>
+          <Text style={styles.questionsEntryTitle}>{questionsCopy.entryTitle}</Text>
+          <Text style={styles.questionsEntryText}>{questionsCopy.entryDescription}</Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={questionsCopy.entryAction}
+            style={styles.questionsEntryButton}
+            onPress={() => navigation.getParent()?.navigate('CommunityQuestions')}
+          >
+            <Text style={styles.questionsEntryButtonText}>{questionsCopy.entryAction}</Text>
+          </Pressable>
         </View>
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -298,6 +313,41 @@ function createStyles(colors) {
       fontSize: 12,
       lineHeight: 18,
       marginTop: 6,
+    },
+    questionsEntry: {
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: colors.goldDark,
+      backgroundColor: colors.activeSurface,
+      padding: 18,
+      marginTop: 12,
+    },
+    questionsEntryTitle: {
+      color: colors.gold,
+      fontSize: 18,
+      fontWeight: '800',
+    },
+    questionsEntryText: {
+      color: colors.textSoft,
+      fontSize: 12,
+      lineHeight: 19,
+      marginTop: 8,
+    },
+    questionsEntryButton: {
+      backgroundColor: colors.gold,
+      borderRadius: radius.md,
+      paddingVertical: 13,
+      paddingHorizontal: 14,
+      alignItems: 'center',
+      marginTop: 14,
+      minHeight: 46,
+      justifyContent: 'center',
+    },
+    questionsEntryButtonText: {
+      color: colors.background,
+      fontSize: 13,
+      fontWeight: '800',
+      textAlign: 'center',
     },
     loadingWrap: {
       marginTop: 14,

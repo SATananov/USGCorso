@@ -14,6 +14,7 @@ import AdminPlaceDetailsScreen from '../screens/AdminPlaceDetailsScreen';
 import AdminContentDetailsScreen from '../screens/AdminContentDetailsScreen';
 import AdminDogDetailsScreen from '../screens/AdminDogDetailsScreen';
 import CommunityScreen from '../screens/CommunityScreen';
+import CommunityQuestionsScreen from '../screens/CommunityQuestionsScreen';
 import CorsoFriendlyScreen from '../screens/CorsoFriendlyScreen';
 import CorsoMatchScreen from '../screens/CorsoMatchScreen';
 import DetailsScreen from '../screens/DetailsScreen';
@@ -225,6 +226,11 @@ export default function AppNavigator({ initialTab = 'Home' }) {
         name="Main"
         component={MainTabs}
         options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="CommunityQuestions"
+        component={CommunityQuestionsScreen}
+        options={{ title: t('nav.community') }}
       />
       <Stack.Screen
         name="MyCorsoGrowth"
