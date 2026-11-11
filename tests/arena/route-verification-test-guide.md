@@ -18,4 +18,4 @@ Provisional thresholds: 10 usable samples with accuracy <=50m, >=70% time covera
 
 Current limitations: no hardware attestation or spoofing detection, no multi-session replay detection, no account authentication, no duplicate route fingerprint, no review audit, no server-side award issuer. Haversine distance is not map matching and noisy samples may trigger false positives. 2–9 structurally valid points are flagged, not automatically approved. This test suite is not evidence of production security.
 
-Git: no commit/push until Android-independent local test PASS and user approval. Prior tests/arena/concurrency01.py remains unchanged and unexecuted.
+Git: no commit/push until Android-independent local test PASS and user approval. Prior tests/arena/route_concurrency_isolated.py remains unchanged and unexecuted.

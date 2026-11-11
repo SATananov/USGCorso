@@ -15,7 +15,7 @@ Two real database connections call `usg_arena_ingest_gps_evidence_server` concur
 3. On your developer PC install Python 3.11+ and `psycopg[binary]`: `py -m pip install "psycopg[binary]"`.
 4. Obtain a direct database connection string from the isolated project. Keep it secret; never paste it in chat, Git, logs, or the app. It needs a database role capable of executing the server function, selecting and deleting the synthetic test sessions. **Never embed the service-role key in mobile code.**
 5. In PowerShell set `$env:TEST_DATABASE_URL = '<your-isolated-project-connection-string>'` privately and `$env:USG_ARENA_ISOLATED_TEST = 'YES'`.
-6. Run `py tests/arena/concurrency01.py` from the USGCorso project root. Afterwards clear the session variable: `Remove-Item Env:TEST_DATABASE_URL,Env:USG_ARENA_ISOLATED_TEST`.
+6. Run `py tests/arena/route_concurrency_isolated.py` from the USGCorso project root. Afterwards clear the session variable: `Remove-Item Env:TEST_DATABASE_URL,Env:USG_ARENA_ISOLATED_TEST`.
 
 ## Safety
 

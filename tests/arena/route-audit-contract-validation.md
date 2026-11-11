@@ -13,7 +13,7 @@ Offline-only safety hardening. No new API, DB migration, Android permission, GPS
 
 ## Tests
 
-New: 15 synthetic offline edge-case tests in `test_route_audit_fix02.py`.
+New: 15 synthetic offline edge-case tests in `test_route_contract_validation.py`.
 
 Expected total after patch: 61 previous tests + 15 = **76 tests**. Verify on Windows:
 

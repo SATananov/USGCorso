@@ -8,7 +8,7 @@ History not provided as a list/tuple becomes `REVIEW_REQUIRED` with `INVALID_HIS
 
 This is a bounded offline **sample-count** check, not an enforcement of memory bytes, CPU time or serialization size. Those limits must be enforced by a future trusted gateway/worker. Python local caller data are untrusted; no production security guarantees result from this patch.
 
-Adds `test_route_audit_fix01.py` with 14 regression tests and updates 3 old tests to reflect the safer review policy. The previously verified test suite had 47 tests; expected after APPLY is **61 tests**, but the complete set must be checked on the user's Windows repository. Original route and fair-play modules, concurrency harness, Android and Supabase remain untouched. No automatic verification, awards or public rankings.
+Adds `test_route_input_validation.py` with 14 regression tests and updates 3 old tests to reflect the safer review policy. The previously verified test suite had 47 tests; expected after APPLY is **61 tests**, but the complete set must be checked on the user's Windows repository. Original route and fair-play modules, concurrency harness, Android and Supabase remain untouched. No automatic verification, awards or public rankings.
 
 Run from USGCorso root:
 
