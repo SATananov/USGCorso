@@ -1,4 +1,4 @@
-# USG ARENA 03B4F — AUDIT FIX03 PART02 / Resource & Load Boundaries
+# USG Arena — Route Resource and Load Boundaries
 
 Baseline: `6d292b2fc58a6547649c6658aa12e6ee87a35ad5`.
 

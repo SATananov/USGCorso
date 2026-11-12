@@ -1,4 +1,4 @@
-# USG ARENA 03B4F — AUDIT FIX01
+# USG Arena — Route Input Validation
 
 Baseline: `9c8d5c1ace605c66832d0ac50695b07c6ac5b09e`.
 
@@ -19,4 +19,4 @@ git status --short
 git diff --check
 ```
 
-After PASS, check changed paths and stage only the three AUDIT FIX01 files. Commit/push only after user acceptance.
+After validation passes, review the changed paths and commit only after user acceptance.

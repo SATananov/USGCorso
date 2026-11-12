@@ -1,8 +1,8 @@
-# USG ARENA 03B4F — AUDIT FIX03 / Part 01: Numeric Boundaries
+# USG Arena — Route Numeric Boundaries
 
 Baseline: `2890ad9d74d3c3b62f5b1d7a16c8e11479f09bb2`.
 
-This is a test-only offline regression patch. No changes to GPS algorithms, production code, Android, Supabase, migrations, XP, ranking or privacy settings.
+This document covers offline regression tests. No changes to GPS algorithms, production code, Android, Supabase, migrations, XP, ranking or privacy settings.
 
 Adds 16 synthetic unit tests for:
 

@@ -1,4 +1,4 @@
-# USG ARENA 03B4F — AUDIT FIX02 / GPS Edge Cases & Resource Safety
+# USG Arena — GPS Edge Cases and Resource Safety
 
 Baseline: `3eaf85c54674798491e4e0287d685469e845ec6e`.
 
@@ -15,7 +15,7 @@ Offline-only safety hardening. No new API, DB migration, Android permission, GPS
 
 New: 15 synthetic offline edge-case tests in `test_route_contract_validation.py`.
 
-Expected total after patch: 61 previous tests + 15 = **76 tests**. Verify on Windows:
+Expected total for this test scope: 61 previous tests + 15 = **76 tests**. Verify on Windows:
 
 ```powershell
 python -m unittest discover -s tests/arena -p "test_route*.py" -v

@@ -1,4 +1,4 @@
-# USG ARENA — 03B4F VERIFICATION AUDIT 01
+# USG Arena — Route Verification Source Audit
 
 **Mode:** READ-ONLY source audit. No runtime, SQL, Android, award or ranking changes.
 **Source checkpoint:** `a7fac5ea5a018c261a278543ed47234c08fcb4a3`
@@ -80,7 +80,7 @@
 | Verified awards | Source ledger uniqueness | Transactional trusted issuer, never double issue |
 | GPS privacy | Architecture and private DB structures | Deployed access audits, logging, retention/appeals |
 
-## Priority for next patch — 03B4F AUDIT FIX01 (offline only)
+## Priority — Offline Route Input Validation
 
 1. Add adversarial regression tests first, including malformed unrelated history, different GPS sampling density/noise, huge history budget, and analyzer fault injection.
 2. Implement a *pure* fail-closed input/processing-boundary adapter; do not change production schema, client permissions or award logic.

@@ -1,9 +1,9 @@
-# USG ARENA — 03B4F FINAL OFFLINE VERIFICATION AUDIT
+# USG Arena — Final Offline Route Verification
 
 **Mode:** Read-only source audit, no deployed functionality changed.
 **Source checkpoint:** `2833a3c40d6b6d93cb0b7e2715f2a2c7e9439796`.
 **Scope:** `tests/arena/route_verifier.py`, `route_fair_play.py`, `route_contract.py`, `test_route_contract_validation.py`, `route-audit-contract-validation.md`, `route-audit-input-validation.md`, `route-contract-test-guide.md`, and prior audit document, inspected at the checkpoint.
-**Testing evidence:** User reported `OK` after the AUDIT FIX02 unittest run. The expected suite is 76 tests (61 previous + 15 new), but the provided final excerpt does not independently show `Ran 76 tests`. This audit is a source review, not a fresh execution of the full test suite.
+**Testing evidence:** User reported `OK` after the GPS edge-case unittest run. The expected suite is 76 tests (61 previous + 15 new), but the provided final excerpt does not independently show `Ran 76 tests`. This audit is a source review, not a fresh execution of the full test suite.
 
 ## Executive decision
 
@@ -40,7 +40,7 @@ All three analyzers remain local and pure, with no service credentials, database
 
 ### P2 — Documentation and test completeness
 
-- **Outdated README:** `tests/arena/route-contract-test-guide.md` describes invalid history as `REJECT`, whereas FIX01/FIX02 changed current `assess_contract` behavior to `REVIEW_REQUIRED`. Keep older historical notes labeled by version or add a current contract document so readers do not mistake an old contract for the live one.
+- **Outdated README:** `tests/arena/route-contract-test-guide.md` describes invalid history as `REJECT`, whereas the current validation changes use `assess_contract` behavior to `REVIEW_REQUIRED`. Keep older historical notes labeled by version or add a current contract document so readers do not mistake an old contract for the live one.
 - **Test breadth:** 76 is the expected cumulative test count; user output confirms `OK`, not the exact count in the last excerpt. Synthetic tests are not a replacement for fuzz/property-based testing, replay variants, latency measurements or Android field trials.
 
 ## Readiness table
@@ -49,7 +49,7 @@ All three analyzers remain local and pure, with no service credentials, database
 | --- | --- | --- |
 | Deterministic local route parser | Source inspected and previous local tests reported | Ready for further offline development |
 | Overlap and repeated-shape review | Source inspected; heuristic only | Ready for offline experimentation |
-| Contract merge and fail-safe review | Source inspected; FIX01/FIX02 applied | Ready for offline experimentation |
+| Contract merge and fail-safe review | Source inspected; input and GPS validation updates applied | Ready for offline experimentation |
 | Approximate historical input bounds | Source inspected; no execution deadline | Partial; not sufficient for untrusted server |
 | Production identity, consent and moderation | No live integration audited | Blocked |
 | Real concurrent ingestion | Harness unexecuted | Blocked |
@@ -58,7 +58,7 @@ All three analyzers remain local and pure, with no service credentials, database
 
 ## Recommended next small step
 
-**03B4F AUDIT FIX03 — OFFLINE BOUNDARY & DOCUMENTATION:** Add a current-version contract README and deterministic adversarial tests for exceptionally large numeric inputs, unusual timestamp objects, input budget boundaries, history recovery cost and repeat-shape false positives. Do not rewrite working production behavior merely to satisfy tests; start with test evidence and isolated measurements. Preserve `REJECT` for malformed current evidence and `REVIEW_REQUIRED` for historical/service uncertainty. Keep all XP/verification disabled.
+**Offline Boundary and Documentation:** Add a current-version contract README and deterministic adversarial tests for exceptionally large numeric inputs, unusual timestamp objects, input budget boundaries, history recovery cost and repeat-shape false positives. Do not rewrite working production behavior merely to satisfy tests; start with test evidence and isolated measurements. Preserve `REJECT` for malformed current evidence and `REVIEW_REQUIRED` for historical/service uncertainty. Keep all XP/verification disabled.
 
 For future gateway implementation, separately design authenticated server-owned history retrieval, strict wire request-size limits, isolated worker CPU/memory/deadline bounds, review audit, privacy and safe concurrent tests. A second Supabase project is **not required for this read-only audit or offline hardening**, but the unexecuted concurrency gate cannot be marked PASS.
 
