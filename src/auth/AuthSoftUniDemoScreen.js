@@ -39,9 +39,9 @@ const requirements = [
   },
   {
     points: null,
-    bg: { title: 'Изграждане и представяне', topic: 'Подготовка за представяне', detail: 'GitHub, README, успешно изграждане и инсталиране на Android Debug APK. Самостоятелна release версия още не е потвърдена.', example: 'Проверен checkpoint: e82b3dc; Gradle assembleDebug: PASS; ADB инсталация: PASS.' },
-    en: { title: 'Build and presentation', topic: 'Project presentation', detail: 'GitHub, README, successful Android Debug APK build and installation. A standalone release build has not yet been verified.', example: 'Verified checkpoint: e82b3dc; Gradle assembleDebug: PASS; ADB installation: PASS.' },
-    it: { title: 'Build e presentazione', topic: 'Presentazione del progetto', detail: 'GitHub, README, build e installazione APK Android Debug riusciti. Una build release autonoma non è ancora stata verificata.', example: 'Checkpoint verificato: e82b3dc; Gradle assembleDebug: PASS; installazione ADB: PASS.' },
+    bg: { title: 'Изграждане и представяне', topic: 'Подготовка за представяне', detail: 'GitHub, README, успешно изграждане и инсталиране на Android Debug APK. Самостоятелна release версия още не е потвърдена.', example: 'Community checkpoint: 06c4fe1; Android build и инсталация: потвърдени при локалните тестове. Финален APK линк: предстои.' },
+    en: { title: 'Build and presentation', topic: 'Project presentation', detail: 'GitHub, README, successful Android Debug APK build and installation. A standalone release build has not yet been verified.', example: 'Community checkpoint: 06c4fe1; Android build and installation: confirmed in local tests. Final APK link: pending.' },
+    it: { title: 'Build e presentazione', topic: 'Presentazione del progetto', detail: 'GitHub, README, build e installazione APK Android Debug riusciti. Una build release autonoma non è ancora stata verificata.', example: 'Checkpoint Community: 06c4fe1; build e installazione Android confermate dai test locali. Link APK finale: da aggiungere.' },
   },
 ];
 
@@ -61,6 +61,13 @@ const content = {
     formRegister: 'ФОРМА ЗА РЕГИСТРАЦИЯ', formMaterial: 'ФОРМА ЗА МАТЕРИАЛ И ВАЛИДАЦИЯ',
     camera: 'КАМЕРА / ГАЛЕРИЯ / OCR', location: 'МЕСТОПОЛОЖЕНИЕ И КАРТА',
     translation: 'ML KIT ПРЕВОД — ЗНАНИЕ', careCalendar: 'КАЛЕНДАР И ИСТОРИЯ НА ГРИЖИТЕ',
+    navigationCheck: 'LIST → DETAILS: Отвори Knowledge, избери материал и провери детайлния екран. Навигацията предава параметри към детайлите.',
+    sessionCheck: 'SESSION: Влез в акаунт, затвори напълно и отвори приложението отново — трябва да останеш влязъл. За Logout използвай действието „Изход“ в акаунта, след което провери защитен екран.',
+    refreshCheck: 'PULL-TO-REFRESH: В „Моите материали“ издърпай списъка надолу за ново зареждане от Supabase.',
+    validationCheck: 'ВАЛИДАЦИЯ: Провери задължително поле, минимална и максимална дължина в регистрацията и формата за материал. Провери и клавиатурата, когато полето е на фокус.',
+    community: 'COMMUNITY — ВЪПРОСИ И ОТГОВОРИ',
+    communityCheck: 'ДОПЪЛНИТЕЛЕН ПРИМЕР: Community използва Supabase за въпроси, отговори и обновяване. Публикуването изисква вход. Пълният CRUD се проверява в „Моите материали“.',
+    presentationCheck: 'ПРЕДАВАНЕ: README трябва да съдържа попълнения Functional Guide, инструкции за старт и публичен линк към проверен APK. Community Admin moderation е допълнителна функционалност, не отделни изпитни точки.',
     github: 'ОТВОРИ GITHUB ХРАНИЛИЩЕТО',
   },
   en: {
@@ -78,6 +85,13 @@ const content = {
     formRegister: 'REGISTRATION FORM', formMaterial: 'MATERIAL FORM AND VALIDATION',
     camera: 'CAMERA / GALLERY / OCR', location: 'LOCATION AND MAP',
     translation: 'ML KIT TRANSLATION — KNOWLEDGE', careCalendar: 'CARE CALENDAR AND HISTORY',
+    navigationCheck: 'LIST → DETAILS: Open Knowledge, select an item and inspect its details screen. Route parameters identify the selected content.',
+    sessionCheck: 'SESSION: Sign in, fully close and reopen the application — the session should persist. Use the account sign-out action, then verify a protected screen.',
+    refreshCheck: 'PULL-TO-REFRESH: On My Materials, swipe the list down to reload from Supabase.',
+    validationCheck: 'VALIDATION: Test required fields and minimum/maximum lengths in registration and Add Material. Check that the keyboard does not cover the active field.',
+    community: 'COMMUNITY — QUESTIONS & ANSWERS',
+    communityCheck: 'EXTRA EXAMPLE: Community loads questions, answers and refreshes through Supabase. Posting requires sign-in. Full CRUD is demonstrated in My Materials.',
+    presentationCheck: 'SUBMISSION: README must include the completed Functional Guide, setup instructions and a public link to the verified APK. Community Admin moderation is an extra feature, not extra exam points.',
     github: 'OPEN GITHUB REPOSITORY',
   },
   it: {
@@ -95,6 +109,13 @@ const content = {
     formRegister: 'MODULO DI REGISTRAZIONE', formMaterial: 'MODULO MATERIALE E VALIDAZIONE',
     camera: 'FOTOCAMERA / GALLERIA / OCR', location: 'POSIZIONE E MAPPA',
     translation: 'TRADUZIONE ML KIT — CONOSCENZE', careCalendar: 'CALENDARIO E STORICO DELLE CURE',
+    navigationCheck: 'ELENCO → DETTAGLI: Apri Knowledge, scegli un elemento e verifica i dettagli. I parametri di navigazione identificano il contenuto.',
+    sessionCheck: 'SESSIONE: Accedi, chiudi completamente e riapri l’app — la sessione deve restare attiva. Esci dall’account e verifica una schermata protetta.',
+    refreshCheck: 'PULL-TO-REFRESH: In I miei materiali, trascina l’elenco verso il basso per ricaricarlo da Supabase.',
+    validationCheck: 'VALIDAZIONE: Prova campi obbligatori e lunghezze minime/massime in registrazione e Aggiungi materiale. Controlla che la tastiera non copra il campo attivo.',
+    community: 'COMMUNITY — DOMANDE E RISPOSTE',
+    communityCheck: 'ESEMPIO EXTRA: Community carica domande, risposte e aggiornamenti da Supabase. Pubblicare richiede l’accesso. Il CRUD completo si prova in I miei materiali.',
+    presentationCheck: 'CONSEGNA: README deve includere Functional Guide completo, istruzioni di avvio e link pubblico all’APK verificato. La moderazione Admin è una funzione extra, senza punti aggiuntivi.',
     github: 'APRI REPOSITORY GITHUB',
   },
 };
@@ -171,6 +192,11 @@ export default function AuthSoftUniDemoScreen({ onBack, onLogin, onOpenKnowledge
                     <Text style={styles.detailLabel}>{copy.implementation}</Text>
                     <Text style={styles.detailText}>{detail.detail}</Text>
                     <Text style={styles.exampleText}>{detail.example}</Text>
+                    {index === 0 ? <Text style={styles.exampleText}>{copy.navigationCheck}</Text> : null}
+                    {index === 1 ? <Text style={styles.exampleText}>{copy.sessionCheck}</Text> : null}
+                    {index === 2 ? <Text style={styles.exampleText}>{copy.refreshCheck}</Text> : null}
+                    {index === 3 ? <Text style={styles.exampleText}>{copy.validationCheck}</Text> : null}
+                    {index === 5 ? <Text style={styles.exampleText}>{copy.presentationCheck}</Text> : null}
                     {index === 0 && onOpenKnowledge ? (
                       <Pressable accessibilityRole="button" onPress={onOpenKnowledge} style={styles.realDemoButton}>
                         <Text style={styles.realDemoText}>{copy.openKnowledge} →</Text>
@@ -203,6 +229,14 @@ export default function AuthSoftUniDemoScreen({ onBack, onLogin, onOpenKnowledge
                             <Text style={styles.realDemoText}>{label} →</Text>
                           </Pressable>
                         ))}
+                      </View>
+                    ) : null}
+                    {index === 2 && onOpenFeature ? (
+                      <View style={styles.authDemoActions}>
+                        <Text style={styles.exampleText}>{copy.communityCheck}</Text>
+                        <Pressable accessibilityRole="button" onPress={() => onOpenFeature('CommunityQuestions')} style={styles.realDemoButton}>
+                          <Text style={styles.realDemoText}>{copy.community} →</Text>
+                        </Pressable>
                       </View>
                     ) : null}
                     {index === 5 ? (
