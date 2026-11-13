@@ -24,6 +24,7 @@ import { getAdminContentItems } from '../governance/contentGovernanceService';
 import { useTheme } from '../theme/ThemeContext';
 import { getAdminProfessionalApplications } from '../services/professionalAccessService';
 import AdminContentGovernance from '../components/AdminContentGovernance';
+import AdminCommunityQAModeration from '../components/AdminCommunityQAModeration';
 import AdminDogModeration from '../components/AdminDogModeration';
 import AdminDogsManagement from '../components/AdminDogsManagement';
 import AdminPlaceMediaModeration from '../components/AdminPlaceMediaModeration';
@@ -57,7 +58,7 @@ const sectionCopy = {
       myCorso: ['Моето Корсо', 'Профили на кучета и бъдеща медия'],
       places: ['Корсо места', 'Места, снимки и модерация'],
       knowledge: ['Знание', 'Статии, текстове и образователни материали'],
-      community: ['Общност', 'Публикации, коментари и сигнали'],
+      community: ['Общност', 'Публикации, Q&A, коментари и сигнали'],
       services: ['Услуги', 'Професионалисти и услуги'],
       events: ['Събития', 'Събития и свързана медия'],
       match: ['Корсо съвпадение', 'Профили, заявки и свързано съдържание'],
@@ -89,7 +90,7 @@ const sectionCopy = {
       myCorso: ['My Corso', 'Dog profiles and future media'],
       places: ['Corso Places', 'Places, photos and moderation'],
       knowledge: ['Knowledge', 'Articles, text and educational content'],
-      community: ['Community', 'Posts, comments and reports'],
+      community: ['Community', 'Posts, Q&A, comments and reports'],
       services: ['Services', 'Professionals and services'],
       events: ['Events', 'Events and related media'],
       match: ['Corso Match', 'Future requests and content'],
@@ -121,7 +122,7 @@ const sectionCopy = {
       myCorso: ['Il mio Corso', 'Profili dei cani e media futuri'],
       places: ['Luoghi Corso', 'Luoghi, foto e moderazione'],
       knowledge: ['Conoscenza', 'Articoli, testi e contenuti educativi'],
-      community: ['Community', 'Post, commenti e segnalazioni'],
+      community: ['Community', 'Post, Q&A, commenti e segnalazioni'],
       services: ['Servizi', 'Professionisti e servizi'],
       events: ['Eventi', 'Eventi e media correlati'],
       match: ['Corso Match', 'Richieste e contenuti futuri'],
@@ -544,6 +545,14 @@ export default function AdminScreen({ navigation }) {
                       <>
                         <AdminDogModeration onChanged={loadDashboard} />
                         <AdminDogsManagement />
+                      </>
+                    ) : key === 'community' ? (
+                      <>
+                        <AdminContentGovernance
+                          sectionKey={moduleSectionKeys[key]}
+                          onChanged={loadDashboard}
+                        />
+                        <AdminCommunityQAModeration key={`community-qna-${refreshToken}`} />
                       </>
                     ) : (
                       <AdminContentGovernance

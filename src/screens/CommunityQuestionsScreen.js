@@ -1,12 +1,12 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { communityQuestionsCopy } from '../community/communityQuestionsCopy';
 import USGBackToTop from '../components/USGBackToTop';
 import { useAuth } from '../auth/AuthContext';
-import { getCommunityQuestions } from '../community/communityQuestionsService';
+import { useCommunity } from '../community/CommunityContext';
 import { useLanguage } from '../i18n/LanguageContext';
 import { radius, spacing } from '../styles/usgTheme';
 import { useTheme } from '../theme/ThemeContext';
@@ -26,49 +26,33 @@ export default function CommunityQuestionsScreen({ navigation }) {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const scrollRef = useRef(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
-  const [category, setCategory] = useState(null);
-  const [questions, setQuestions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [loadError, setLoadError] = useState(false);
-  const [reload, setReload] = useState(0);
+  const {
+    category, questions, loading, loadingMore, refreshing, hasMore, loadError,
+    submittingReply, selectedQuestionId, repliesByQuestion, replyErrors,
+    loadingReplies, loadQuestions, refreshQuestions, selectCategory,
+    loadMoreQuestions, toggleQuestion, refreshReplies, submitReply,
+  } = useCommunity();
+  const [replyDraft, setReplyDraft] = useState('');
+  const [replySubmitError, setReplySubmitError] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
-      let active = true;
-      setLoading(true);
-      setLoadError(false);
-
-      getCommunityQuestions(category)
-        .then(({ data, error }) => {
-          if (!active) return;
-          setQuestions(error ? [] : data ?? []);
-          setLoadError(Boolean(error));
-        })
-        .catch(() => {
-          if (!active) return;
-          setQuestions([]);
-          setLoadError(true);
-        })
-        .finally(() => {
-          if (!active) return;
-          setLoading(false);
-          setRefreshing(false);
-        });
-
-      return () => { active = false; };
-    }, [category, reload])
+      loadQuestions({ nextCategory: category, append: false });
+    }, [category, loadQuestions])
   );
 
-  const refresh = () => {
-    setRefreshing(true);
-    setReload((value) => value + 1);
-  };
-
   const changeCategory = (nextCategory) => {
-    setCategory((previous) => previous === nextCategory ? null : nextCategory);
+    selectCategory(nextCategory);
     scrollRef.current?.scrollTo({ y: 0, animated: true });
   };
+
+  async function sendReply(questionId) {
+    if (submittingReply) return;
+    setReplySubmitError(false);
+    const result = await submitReply({ questionId, body: replyDraft });
+    if (result.error) setReplySubmitError(true);
+    else setReplyDraft('');
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -77,14 +61,15 @@ export default function CommunityQuestionsScreen({ navigation }) {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={64}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.gold} />}
+        keyboardShouldPersistTaps="handled"
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refreshQuestions} tintColor={colors.gold} />}
         onScroll={(event) => {
           const offset = event.nativeEvent.contentOffset.y;
           setShowBackToTop((visible) => offset > 240 ? true : offset < 160 ? false : visible);
         }}
       >
         <View style={styles.intro}>
-          <Text style={styles.kicker}>USG COMMUNITY</Text>
+          <Text style={styles.kicker}>USG · {copy.communityName}</Text>
           <Text style={styles.title}>{copy.title}</Text>
           <Text style={styles.subtitle}>{copy.subtitle}</Text>
         </View>
@@ -119,7 +104,7 @@ export default function CommunityQuestionsScreen({ navigation }) {
         <View style={styles.questionsHeader}>
           <Text style={styles.questionsSectionTitle}>{copy.questionsTitle}</Text>
           {category ? (
-            <Pressable accessibilityRole="button" onPress={() => setCategory(null)} style={styles.allButton}>
+            <Pressable accessibilityRole="button" onPress={() => selectCategory(null)} style={styles.allButton}>
               <Text style={styles.allButtonText}>{copy.allQuestions}</Text>
             </Pressable>
           ) : null}
@@ -132,7 +117,7 @@ export default function CommunityQuestionsScreen({ navigation }) {
         ) : loadError ? (
           <View style={styles.status}>
             <Text style={styles.statusText}>{copy.loadFailed}</Text>
-            <Pressable accessibilityRole="button" onPress={refresh} style={styles.retryButton}>
+            <Pressable accessibilityRole="button" onPress={refreshQuestions} style={styles.retryButton}>
               <Text style={styles.retryText}>{copy.retry}</Text>
             </Pressable>
           </View>
@@ -151,11 +136,57 @@ export default function CommunityQuestionsScreen({ navigation }) {
                   <Text style={styles.metaText}>{question.is_resolved ? copy.resolved : copy.openQuestion}</Text>
                 </View>
                 {question.city ? <Text style={styles.metaText}>{question.city}</Text> : null}
+                <Pressable accessibilityRole="button" onPress={() => toggleQuestion(question.id)} style={styles.replyToggle}>
+                  <Text style={styles.replyToggleText}>{copy.viewReplies}</Text>
+                </Pressable>
+                {selectedQuestionId === question.id ? (
+                  <View style={styles.replyPanel}>
+                    {loadingReplies[question.id] ? <ActivityIndicator color={colors.gold} /> : null}
+                    {replyErrors[question.id] ? (
+                      <Pressable onPress={() => refreshReplies(question.id)} style={styles.retryButton}>
+                        <Text style={styles.retryText}>{copy.retryReplies}</Text>
+                      </Pressable>
+                    ) : null}
+                    {(repliesByQuestion[question.id] ?? []).map((reply) => (
+                      <View key={reply.id} style={styles.replyCard}>
+                        <Text style={styles.replyBody}>{reply.body}</Text>
+                        <Text style={styles.replyDate}>{new Date(reply.created_at).toLocaleDateString(language)}</Text>
+                      </View>
+                    ))}
+                    {(repliesByQuestion[question.id] ?? []).length === 0 && !loadingReplies[question.id] && !replyErrors[question.id] ? (
+                      <Text style={styles.replyEmpty}>{copy.noReplies}</Text>
+                    ) : null}
+                    {question.is_resolved ? <Text style={styles.replyEmpty}>{copy.resolvedNoReplies}</Text> : session?.user?.id ? (
+                      <>
+                        <TextInput
+                          style={styles.replyInput}
+                          value={replyDraft}
+                          onChangeText={setReplyDraft}
+                          placeholder={copy.replyPlaceholder}
+                          placeholderTextColor={colors.textMuted}
+                          multiline
+                          maxLength={3000}
+                          textAlignVertical="top"
+                          editable={!submittingReply}
+                        />
+                        {replySubmitError ? <Text style={styles.error}>{copy.replyFailed}</Text> : null}
+                        <Pressable accessibilityRole="button" disabled={submittingReply || replyDraft.trim().length < 2} onPress={() => sendReply(question.id)} style={styles.replySend}>
+                          {submittingReply ? <ActivityIndicator color={colors.background} /> : <Text style={styles.replySendText}>{copy.sendReply}</Text>}
+                        </Pressable>
+                      </>
+                    ) : <Text style={styles.signInNote}>{copy.signInToReply}</Text>}
+                  </View>
+                ) : null}
               </View>
             ))}
             <Text style={styles.note}>{copy.questionCount}: {questions.length}</Text>
           </View>
         )}
+        {!loading && !loadError && hasMore ? (
+          <Pressable accessibilityRole="button" disabled={loadingMore} onPress={loadMoreQuestions} style={styles.retryButton}>
+            {loadingMore ? <ActivityIndicator color={colors.gold} /> : <Text style={styles.retryText}>{copy.loadMore}</Text>}
+          </Pressable>
+        ) : null}
         <Text style={styles.note}>{copy.refreshHint}</Text>
         <Text style={styles.healthNote}>{copy.healthNote}</Text>
       </ScrollView>
@@ -200,6 +231,16 @@ function createStyles(colors) {
     statusText: { color: colors.textSoft, fontSize: 12, lineHeight: 19 },
     retryButton: { alignSelf: 'flex-start', paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, borderColor: colors.gold, borderRadius: radius.md },
     retryText: { color: colors.gold, fontWeight: '700' },
+    replyToggle: { alignSelf: 'flex-start', paddingVertical: 8, paddingHorizontal: 4 },
+    replyToggleText: { color: colors.gold, fontWeight: '800', fontSize: 12 },
+    replyPanel: { borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 10, gap: 9 },
+    replyCard: { borderRadius: radius.md, backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border, padding: 10, gap: 6 },
+    replyBody: { color: colors.text, fontSize: 12, lineHeight: 18 },
+    replyDate: { color: colors.textMuted, fontSize: 10 },
+    replyEmpty: { color: colors.textMuted, fontSize: 11 },
+    replyInput: { minHeight: 76, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, color: colors.text, borderRadius: radius.md, padding: 11, fontSize: 13 },
+    replySend: { minHeight: 42, borderRadius: radius.md, backgroundColor: colors.gold, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14 },
+    replySendText: { color: colors.background, fontWeight: '800', fontSize: 12 },
     note: { color: colors.textMuted, fontSize: 11, lineHeight: 17, marginTop: 15 },
     healthNote: { color: colors.textMuted, fontSize: 11, lineHeight: 17, marginTop: 20 },
   });

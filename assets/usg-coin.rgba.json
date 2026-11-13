@@ -1,0 +1,15 @@
+{
+  "width": 1043,
+  "height": 1142,
+  "expectedByteLength": 4764424,
+  "originalPngSha256": "21954E11B482AEE3C8A817C5A15C07152E5B578E2249E2EE953B09095C93623A",
+  "generatedRgbaSha256": "61FB573DF10CA1798141ABE9D0CF36330073C658270D2CC54BBB026792C3A95B",
+  "pixelChannelOrdering": "RGBA, 8 bits per channel, row-major, top-to-bottom",
+  "pixelStats": {
+    "nonTransparentPixels": 927804,
+    "nonDarkPixels": 835876,
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "partiallyTransparentPixels": 19380
+  }
+}

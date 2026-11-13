@@ -9,6 +9,8 @@ import {
   View,
 } from 'react-native';
 import { Asset } from 'expo-asset';
+import { readAsStringAsync, EncodingType } from 'expo-file-system/legacy';
+import { decode as decodeBase64 } from 'base64-arraybuffer';
 import { GLView } from 'expo-gl';
 import * as THREE from 'three';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -44,46 +46,25 @@ function createRenderer(gl) {
   return renderer;
 }
 
-async function loadExpoTexture(moduleId) {
+async function loadRgbaTexture(moduleId) {
   const asset = Asset.fromModule(moduleId);
   await asset.downloadAsync();
-
-  const uri = asset.localUri ?? asset.uri;
-
-  let width = asset.width;
-  let height = asset.height;
-
-  if (!width || !height) {
-    const size = await new Promise((resolve, reject) => {
-      RNImage.getSize(
-        uri,
-        (resolvedWidth, resolvedHeight) =>
-          resolve({
-            width: resolvedWidth,
-            height: resolvedHeight,
-          }),
-        reject
-      );
-    });
-
-    width = size.width;
-    height = size.height;
+  if (!asset.localUri) throw new Error('USG medallion RGBA asset did not resolve to a local file.');
+  const metadata = require('../../assets/usg-coin.rgba.json');
+  const base64 = await readAsStringAsync(asset.localUri, { encoding: EncodingType.Base64 });
+  const pixels = new Uint8Array(decodeBase64(base64));
+  if (pixels.byteLength !== metadata.expectedByteLength || pixels.byteLength !== 4764424) {
+    throw new Error('Invalid USG medallion RGBA buffer length: ' + pixels.byteLength);
   }
-
-  const texture = new THREE.Texture();
-  texture.isDataTexture = true;
-  texture.image = {
-    data: asset,
-    width,
-    height,
-  };
+  const texture = new THREE.DataTexture(pixels, metadata.width, metadata.height, THREE.RGBAFormat, THREE.UnsignedByteType);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.magFilter = THREE.LinearFilter;
+  texture.minFilter = THREE.LinearFilter;
+  texture.generateMipmaps = false;
+  texture.unpackAlignment = 1;
+  texture.flipY = true;
   texture.needsUpdate = true;
-
-  return {
-    texture,
-    width,
-    height,
-  };
+  return { texture, width: metadata.width, height: metadata.height };
 }
 
 function fitCrestSize(width, height) {
@@ -123,9 +104,7 @@ async function buildCrestMedallion() {
     texture: coinTexture,
     width,
     height,
-  } = await loadExpoTexture(
-    require('../../assets/usg-coin.png')
-  );
+  } = await loadRgbaTexture(require('../../assets/usg-coin.rgba'));
 
   const group = new THREE.Group();
 

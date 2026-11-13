@@ -40,7 +40,7 @@ const copy = {
     community: {
       title: 'Общност',
       body:
-        'Тук ще откриваш профили на Cane Corso от USG общността и ще участваш в бъдещи обществени функции и взаимодействия.',
+        'Разглеждай публичните въпроси на общността. Влез в профила си, за да публикуваш въпрос или отговор.',
     },
     services: {
       title: 'Професионалисти и услуги',
@@ -63,6 +63,8 @@ const copy = {
         'Тук ще намериш повече за идеята, ценностите и развитието на USG — Unico Suo Genere™ като независима образователна и културна среда.',
     },
     status: 'Активира се след регистрация',
+    communityStatus: 'Публичните въпроси са достъпни за четене',
+    browseCommunity: 'ВЪПРОСИ И ОТГОВОРИ',
     note:
       'Като гост виждаш предварителен преглед. След регистрация или вход ще получиш достъп до активните функции на тази секция.',
     home: 'НАЧАЛО',
@@ -87,7 +89,7 @@ const copy = {
     community: {
       title: 'Community',
       body:
-        'Discover Cane Corso profiles from the USG community and take part in future community features and interactions.',
+        'Browse public questions from the community. Sign in to publish a question or reply.',
     },
     services: {
       title: 'Professionals & Services',
@@ -110,6 +112,8 @@ const copy = {
         'Learn more about the idea, values, and development of USG — Unico Suo Genere™ as an independent educational and cultural environment.',
     },
     status: 'Available after registration',
+    communityStatus: 'Public questions are available to read',
+    browseCommunity: 'QUESTIONS & ANSWERS',
     note:
       'As a guest you can see this preview. Sign in or create an account to use the active features of this section.',
     home: 'HOME',
@@ -134,7 +138,7 @@ const copy = {
     community: {
       title: 'Comunità',
       body:
-        'Scopri i profili Cane Corso della comunità USG e partecipa alle future funzioni e interazioni della comunità.',
+        'Consulta le domande pubbliche della community. Accedi per pubblicare una domanda o rispondere.',
     },
     services: {
       title: 'Professionisti e servizi',
@@ -157,12 +161,41 @@ const copy = {
         'Scopri l’idea, i valori e lo sviluppo di USG — Unico Suo Genere™ come ambiente educativo e culturale indipendente.',
     },
     status: 'Disponibile dopo la registrazione',
+    communityStatus: 'Le domande pubbliche sono consultabili',
+    browseCommunity: 'DOMANDE E RISPOSTE',
     note:
       'Come ospite puoi vedere questa anteprima. Accedi o crea un account per usare le funzioni attive di questa sezione.',
     home: 'HOME',
     auth: 'ACCEDI / REGISTRATI',
   },
 };
+
+function navigateToRegisteredAncestor(navigation, routeName) {
+  let candidate = navigation;
+  const inspected = [];
+
+  while (candidate) {
+    const state = candidate.getState?.();
+    const routeNames = state?.routeNames ?? state?.routes?.map((route) => route.name) ?? [];
+    inspected.push(routeNames);
+
+    if (routeNames.includes(routeName)) {
+      console.info('[CommunityGuestNavigation] route resolved', {
+        routeName,
+        routeNames,
+      });
+      candidate.navigate(routeName);
+      return;
+    }
+
+    candidate = candidate.getParent?.();
+  }
+
+  console.warn('[CommunityGuestNavigation] route not registered in ancestor navigators', {
+    routeName,
+    inspected,
+  });
+}
 
 export default function GuestSectionPreview({
 sectionKey,
@@ -187,6 +220,7 @@ sectionKey,
   const [showBackToTop, setShowBackToTop] = useState(false);
   const languageCopy = copy[language] ?? copy.en;
   const section = languageCopy[sectionKey] ?? languageCopy.about;
+  const statusText = sectionKey === 'community' ? languageCopy.communityStatus : languageCopy.status;
 
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right']}>
@@ -214,10 +248,24 @@ sectionKey,
           <Text style={styles.body}>{section.body}</Text>
 
           <View style={styles.status}>
-            <Text style={styles.statusText}>{languageCopy.status}</Text>
+            <Text style={styles.statusText}>{statusText}</Text>
           </View>
 
           <Text style={styles.note}>{languageCopy.note}</Text>
+
+          {sectionKey === 'community' ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={languageCopy.browseCommunity}
+              style={styles.communityButton}
+              onPress={() => {
+                console.info('[CommunityGuestNavigation] public questions CTA pressed');
+                navigateToRegisteredAncestor(navigation, 'CommunityQuestions');
+              }}
+            >
+              <Text style={styles.primaryText}>{languageCopy.browseCommunity}</Text>
+            </Pressable>
+          ) : null}
 
           <View style={styles.actions}>
             <Pressable
@@ -328,6 +376,17 @@ function createStyles(colors) {
       flexDirection: 'row',
       gap: 12,
       marginTop: 22,
+    },
+    communityButton: {
+      minHeight: 48,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.gold,
+      backgroundColor: colors.activeSurface,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 12,
+      marginTop: 20,
     },
     secondaryButton: {
       flex: 1,

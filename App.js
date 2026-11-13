@@ -14,6 +14,7 @@ import {
 } from '@react-navigation/native';
 
 import AppNavigator from './src/navigation/AppNavigator';
+import { CommunityProvider } from './src/community/CommunityContext';
 import USGIntro3DDirect from './src/components/USGIntro3DDirect';
 import { AppControlProvider } from './src/app/AppControlContext';
 import { AuthProvider, useAuth } from './src/auth/AuthContext';
@@ -180,15 +181,17 @@ function AppContent() {
   return (
     <AppControlProvider replayIntro={replayIntro} leaveGuestMode={leaveGuestMode}>
       <View style={demoReturnStyles.container}>
-        <NavigationContainer
-          ref={demoNavigationRef}
-          theme={navigationTheme}
-          onReady={() => setDemoNavigationReady(true)}
-        >
-          <StatusBar style={isDark ? 'light' : 'dark'} />
-          <AuthSignedInBanner />
-          <AppNavigator />
-        </NavigationContainer>
+        <CommunityProvider>
+          <NavigationContainer
+            ref={demoNavigationRef}
+            theme={navigationTheme}
+            onReady={() => setDemoNavigationReady(true)}
+          >
+            <StatusBar style={isDark ? 'light' : 'dark'} />
+            <AuthSignedInBanner />
+            <AppNavigator />
+          </NavigationContainer>
+        </CommunityProvider>
         {(isSoftUniDemoUser || (demoGuest && (guestMode || Boolean(session)))) && !demoPanel ? (
           <View pointerEvents="box-none" style={demoReturnStyles.floatingLayer}>
             <Pressable

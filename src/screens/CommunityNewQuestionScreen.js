@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '../auth/AuthContext';
 import { communityQuestionsCopy } from '../community/communityQuestionsCopy';
-import { createCommunityQuestion } from '../community/communityQuestionsService';
+import { useCommunity } from '../community/CommunityContext';
 import { useLanguage } from '../i18n/LanguageContext';
 import { radius, spacing } from '../styles/usgTheme';
 import { useTheme } from '../theme/ThemeContext';
@@ -21,6 +21,7 @@ export default function CommunityNewQuestionScreen({ navigation, route }) {
   const { language } = useLanguage();
   const { colors } = useTheme();
   const copy = communityQuestionsCopy[language] ?? communityQuestionsCopy.en;
+  const { submitQuestion, submittingQuestion } = useCommunity();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const validInitialCategory = categories.some((item) => item.value === route?.params?.category)
     ? route.params.category : null;
@@ -28,12 +29,11 @@ export default function CommunityNewQuestionScreen({ navigation, route }) {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [city, setCity] = useState('');
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
-  async function submitQuestion() {
-    if (saving) return;
+  async function submitForm() {
+    if (submittingQuestion) return;
     if (!session?.user?.id) {
       setError(copy.authRequired);
       return;
@@ -58,11 +58,9 @@ export default function CommunityNewQuestionScreen({ navigation, route }) {
       return;
     }
 
-    setSaving(true);
     setError('');
     try {
-      const { error: saveError } = await createCommunityQuestion({
-        authorId: session.user.id,
+      const { error: saveError } = await submitQuestion({
         category,
         title: cleanTitle,
         body: cleanBody,
@@ -72,8 +70,6 @@ export default function CommunityNewQuestionScreen({ navigation, route }) {
       setSuccess(true);
     } catch {
       setError(copy.submitFailed);
-    } finally {
-      setSaving(false);
     }
   }
 
@@ -93,7 +89,7 @@ export default function CommunityNewQuestionScreen({ navigation, route }) {
               key={item.value}
               accessibilityRole="radio"
               accessibilityState={{ selected: category === item.value }}
-              disabled={saving}
+              disabled={submittingQuestion}
               onPress={() => { setCategory(item.value); setError(''); }}
               style={[styles.category, category === item.value && styles.selected]}
             >
@@ -107,7 +103,7 @@ export default function CommunityNewQuestionScreen({ navigation, route }) {
           style={styles.input}
           value={title}
           onChangeText={setTitle}
-          editable={!saving}
+          editable={!submittingQuestion}
           maxLength={160}
           placeholder={copy.questionTitlePlaceholder}
           placeholderTextColor={colors.textMuted}
@@ -117,7 +113,7 @@ export default function CommunityNewQuestionScreen({ navigation, route }) {
           style={[styles.input, styles.multiline]}
           value={body}
           onChangeText={setBody}
-          editable={!saving}
+          editable={!submittingQuestion}
           multiline
           textAlignVertical="top"
           maxLength={5000}
@@ -129,7 +125,7 @@ export default function CommunityNewQuestionScreen({ navigation, route }) {
           style={styles.input}
           value={city}
           onChangeText={setCity}
-          editable={!saving}
+          editable={!submittingQuestion}
           maxLength={100}
           placeholder={copy.questionCityPlaceholder}
           placeholderTextColor={colors.textMuted}
@@ -137,11 +133,11 @@ export default function CommunityNewQuestionScreen({ navigation, route }) {
         {error ? <Text style={styles.error}>{error}</Text> : null}
         <Pressable
           accessibilityRole="button"
-          disabled={saving || !session?.user?.id}
-          onPress={submitQuestion}
-          style={[styles.submit, (saving || !session?.user?.id) && styles.submitDisabled]}
+          disabled={submittingQuestion || !session?.user?.id}
+          onPress={submitForm}
+          style={[styles.submit, (submittingQuestion || !session?.user?.id) && styles.submitDisabled]}
         >
-          {saving ? <ActivityIndicator color={colors.background} /> : <Text style={styles.submitText}>{copy.submitQuestion}</Text>}
+          {submittingQuestion ? <ActivityIndicator color={colors.background} /> : <Text style={styles.submitText}>{copy.submitQuestion}</Text>}
         </Pressable>
         {!session?.user?.id ? <Text style={styles.error}>{copy.authRequired}</Text> : null}
       </ScrollView>
