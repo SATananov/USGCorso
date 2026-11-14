@@ -46,6 +46,21 @@ function AppContent() {
   const isSoftUniDemoUser = ['softuniadmin@demo.com', 'softuniuser@demo.com'].includes(
     (session?.user?.email || '').trim().toLowerCase()
   );
+  const wasSignedInRef = useRef(false);
+
+  useEffect(() => {
+    if (loading) return;
+    if (session?.user?.id) {
+      wasSignedInRef.current = true;
+      return;
+    }
+    if (!wasSignedInRef.current) return;
+    wasSignedInRef.current = false;
+    setDemoGuest(false);
+    setDemoDestination(null);
+    setDemoPanel(false);
+    demoViewState.current = { expanded: null, scrollY: 0 };
+  }, [loading, session?.user?.id]);
   const { language } = useLanguage();
 
   useEffect(() => {
@@ -156,6 +171,10 @@ function AppContent() {
           onOpenDemoKnowledge={() => { setDemoDestination(null); setDemoGuest(true); setGuestMode(true); }}
           onDemoLogin={() => { setDemoDestination(null); setDemoGuest(true); }}
           onCancelDemoFeature={() => setDemoDestination(null)}
+          onSetDemoContext={(active) => {
+            setDemoGuest(Boolean(active));
+            if (!active) setDemoDestination(null);
+          }}
           onOpenDemoFeature={(destination) => { setDemoDestination(destination); setDemoGuest(true); setDemoNavigationReady(false); }}
         />
       </AppControlProvider>

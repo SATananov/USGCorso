@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Image,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -34,11 +35,37 @@ export default function AuthFormScreen({ mode, onBack, onSwitch, onForgotPasswor
   const copy = authCopy[language] ?? authCopy.en;
   const styles = useMemo(() => createStyles(colors), [colors]);
   const isRegister = mode === 'register';
+  const authPresentation = {
+    bg: {
+      login: 'Добре дошъл обратно',
+      register: 'Стани част от USG Corso',
+      loginSubtitle: 'Твоето лично пространство за Cane Corso те очаква.',
+      registerSubtitle: 'Създай профил и открий общността на USG.',
+    },
+    en: {
+      login: 'Welcome back',
+      register: 'Join USG Corso',
+      loginSubtitle: 'Your personal Cane Corso space is waiting.',
+      registerSubtitle: 'Create your profile and discover the USG community.',
+    },
+    it: {
+      login: 'Bentornato',
+      register: 'Entra in USG Corso',
+      loginSubtitle: 'Il tuo spazio dedicato al Cane Corso ti aspetta.',
+      registerSubtitle: 'Crea il profilo e scopri la comunità USG.',
+    },
+  }[language] || {
+    login: 'Welcome back',
+    register: 'Join USG Corso',
+    loginSubtitle: 'Your personal Cane Corso space is waiting.',
+    registerSubtitle: 'Create your profile and discover the USG community.',
+  };
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
@@ -215,13 +242,18 @@ export default function AuthFormScreen({ mode, onBack, onSwitch, onForgotPasswor
 
           <View style={styles.card}>
             <Pressable onPress={onBack} disabled={submitting}>
-              <Text style={styles.backText}>{copy.back}</Text>
+              <Text style={styles.backText}>{"←  "}{copy.back}</Text>
             </Pressable>
 
+            <Image source={require("../../assets/usg-auth-crest.png")} style={[styles.crest, isRegister && styles.crestCompact]} accessible accessibilityLabel="USG Unico Suo Genere" />
             <Text style={styles.brand}>{copy.brand}</Text>
             <Text style={styles.title}>
-              {isRegister ? copy.registerTitle : copy.loginTitle}
+              {isRegister ? authPresentation.register : authPresentation.login}
             </Text>
+            <Text style={styles.subtitle}>
+              {isRegister ? authPresentation.registerSubtitle : authPresentation.loginSubtitle}
+            </Text>
+            <View style={styles.heroDivider} />
 
             <Text style={styles.label}>{copy.email}</Text>
             <TextInput
@@ -258,7 +290,8 @@ export default function AuthFormScreen({ mode, onBack, onSwitch, onForgotPasswor
               <TextInput
                 value={password}
                 ref={passwordInputRef}
-                onFocus={() => handleInputFocus(passwordInputRef)}
+                onFocus={() => { setPasswordFocused(true); handleInputFocus(passwordInputRef); }}
+                onBlur={() => setPasswordFocused(false)}
                 onChangeText={(value) => {
                   setPassword(value);
                   setErrors((current) => ({ ...current, password: '' }));
@@ -296,6 +329,7 @@ export default function AuthFormScreen({ mode, onBack, onSwitch, onForgotPasswor
             ) : null}
             {isRegister ? (
               <>
+                {(((passwordFocused || password.length > 0) && !isPasswordValid(password)) || Boolean(errors.password)) ? (
                 <View style={styles.rulesBox}>
                   {passwordRules.length &&
                   passwordRules.uppercase &&
@@ -349,6 +383,7 @@ export default function AuthFormScreen({ mode, onBack, onSwitch, onForgotPasswor
                     </>
                   )}
                 </View>
+                ) : null}
 
                 <Text style={styles.label}>{copy.confirmPassword}</Text>
                 <View
@@ -524,19 +559,19 @@ const stylesForRule = StyleSheet.create({
     width: '48%',
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 6,
+    marginTop: 4,
   },
   dot: {
-    width: 8,
-    height: 8,
+    width: 7,
+    height: 7,
     borderRadius: 4,
     borderWidth: 1,
-    marginRight: 7,
+    marginRight: 6,
   },
   text: {
     flex: 1,
     fontSize: 10,
-    lineHeight: 14,
+    lineHeight: 13,
     fontWeight: '600',
   },
 });
@@ -554,42 +589,71 @@ function createStyles(colors) {
       flexGrow: 1,
       justifyContent: 'center',
       padding: spacing.md,
-      paddingVertical: 28,
+      paddingVertical: 18,
     },
     card: {
       borderRadius: radius.lg,
       borderWidth: 1,
       borderColor: colors.border,
       backgroundColor: colors.surface,
-      padding: 24,
+      paddingHorizontal: 20,
+      paddingVertical: 20,
     },
     backText: {
       color: colors.goldSoft,
-      fontSize: 11,
+      fontSize: 12,
       fontWeight: '700',
-      marginBottom: 16,
+      marginBottom: 12,
+    },
+    crest: {
+      width: 92,
+      height: 92,
+      resizeMode: 'contain',
+      alignSelf: 'center',
+      marginBottom: 8,
+    },
+    crestCompact: {
+      width: 78,
+      height: 78,
+      marginBottom: 6,
     },
     brand: {
       color: colors.goldSoft,
-      fontSize: 10,
+      fontSize: 11,
       fontWeight: '700',
-      letterSpacing: 3,
+      letterSpacing: 3.5,
       textAlign: 'center',
-      marginBottom: 10,
+      marginBottom: 8,
     },
     title: {
       color: colors.text,
-      fontSize: 27,
+      fontSize: 25,
       fontWeight: '700',
       textAlign: 'center',
-      marginBottom: 24,
+      marginBottom: 8,
+    },
+    subtitle: {
+      color: colors.textSoft,
+      fontSize: 12,
+      lineHeight: 18,
+      textAlign: 'center',
+      marginBottom: 14,
+      paddingHorizontal: 8,
+    },
+    heroDivider: {
+      width: 48,
+      height: 2,
+      backgroundColor: colors.gold,
+      borderRadius: 1,
+      alignSelf: 'center',
+      marginBottom: 8,
     },
     label: {
       color: colors.textSoft,
       fontSize: 12,
       fontWeight: '600',
-      marginTop: 12,
-      marginBottom: 8,
+      marginTop: 10,
+      marginBottom: 6,
     },
     input: {
       minHeight: 48,
@@ -646,16 +710,16 @@ function createStyles(colors) {
       borderWidth: 1,
       borderColor: colors.border,
       backgroundColor: colors.surfaceSoft,
-      paddingHorizontal: 12,
-      paddingVertical: 9,
-      marginTop: 10,
+      paddingHorizontal: 10,
+      paddingVertical: 7,
+      marginTop: 8,
     },
     rulesTitle: {
       color: colors.textSoft,
       fontSize: 10,
       lineHeight: 14,
       fontWeight: '700',
-      marginBottom: 2,
+      marginBottom: 1,
     },
     rulesGrid: {
       flexDirection: 'row',
@@ -689,7 +753,8 @@ function createStyles(colors) {
       color: colors.gold,
       fontSize: 11,
       fontWeight: '700',
-    },    primaryButton: {
+    },
+    primaryButton: {
       minHeight: 50,
       borderRadius: radius.md,
       backgroundColor: colors.gold,
@@ -706,7 +771,7 @@ function createStyles(colors) {
     },
     switchRow: {
       alignItems: 'center',
-      marginTop: 22,
+      marginTop: 16,
     },
     switchPrompt: {
       color: colors.textMuted,

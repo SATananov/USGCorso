@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { communityCorsoCopy } from '../community/communityCorsoCopy';
 import { communityQuestionsCopy } from '../community/communityQuestionsCopy';
-import { getCommunityCorsos } from '../community/communityCorsoService';
+import { getCommunityCorsos, setCommunityCorsoVote } from '../community/communityCorsoService';
 import USGProgressBar from '../components/USGProgressBar';
 import USGInteractiveHeroImage from '../components/USGInteractiveHeroImage';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -42,6 +42,7 @@ export default function CommunityScreen({ navigation }) {
   const [corsos, setCorsos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [votingDogId, setVotingDogId] = useState(null);
 
   const loadCommunity = useCallback(async () => {
     setLoading(true);
@@ -66,6 +67,31 @@ export default function CommunityScreen({ navigation }) {
     }, [loadCommunity])
   );
 
+  const changeVote = useCallback(async (corso) => {
+    if (votingDogId || !corso.viewer_can_vote || corso.vote_count == null) return false;
+    setVotingDogId(corso.id);
+    try {
+      const { data, error: voteError } = await setCommunityCorsoVote(
+        corso.id,
+        !corso.viewer_has_voted
+      );
+      if (voteError || !Array.isArray(data) || data.length !== 1) return false;
+      const next = data[0];
+      const count = Number(next.vote_count);
+      if (!Number.isSafeInteger(count) || count < 0 || typeof next.viewer_has_voted !== 'boolean') return false;
+      setCorsos((items) => items.map((item) => item.id === corso.id ? {
+        ...item,
+        vote_count: count,
+        viewer_has_voted: next.viewer_has_voted,
+      } : item));
+      return true;
+    } catch {
+      return false;
+    } finally {
+      setVotingDogId(null);
+    }
+  }, [votingDogId]);
+
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView
@@ -89,19 +115,6 @@ export default function CommunityScreen({ navigation }) {
           <Text style={styles.subtitle}>{copy.subtitle}</Text>
         </View>
 
-        <View style={styles.questionsEntry}>
-          <Text style={styles.questionsEntryTitle}>{questionsCopy.entryTitle}</Text>
-          <Text style={styles.questionsEntryText}>{questionsCopy.entryDescription}</Text>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={questionsCopy.entryAction}
-            style={styles.questionsEntryButton}
-            onPress={() => navigation.getParent()?.navigate('CommunityQuestions')}
-          >
-            <Text style={styles.questionsEntryButtonText}>{questionsCopy.entryAction}</Text>
-          </Pressable>
-        </View>
-
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
         {loading ? (
@@ -115,7 +128,10 @@ export default function CommunityScreen({ navigation }) {
                 key={corso.id}
                 corso={corso}
                 copy={copy}
+                language={language}
                 styles={styles}
+                onVote={changeVote}
+                voting={votingDogId === corso.id}
               />
             ))}
           </View>
@@ -125,6 +141,19 @@ export default function CommunityScreen({ navigation }) {
             <Text style={styles.emptyText}>{copy.emptyText}</Text>
           </View>
         ) : null}
+        <View style={styles.questionsEntry}>
+          <Text style={styles.questionsEntryTitle}>{questionsCopy.entryTitle}</Text>
+          <Text style={styles.questionsEntryText}>{questionsCopy.entryDescription}</Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={questionsCopy.entryAction}
+            style={styles.questionsEntryButton}
+            onPress={() => navigation.getParent()?.navigate('CommunityQuestions')}
+          >
+            <Text style={styles.questionsEntryButtonText}>{questionsCopy.entryAction}</Text>
+          </Pressable>
+        </View>
+
       </ScrollView>
       <USGBackToTop
         visible={showBackToTop}
@@ -135,8 +164,16 @@ export default function CommunityScreen({ navigation }) {
   );
 }
 
-function CommunityCorsoCard({ corso, copy, styles }) {
+function CommunityCorsoCard({ corso, copy, language, styles, onVote, voting }) {
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [voteError, setVoteError] = useState(false);
+  const voteAvailable = corso.vote_count !== null && corso.vote_count !== undefined;
+  const voteAllowed = voteAvailable && corso.viewer_can_vote;
+  const handleVote = async () => {
+    setVoteError(false);
+    const ok = await onVote(corso);
+    if (!ok) setVoteError(true);
+  };
   const avatar = getAvatarPreset(corso.owner_avatar_preset);
   const ownerName =
     corso.owner_display_name ||
@@ -148,6 +185,13 @@ function CommunityCorsoCard({ corso, copy, styles }) {
   const location = [corso.city, corso.country].filter(Boolean).join(', ');
   const sex = corso.sex ? copy[corso.sex] : '';
   const color = corso.color ? copy[corso.color] : '';
+  const voteCountValue = corso.vote_count;
+  const parsedVoteCount = voteCountValue === null || voteCountValue === undefined
+    ? null
+    : Number(voteCountValue);
+  const voteCount = Number.isInteger(parsedVoteCount) && parsedVoteCount >= 0
+    ? parsedVoteCount
+    : null;
 
   return (
     <View style={styles.card}>
@@ -157,7 +201,7 @@ function CommunityCorsoCard({ corso, copy, styles }) {
             {corso.photo_url ? (
               <Pressable
                 style={styles.corsoPhotoTapTarget}
-                onPress={() => setPreviewOpen(true)}
+                onPress={() => { setVoteError(false); setPreviewOpen(true); }}
               >
                 <Image
                   source={{ uri: corso.photo_url }}
@@ -193,7 +237,7 @@ function CommunityCorsoCard({ corso, copy, styles }) {
         {corso.birth_date ? (
           <DetailRow
             label={copy.born}
-            value={corso.birth_date}
+            value={formatCommunityBirthDate(corso.birth_date, language)}
             styles={styles}
           />
         ) : null}
@@ -253,6 +297,32 @@ function CommunityCorsoCard({ corso, copy, styles }) {
             style={styles.photoPreviewImage}
             resizeMode="contain"
           />
+
+          <Pressable style={styles.photoVotePanel} onPress={(event) => event.stopPropagation()}>
+            <Text style={styles.photoVoteName}>{corso.name}</Text>
+            <Text style={styles.photoVoteCount}>👍 {voteAvailable ? corso.vote_count : '—'} · {copy.communityVotes}</Text>
+            {voteAvailable && (
+              <Text style={styles.photoVoteProgress}>{copy.recognitionProgress}: {Math.min(corso.vote_count, 50)} / 50</Text>
+            )}
+            {voteAllowed ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={corso.viewer_has_voted ? copy.unvoteAction : copy.voteAction}
+                disabled={voting}
+                style={[styles.photoVoteButton, voting && styles.photoVoteButtonDisabled]}
+                onPress={(event) => { event.stopPropagation(); handleVote(); }}
+              >
+                <Text style={styles.photoVoteButtonText}>
+                  {voting ? copy.voteSaving : corso.viewer_has_voted ? copy.unvoteAction : copy.voteAction}
+                </Text>
+              </Pressable>
+            ) : (
+              <Text style={styles.photoVoteDisabled}>
+                {voteAvailable ? copy.cannotVote : copy.votesNotActive}
+              </Text>
+            )}
+            {voteError ? <Text style={styles.photoVoteError}>{copy.voteError}</Text> : null}
+          </Pressable>
         </Pressable>
       </Modal>
 
@@ -266,8 +336,44 @@ function CommunityCorsoCard({ corso, copy, styles }) {
           ) : null}
         </View>
       </View>
+
+      <View style={styles.votePanel}>
+        <View style={styles.voteHeading}>
+          <Text style={styles.voteSymbol}>👍</Text>
+          <Text style={styles.voteTitle}>{copy.communityVotes}</Text>
+          <Text style={styles.voteNumber}>{voteCount === null ? '—' : voteCount}</Text>
+        </View>
+        {voteCount === null ? (
+          <Text style={styles.voteUnavailable}>{copy.votesNotActive}</Text>
+        ) : (
+          <Text style={styles.voteProgress}>
+            {copy.recognitionProgress}: {Math.min(voteCount, 50)} / 50
+          </Text>
+        )}
+      </View>
     </View>
   );
+}
+
+function formatCommunityBirthDate(value, language) {
+  if (typeof value !== 'string') return value;
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+  if (!match) return value;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (date.getUTCFullYear() !== year ||
+      date.getUTCMonth() + 1 !== month ||
+      date.getUTCDate() !== day) return value;
+  if (language === 'bg') return `${match[3]}.${match[2]}.${match[1]}`;
+  if (language === 'it') return `${match[3]}/${match[2]}/${match[1]}`;
+  return date.toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
 }
 
 function DetailRow({ label, value, styles }) {
@@ -402,7 +508,64 @@ function createStyles(colors) {
     },
     photoPreviewImage: {
       width: '100%',
-      height: '82%',
+      flex: 1,
+      marginTop: 68,
+    },
+    photoVotePanel: {
+      width: '100%',
+      borderWidth: 1,
+      borderColor: colors.goldDark,
+      borderRadius: radius.lg,
+      backgroundColor: colors.surface,
+      padding: 14,
+      marginTop: 8,
+      marginBottom: 18,
+      alignItems: 'center',
+    },
+    photoVoteName: {
+      color: colors.gold,
+      fontWeight: '800',
+      fontSize: 16,
+    },
+    photoVoteCount: {
+      color: colors.text,
+      fontWeight: '700',
+      fontSize: 12,
+      marginTop: 6,
+    },
+    photoVoteProgress: {
+      color: colors.goldSoft,
+      fontSize: 10,
+      marginTop: 5,
+    },
+    photoVoteButton: {
+      backgroundColor: colors.gold,
+      borderRadius: radius.md,
+      paddingVertical: 12,
+      paddingHorizontal: 22,
+      minHeight: 44,
+      justifyContent: 'center',
+      marginTop: 12,
+    },
+    photoVoteButtonDisabled: {
+      opacity: 0.55,
+    },
+    photoVoteButtonText: {
+      color: colors.background,
+      fontWeight: '800',
+      fontSize: 12,
+      textAlign: 'center',
+    },
+    photoVoteDisabled: {
+      color: colors.textMuted,
+      fontSize: 11,
+      marginTop: 12,
+      textAlign: 'center',
+    },
+    photoVoteError: {
+      color: colors.danger || '#b85c5c',
+      fontSize: 11,
+      marginTop: 8,
     },
     photoPreviewClose: {
       position: 'absolute',
@@ -519,6 +682,45 @@ function createStyles(colors) {
       color: colors.goldSoft,
       fontSize: 9,
       marginTop: 2,
+    },
+    votePanel: {
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.activeSurface,
+      paddingHorizontal: 12,
+      paddingVertical: 12,
+      marginTop: 12,
+    },
+    voteHeading: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    voteSymbol: {
+      fontSize: 17,
+      marginRight: 9,
+    },
+    voteTitle: {
+      color: colors.textSoft,
+      fontSize: 12,
+      fontWeight: '700',
+      flex: 1,
+    },
+    voteNumber: {
+      color: colors.gold,
+      fontSize: 17,
+      fontWeight: '800',
+    },
+    voteUnavailable: {
+      color: colors.textMuted,
+      fontSize: 10,
+      lineHeight: 16,
+      marginTop: 5,
+    },
+    voteProgress: {
+      color: colors.goldSoft,
+      fontSize: 10,
+      marginTop: 5,
     },
     emptyCard: {
       alignItems: 'center',
