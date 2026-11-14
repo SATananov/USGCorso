@@ -63,6 +63,11 @@ For Windows laptop / Android Emulator installation and step-by-step grading, see
 **Android APK v1.0.0 (SoftUni exam version)**
 
 **[Download USGCorso for Android](https://github.com/SATananov/USGCorso/releases/download/softuni-v1.0.0/USGCorso_1.0.0_SOFTUNI.apk)**
+**Share the Android download link:** Copy the address below and send it to any Android phone via messaging, SMS or email.
+
+```text
+https://github.com/SATananov/USGCorso/releases/download/softuni-v1.0.0/USGCorso_1.0.0_SOFTUNI.apk
+```
 
 1. Download the APK on an Android phone, or download it on your computer to use with Android Emulator.
 2. On a phone, open the downloaded APK and follow the installation prompts. On a computer, use Android Studio's emulator and drag the APK into it.
