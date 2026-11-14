@@ -20,7 +20,7 @@ https://usg-cane-corso-platform.com/
 
 - [SoftUni Demo](#softuni-demo)
 
-- [APK](#apk)
+- [APK](#apk--install-usgcorso)
 - [Exam Status](#exam-status)
 - [Visual Project Scheme](#visual-project-scheme)
 - [Functional Guide](#functional-guide)
@@ -63,6 +63,7 @@ For Windows laptop / Android Emulator installation and step-by-step grading, see
 **Android APK v1.0.0 (SoftUni exam version)**
 
 **[Download USGCorso for Android](https://github.com/SATananov/USGCorso/releases/download/softuni-v1.0.0/USGCorso_1.0.0_SOFTUNI.apk)**
+
 **Share the Android download link:** Copy the address below and send it to any Android phone via messaging, SMS or email.
 
 ```text
