@@ -37,10 +37,8 @@ The application includes a **SoftUni exam demonstration menu (01-06)** with dire
 
 **Demo accounts for exam evaluation only:**
 
-| Role | Email | Password |
-| --- | --- | --- |
-| Administrator | `SoftUniAdmin@demo.com` | `SoftUniAdmin123!@#` |
-| Regular User | `SoftUniUser@demo.com` | `SoftUniUser123!@#` |
+Use separate disposable demo accounts for the exam. Credentials are provided privately to the examiner, not stored in this public repository.
+Rotate any previously published demo account passwords and ensure these accounts contain no real user data or privileged production access.
 
 **Exam walkthrough:**
 
@@ -54,14 +52,20 @@ The application includes a **SoftUni exam demonstration menu (01-06)** with dire
 The administrator account is for admin moderation features; the regular user account is for user-level actions. These must be dedicated demo accounts without real personal data or reused passwords. The demo menu supplements the real application functionality.
 
 ---
+## Examiner setup and demo
+
+For Windows laptop / Android Emulator installation and step-by-step grading, see **[Examiner Guide](EXAMINER_GUIDE.md)**.
+
+---
+
 ## APK
 
 **Final Exam APK:**  
-The final APK download link is **not documented in this repository snapshot** and must be added before submission. Android development builds have been tested, but they are not a substitute for a published final exam APK link.
+Android v1.0.0 exam APK (signed using a dedicated USG Corso release certificate): **[Download Android APK](https://github.com/SATananov/USGCorso/releases/download/softuni-v1.0.0/USGCorso_1.0.0_SOFTUNI.apk)**. This link becomes available only after publishing the matching GitHub Release asset. SHA-256 and source commit are recorded in the GitHub Release notes.
 
 The SoftUni requirements state that the project must include a working APK link in the README.
 
-The project will not be submitted without this link.
+The release asset must be uploaded and the public download link verified before exam submission.
 
 ---
 
@@ -78,7 +82,7 @@ Current status:
 - Forms and validation: implemented
 - Native mobile features: implemented
 - Functional Guide: included below
-- Final exam APK/download link: pending verification and publication
+- Final exam APK/download link: see [APK](#apk); verify the GitHub Release asset is publicly downloadable before submission
 - Android on-device Knowledge translation: implemented (manual action, BG/EN/IT)
 - Tesseract OCR and OCR Test Lab: implemented and tested; document accuracy varies
 
@@ -402,7 +406,7 @@ The project is tested with an Android Development Build during development, incl
 
 A standalone Android preview build profile is also configured.
 
-The final exam APK link must be added at the top of this README before submission; it is not present in this audited snapshot.
+The exam APK is distributed through GitHub Releases (see [APK](#apk)). Verify the published asset and checksum before submission.
 
 The project will not be submitted without the APK link.
 
@@ -410,7 +414,7 @@ The project will not be submitted without the APK link.
 
 # Current Implementation
 
-The following features were documented in the Android-tested source baseline `ae91d36`. Later repository commits include documentation and SQL-file naming maintenance; those changes do not, by themselves, constitute a new Android build verification:
+The following features were documented in earlier Android-tested checkpoints and evolved across later commits. A signed Release APK has been built and its welcome screen and SoftUni Demonstration checked on an Android emulator; full feature-by-feature runtime verification remains separate:
 
 - 3D USG intro
 - dark and light themes
