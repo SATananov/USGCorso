@@ -88,8 +88,8 @@ const dictionary = {
 };
 
 const kinds = ['walk', 'play', 'training', 'scent', 'social'];
-const dateLabel = value => value
-  ? formatTimestamp(value, undefined, {
+const dateLabel = (value, language) => value
+  ? formatTimestamp(value, ({ bg: 'bg-BG', en: 'en-GB', it: 'it-IT' }[language] || 'en-GB'), {
       year: 'numeric',
       month: 'numeric',
       day: 'numeric',
@@ -339,11 +339,11 @@ export default function MyCorsoChallengesScreen({ route, navigation }) {
           </View>
           <View style={styles.card} onLayout={event => { sectionY.current.achievements = event.nativeEvent.layout.y; }}>
             <Text style={styles.heading}>{t.achievements}</Text>
-            {achievements.length ? achievements.map(a => <View key={a.id} style={styles.mission}><Text style={styles.gold}>★ {t[a.code] || a.code}</Text><Text style={styles.small}>{dateLabel(a.unlocked_at)}</Text></View>) : <Text style={styles.small}>{t.empty}</Text>}
+            {achievements.length ? achievements.map(a => <View key={a.id} style={styles.mission}><Text style={styles.gold}>★ {t[a.code] || a.code}</Text><Text style={styles.small}>{dateLabel(a.unlocked_at, language)}</Text></View>) : <Text style={styles.small}>{t.empty}</Text>}
           </View>
           <View style={styles.card} onLayout={event => { sectionY.current.timeline = event.nativeEvent.layout.y; }}>
             <Text style={styles.heading}>{t.timeline}</Text>
-            {timeline.length ? timeline.map(event => <View key={event.id} style={styles.timelineItem}><View style={styles.dot}/><View style={{flex: 1}}><Text style={styles.body}>{t[event.event_code] || t[event.event_code?.toLowerCase()] || event.event_code}</Text><Text style={styles.small}>{dateLabel(event.occurred_at)}</Text></View></View>) : <Text style={styles.small}>{t.empty}</Text>}
+            {timeline.length ? timeline.map(event => <View key={event.id} style={styles.timelineItem}><View style={styles.dot}/><View style={{flex: 1}}><Text style={styles.body}>{t[event.event_code] || t[event.event_code?.toLowerCase()] || event.event_code}</Text><Text style={styles.small}>{dateLabel(event.occurred_at, language)}</Text></View></View>) : <Text style={styles.small}>{t.empty}</Text>}
           </View>
         </> : null}
       </ScrollView>

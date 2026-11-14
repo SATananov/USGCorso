@@ -2,15 +2,15 @@
 
 USGCorso is an **Android (Expo / React Native)** application. The `.apk` does **not** execute natively on a Windows laptop. You may use a physical Android phone or an Android Virtual Device (AVD) on a Windows laptop. No Windows `.exe` is provided. A short demonstration video, if supplied separately, is a supplement, not a replacement for the APK.
 
-> **Status:** This guide documents the exam workflow. The GitHub Release download must be checked after publication. The current APK is signed with a dedicated USG Corso release certificate; the welcome screen and SoftUni Demonstration have been observed on an Android emulator. This is **not** proof of all features working in all environments.
+> **Status:** This guide documents the exam workflow. The GitHub Release download was checked after publication. The current APK is signed with a dedicated USG Corso release certificate; the welcome screen and SoftUni Demonstration have been observed on an Android emulator. This is **not** proof of all features working in all environments.
 
 ## Download the exam APK
 
 1. Open the [GitHub releases page](https://github.com/SATananov/USGCorso/releases).
-2. Select release `softuni-v1.0.0`, **once published**.
+2. Select release `softuni-v1.0.0`.
 3. Download the asset named `USGCorso_1.0.0_SOFTUNI.apk`.
 4. Compare the downloaded file's SHA-256 to the checksum **published in that release's notes**. Do not use an older build's checksum for a new APK.
-5. The public download URL is active only after the matching GitHub Release asset is uploaded. If it is not yet present, the exam package is not fully published.
+5. The public APK is published at the GitHub Release linked above.
 
 ## Option A — install on Android phone
 

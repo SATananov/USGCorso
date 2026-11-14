@@ -49,7 +49,7 @@ const sectionCopy = {
     pendingPhotos: 'Чакащи снимки',
     pendingContent: 'Чакащи материали',
     pendingApplications: 'Чакащи професионални заявки',
-    openServicesAdmin: 'ОТВОРИ ADMIN SERVICES',
+    openServicesAdmin: 'ОТВОРИ АДМИНИСТРАЦИЯ НА УСЛУГИТЕ',
     noQueue: 'Няма активна модерация',
     ready: 'ГОТОВО',
     open: 'ОТВОРИ',

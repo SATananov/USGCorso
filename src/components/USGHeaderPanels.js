@@ -104,7 +104,7 @@ const copy = {
     accountDetails: 'Настройки на акаунта',
     accountDetailsHint: 'Виж текущия влязъл акаунт.',
     editProfile: 'Редактиране на профил',
-    editProfileHint: 'Avatar, име, държава и град идват в PROFILE 01.',
+    editProfileHint: 'Снимката на профила, името, държавата и градът се управляват в настройките на профила.',
     signOut: 'Изход от профила',
     signOutHint: 'Приключи текущата сесия на това устройство.',
     guestTitle: 'Гост режим',

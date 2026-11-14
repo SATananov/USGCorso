@@ -21,7 +21,7 @@ import USGProgressBar from '../components/USGProgressBar';
 
 const copy = {
   bg: {
-    title: 'ADMIN INBOX',
+    title: 'АДМИНИСТРАТОРСКА ПОЩА',
     subtitle: 'Всички нови и важни неща на едно място.',
     action: 'ИЗИСКВА ДЕЙСТВИЕ',
     info: 'ИНФОРМАЦИЯ',
@@ -34,7 +34,7 @@ const copy = {
     profiles: 'Одобрени професионални профили',
     empty: 'Няма чакащи административни задачи.',
     refresh: 'ОБНОВИ',
-    loadError: 'Admin inbox не можа да бъде зареден.',
+    loadError: 'Администраторската поща не можа да бъде заредена.',
     openAdmin: 'ОТВОРИ КОНТРОЛЕН ЦЕНТЪР',
   },
   en: {

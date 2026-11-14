@@ -23,8 +23,8 @@ import { radius, spacing } from '../styles/usgTheme';
 import { useTheme } from '../theme/ThemeContext';
 import { formatTimestamp } from '../utils/dateTime';
 
-function formatDate(value) {
-  return formatTimestamp(value, undefined, { dateStyle: 'medium', timeStyle: 'short' });
+function formatDate(value, language) {
+  return formatTimestamp(value, ({ bg: 'bg-BG', en: 'en-GB', it: 'it-IT' }[language] || 'en-GB'), { dateStyle: 'medium', timeStyle: 'short' });
 }
 
 const editCopy = {
@@ -334,7 +334,7 @@ export default function MyMaterialDetailsScreen({ route, navigation }) {
           <View style={styles.metaItem}>
             <Text style={styles.label}>{t('myMaterials.created')}</Text>
             <Text style={styles.metaValue}>
-              {formatDate(item.created_at)}
+              {formatDate(item.created_at, language)}
             </Text>
           </View>
 
@@ -343,7 +343,7 @@ export default function MyMaterialDetailsScreen({ route, navigation }) {
           <View style={styles.metaItem}>
             <Text style={styles.label}>{t('myMaterials.updated')}</Text>
             <Text style={styles.metaValue}>
-              {formatDate(item.updated_at)}
+              {formatDate(item.updated_at, language)}
             </Text>
           </View>
 
@@ -353,7 +353,7 @@ export default function MyMaterialDetailsScreen({ route, navigation }) {
               <View style={styles.metaItem}>
                 <Text style={styles.label}>{t('myMaterials.approvedAt')}</Text>
                 <Text style={styles.metaValue}>
-                  {formatDate(item.approved_at)}
+                  {formatDate(item.approved_at, language)}
                 </Text>
               </View>
             </>

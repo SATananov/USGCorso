@@ -165,7 +165,7 @@ const copy = {
     browseCommunity: 'DOMANDE E RISPOSTE',
     note:
       'Come ospite puoi vedere questa anteprima. Accedi o crea un account per usare le funzioni attive di questa sezione.',
-    home: 'HOME',
+    home: 'INIZIO',
     auth: 'ACCEDI / REGISTRATI',
   },
 };

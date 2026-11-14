@@ -57,7 +57,7 @@ const copy = {
     updated: 'Aggiornato',
     untitled: 'Contenuto senza titolo',
     noContent: 'Non è disponibile contenuto testuale per questo materiale.',
-    notFound: 'Questo contenuto Knowledge non può essere aperto.',
+    notFound: 'Questo contenuto della sezione Conoscenza non può essere aperto.',
     translate: 'TRADUCI SUL DISPOSITIVO',
     translating: 'Traduzione sul dispositivo…',
     machine: 'Traduzione automatica — verifica i dettagli importanti.',
@@ -88,8 +88,8 @@ function getContentTypeLabel(type, language) {
   return labels[language]?.[type] ?? labels.en[type] ?? type ?? labels.en.article;
 }
 
-function formatDate(value) {
-  return formatTimestamp(value, undefined, { dateStyle: 'medium' });
+function formatDate(value, language) {
+  return formatTimestamp(value, ({ bg: 'bg-BG', en: 'en-GB', it: 'it-IT' }[language] || 'en-GB'), { dateStyle: 'medium' });
 }
 
 export default function KnowledgePublicDetailsScreen({ route }) {
@@ -161,7 +161,7 @@ export default function KnowledgePublicDetailsScreen({ route }) {
     );
   }
 
-  const updated = formatDate(current.updated_at);
+  const updated = formatDate(current.updated_at, language);
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>

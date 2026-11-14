@@ -72,12 +72,12 @@ export const accountSettingsCopy = {
 
 import { formatTimestamp } from '../utils/dateTime';
 
-export function formatMemberSince(value, _language) {
+export function formatMemberSince(value, language) {
   if (!value) {
     return '\u2014';
   }
 
-  return formatTimestamp(value, undefined, {
+  return formatTimestamp(value, ({ bg: 'bg-BG', en: 'en-GB', it: 'it-IT' }[language] || 'en-GB'), {
     year: 'numeric',
     month: 'long',
   }) || '\u2014';

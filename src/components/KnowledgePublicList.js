@@ -75,8 +75,8 @@ function getContentTypeLabel(type, language) {
   return labels[language]?.[type] ?? labels.en[type] ?? type ?? labels.en.article;
 }
 
-function formatDate(value) {
-  return formatTimestamp(value, undefined, { dateStyle: 'medium' });
+function formatDate(value, language) {
+  return formatTimestamp(value, ({ bg: 'bg-BG', en: 'en-GB', it: 'it-IT' }[language] || 'en-GB'), { dateStyle: 'medium' });
 }
 
 export default function KnowledgePublicList({ categoryKey = null }) {
@@ -147,7 +147,7 @@ export default function KnowledgePublicList({ categoryKey = null }) {
 
       {state === 'ready' &&
         items.map((item) => {
-          const updated = formatDate(item.updated_at);
+          const updated = formatDate(item.updated_at, language);
 
           return (
             <Pressable

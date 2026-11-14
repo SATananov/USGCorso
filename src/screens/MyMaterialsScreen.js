@@ -30,8 +30,8 @@ const SECTION_FILTERS = [
   'corso_match',
 ];
 
-function formatDate(value) {
-  return formatTimestamp(value, undefined, { dateStyle: 'medium' });
+function formatDate(value, language) {
+  return formatTimestamp(value, ({ bg: 'bg-BG', en: 'en-GB', it: 'it-IT' }[language] || 'en-GB'), { dateStyle: 'medium' });
 }
 
 export default function MyMaterialsScreen({ navigation }) {
@@ -294,7 +294,7 @@ export default function MyMaterialsScreen({ navigation }) {
                 </Text>
                 <Text style={styles.metaDot}>•</Text>
                 <Text style={styles.metaText}>
-                  {formatDate(item.updated_at || item.created_at)}
+                  {formatDate(item.updated_at || item.created_at, language)}
                 </Text>
               </View>
 

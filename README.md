@@ -58,14 +58,19 @@ For Windows laptop / Android Emulator installation and step-by-step grading, see
 
 ---
 
-## APK
+## APK — Install USGCorso
 
-**Final Exam APK:**  
-Android v1.0.0 exam APK (signed using a dedicated USG Corso release certificate): **[Download Android APK](https://github.com/SATananov/USGCorso/releases/download/softuni-v1.0.0/USGCorso_1.0.0_SOFTUNI.apk)**. This link becomes available only after publishing the matching GitHub Release asset. SHA-256 and source commit are recorded in the GitHub Release notes.
+**Android APK v1.0.0 (SoftUni exam version)**
 
-The SoftUni requirements state that the project must include a working APK link in the README.
+**[Download USGCorso for Android](https://github.com/SATananov/USGCorso/releases/download/softuni-v1.0.0/USGCorso_1.0.0_SOFTUNI.apk)**
 
-The release asset must be uploaded and the public download link verified before exam submission.
+1. Download the APK on an Android phone, or download it on your computer to use with Android Emulator.
+2. On a phone, open the downloaded APK and follow the installation prompts. On a computer, use Android Studio's emulator and drag the APK into it.
+3. Open **USG Corso**, tap **Continue**, then select **SoftUni Demonstration** to explore the project.
+
+For full installation steps and the examiner walkthrough, see the **[Examiner Guide](EXAMINER_GUIDE.md)**.
+
+The APK is already published and its download was verified. It is an **Android app**, not a Windows `.exe` file. Technical build details and checksum are available in the [GitHub Release](https://github.com/SATananov/USGCorso/releases/tag/softuni-v1.0.0) for anyone who needs them.
 
 ---
 
@@ -82,7 +87,7 @@ Current status:
 - Forms and validation: implemented
 - Native mobile features: implemented
 - Functional Guide: included below
-- Final exam APK/download link: see [APK](#apk); verify the GitHub Release asset is publicly downloadable before submission
+- Final exam APK/download link: published and verified; see [APK](#apk)
 - Android on-device Knowledge translation: implemented (manual action, BG/EN/IT)
 - Tesseract OCR and OCR Test Lab: implemented and tested; document accuracy varies
 

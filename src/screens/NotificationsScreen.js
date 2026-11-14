@@ -109,7 +109,7 @@ function getNotificationPresentation(item, language) {
         body: label
           ? `Получена е заявка за „${label}“.`
           : 'Получена е нова професионална заявка.',
-        action: 'ОТВОРИ ADMIN SERVICES',
+        action: 'ОТВОРИ АДМИНИСТРАЦИЯ НА УСЛУГИТЕ',
       };
     }
 
