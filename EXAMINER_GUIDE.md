@@ -2,20 +2,19 @@
 
 USGCorso is an **Android (Expo / React Native)** application. The `.apk` does **not** execute natively on a Windows laptop. You may use a physical Android phone or an Android Virtual Device (AVD) on a Windows laptop. No Windows `.exe` is provided. A short demonstration video, if supplied separately, is a supplement, not a replacement for the APK.
 
-> **Status:** This guide documents the exam workflow. The GitHub Release download was checked after publication. The current APK is signed with a dedicated USG Corso release certificate; the welcome screen and SoftUni Demonstration have been observed on an Android emulator. This is **not** proof of all features working in all environments.
+> **Status:** This guide documents the exam workflow. The GitHub Release download was checked after publication. The welcome screen and SoftUni Demonstration have been observed on an Android emulator. This is **not** proof of all features working in all environments.
 
 ## Download the exam APK
 
 1. Open the [GitHub releases page](https://github.com/SATananov/USGCorso/releases).
 2. Select release `softuni-v1.0.0`.
 3. Download the asset named `USGCorso_1.0.0_SOFTUNI.apk`.
-4. Compare the downloaded file's SHA-256 to the checksum **published in that release's notes**. Do not use an older build's checksum for a new APK.
-5. The public APK is published at the GitHub Release linked above.
+4. Install the APK on a test Android phone or emulator using the steps below.
 
 ## Option A — install on Android phone
 
 1. Download the APK onto an Android phone or copy it over USB.
-2. Open the APK with Android's file manager and allow installing from that source if prompted. Only install if you trust the release and have verified its checksum.
+2. Open the APK with Android's file manager and allow installing from that source if prompted. Install only an APK downloaded from the official project release.
 3. Launch **USG Corso**, tap **CONTINUE**, then open **SoftUni Demonstration** from the welcome/auth screen.
 4. The app may request runtime permissions for camera, location, or notifications as features are used.
 5. **Do not uninstall an existing USGCorso installation to replace it.** Different signing certificates cannot update one another, and uninstalling may erase locally stored data. Prefer an unused test phone or emulator.
@@ -84,6 +83,6 @@ From the welcome screen tap **CONTINUE**, then **SoftUni Demonstration**. Expand
 
 ## Verification boundaries
 
-- Confirmed previously: Release APK signature v2 with `CN=USG Corso`, expected APK package `com.usgcorso.mobile`, successful emulator boot, welcome screen and section 06 rendering.
+- Confirmed previously: successful emulator boot, welcome screen and SoftUni Demonstration rendering.
 - Not automatically confirmed: every flow in sections 01–05, fresh-device permissions, backend operations, or native features in all emulator images.
 - Signing keystore and passwords are private and **must never be included** in a public release, README, ZIP, or exam submission.

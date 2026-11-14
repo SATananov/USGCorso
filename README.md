@@ -70,7 +70,7 @@ For Windows laptop / Android Emulator installation and step-by-step grading, see
 
 For full installation steps and the examiner walkthrough, see the **[Examiner Guide](EXAMINER_GUIDE.md)**.
 
-The APK is already published and its download was verified. It is an **Android app**, not a Windows `.exe` file. Technical build details and checksum are available in the [GitHub Release](https://github.com/SATananov/USGCorso/releases/tag/softuni-v1.0.0) for anyone who needs them.
+The exam APK is published on GitHub Releases. It is an **Android app**, not a Windows `.exe` file.
 
 ---
 
@@ -97,53 +97,36 @@ Current status:
 
 ```mermaid
 flowchart TD
-    A[USG Corso App] --> B[App Navigator]
-    B --> C[Bottom Tab Navigator]
-    B --> D[Stack Navigator]
+    APP[USG Corso Android App] --> NAV[React Navigation]
+    NAV --> TABS[Bottom Tab Navigator]
+    NAV --> STACK[Native Stack Navigator]
 
-    C --> H[Home]
-    C --> K[Knowledge]
-    C --> G[Guest Preview Areas]
-    C --> U[Authenticated Areas]
+    TABS --> HOME[Home]
+    TABS --> KNOW[Knowledge - public]
+    TABS --> GUEST[Guest previews]
+    TABS --> USER[Signed-in sections]
 
-    K --> KD[Knowledge Details]
+    KNOW --> DETAILS[Knowledge details]
+    GUEST --> LIMIT[Limited public preview of other areas]
+    USER --> PERSONAL[My Corso and Community]
+    USER --> PLACES[Corso Friendly and services]
+    USER --> MORE[Events, Corso Match and About]
 
-    G --> GM[My Corso Preview]
-    G --> GF[Corso Friendly Preview]
-    G --> GC[Community Preview]
-    G --> GS[Services Preview]
-    G --> GE[Events Preview]
-    G --> GX[Corso Match Preview]
-    G --> GA[About Preview]
+    STACK --> EXTRA[Details, Materials and Settings]
+    STACK --> ADMIN[Admin moderation]
+    STACK --> OCR[OCR Test Lab]
 
-    U --> MC[My Corso]
-    U --> CF[Corso Friendly]
-    U --> CO[Community]
-    U --> SV[Services]
-    U --> EV[Events]
-    U --> CM[Corso Match]
-    U --> AB[About USG]
+    PERSONAL --> SUPA[Supabase]
+    PLACES --> SUPA
+    EXTRA --> SUPA
+    ADMIN --> SUPA
+    SUPA --> AUTH[Authentication]
+    SUPA --> DB[Database and Storage]
+    SUPA --> EDGE[Edge Functions]
 
-    D --> PD[Place Details]
-    D --> MD[Materials and Details]
-    D --> ST[Settings and Account]
-    D --> AD[Admin Moderation]
-
-    MC --> SB[Supabase]
-    CF --> SB
-    CO --> SB
-    MD --> SB
-    AD --> SB
-
-    CF --> MAP[Google Maps and Location]
-    MD --> MEDIA[Camera, Image Picker, Tesseract OCR and QR]
-    D --> OCRLAB[OCR Test Lab]
-    KD --> TRANSLATE[Android ML Kit On-Device Translation]
-
-    SB --> AUTH[Auth and Session]
-    SB --> DB[Database]
-    SB --> STORAGE[Storage]
-    SB --> EDGE[Edge Functions]
+    PLACES --> MAP[Google Maps and Location]
+    EXTRA --> MEDIA[Camera, Image Picker and Tesseract OCR]
+    DETAILS --> ML[ML Kit on-device translation]
 ```
 
 The application uses a Bottom Tab Navigator for the main areas and a Stack Navigator for details, settings, materials and admin screens.
@@ -411,9 +394,7 @@ The project is tested with an Android Development Build during development, incl
 
 A standalone Android preview build profile is also configured.
 
-The exam APK is distributed through GitHub Releases (see [APK](#apk)). Verify the published asset and checksum before submission.
-
-The project will not be submitted without the APK link.
+The signed exam APK is available through the [APK download section](#apk). The Google Play edition is planned for later development.
 
 ---
 
@@ -684,17 +665,9 @@ Expo Go is not the main verification environment for the native project features
 
 ---
 
-# Verified Source Baseline
-
-- Android-tested historical source baseline: `ae91d364e4f4d0f37ff7040f251f3118bee9d519` (`main`, November 5, 2026).
-- Historical Git tree: `6fb6709f979a04ae65c43381704cfe56243327be`.
-- Post-naming Git checkpoint before this README-only update: `04d4a6f` (`main`, November 11, 2026). This is a repository checkpoint, not a newly verified Android APK.
-- The working Android development build and OCR/translation flows were manually tested during the cleanup sequence; this is not a claim of comprehensive automated release certification.
-- This README update changes documentation only. Supabase RPCs, migration history and native build configuration remain unchanged.
-
----
-
 # Development Status
+
+The **SoftUni exam edition (v1.0.0)** has a published Android APK. USGCorso remains an active project: after the exam, development will continue toward a public **Google Play** release. The planned features below describe the future product, not missing exam deliverables. Google Play publication has not yet occurred.
 
 ## Working Now
 
@@ -728,7 +701,6 @@ Planned or incomplete areas include:
 - wider events directory
 - full Corso Match logic
 - wider community interaction
-- final exam APK and its public download link
 - improving OCR recognition quality on complex documents
 - production access policy for the OCR diagnostic screen
 - broader editorial review and translation coverage for historical Knowledge content
