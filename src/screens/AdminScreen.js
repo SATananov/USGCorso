@@ -25,6 +25,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { getAdminProfessionalApplications } from '../services/professionalAccessService';
 import AdminContentGovernance from '../components/AdminContentGovernance';
 import AdminCommunityQAModeration from '../components/AdminCommunityQAModeration';
+import AdminRecognitionNominations from '../components/AdminRecognitionNominations';
 import AdminDogModeration from '../components/AdminDogModeration';
 import AdminDogsManagement from '../components/AdminDogsManagement';
 import AdminPlaceMediaModeration from '../components/AdminPlaceMediaModeration';
@@ -553,6 +554,7 @@ export default function AdminScreen({ navigation }) {
                           onChanged={loadDashboard}
                         />
                         <AdminCommunityQAModeration key={`community-qna-${refreshToken}`} />
+                        <AdminRecognitionNominations key={`recognition-${refreshToken}`} />
                       </>
                     ) : (
                       <AdminContentGovernance

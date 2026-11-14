@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState, useRef } from 'react';
 import {
+  useWindowDimensions,
   Image,
   Modal,
   Pressable,
@@ -13,12 +14,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { communityCorsoCopy } from '../community/communityCorsoCopy';
 import { communityQuestionsCopy } from '../community/communityQuestionsCopy';
+import USGRecognitionInfoSection from '../components/USGRecognitionInfoSection';
 import { getCommunityCorsos, setCommunityCorsoVote } from '../community/communityCorsoService';
 import USGProgressBar from '../components/USGProgressBar';
 import USGInteractiveHeroImage from '../components/USGInteractiveHeroImage';
 import { useLanguage } from '../i18n/LanguageContext';
 import USGBackToTop from '../components/USGBackToTop';
 import { getAvatarPreset } from '../profile/avatarPresets';
+import USGRecognitionCertificate from '../components/USGRecognitionCertificate';
+import { recognitionSnapshotFromApprovedCorso } from '../recognition/recognitionData';
 import { radius, spacing } from '../styles/usgTheme';
 import { useTheme } from '../theme/ThemeContext';
 
@@ -141,6 +145,8 @@ export default function CommunityScreen({ navigation }) {
             <Text style={styles.emptyText}>{copy.emptyText}</Text>
           </View>
         ) : null}
+        <USGRecognitionInfoSection corsos={corsos} />
+
         <View style={styles.questionsEntry}>
           <Text style={styles.questionsEntryTitle}>{questionsCopy.entryTitle}</Text>
           <Text style={styles.questionsEntryText}>{questionsCopy.entryDescription}</Text>
@@ -166,6 +172,9 @@ export default function CommunityScreen({ navigation }) {
 
 function CommunityCorsoCard({ corso, copy, language, styles, onVote, voting }) {
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [certificatePreviewOpen, setCertificatePreviewOpen] = useState(false);
+  const [certificatePreviewExpanded, setCertificatePreviewExpanded] = useState(false);
+  const { width: windowWidth } = useWindowDimensions();
   const [voteError, setVoteError] = useState(false);
   const voteAvailable = corso.vote_count !== null && corso.vote_count !== undefined;
   const voteAllowed = voteAvailable && corso.viewer_can_vote;
@@ -174,6 +183,12 @@ function CommunityCorsoCard({ corso, copy, language, styles, onVote, voting }) {
     const ok = await onVote(corso);
     if (!ok) setVoteError(true);
   };
+  const certificatePreview = recognitionSnapshotFromApprovedCorso(corso);
+  const previewLabel = { bg: 'Преглед на сертификат', en: 'Certificate preview', it: 'Anteprima certificato' }[language] ?? 'Certificate preview';
+  const closeLabel = { bg: 'Затвори', en: 'Close', it: 'Chiudi' }[language] ?? 'Close';
+  const previewInfo = { bg: 'Само визуален преглед. Сертификат не е издаден.', en: 'Design preview only. No certificate has been issued.', it: 'Solo anteprima grafica. Nessun certificato è stato rilasciato.' }[language] ?? 'Design preview only.';
+  const certificateWidth = certificatePreviewExpanded ? Math.max(720, windowWidth - 28) : Math.max(1, windowWidth - 28);
+  const zoomLabel = ({ bg: certificatePreviewExpanded ? 'Побери на екрана' : 'Увеличи за четене', en: certificatePreviewExpanded ? 'Fit to screen' : 'Zoom to read', it: certificatePreviewExpanded ? 'Adatta allo schermo' : 'Ingrandisci per leggere' }[language]);
   const avatar = getAvatarPreset(corso.owner_avatar_preset);
   const ownerName =
     corso.owner_display_name ||
@@ -336,6 +351,74 @@ function CommunityCorsoCard({ corso, copy, language, styles, onVote, voting }) {
           ) : null}
         </View>
       </View>
+
+      {certificatePreview ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={previewLabel}
+          style={styles.certificatePreviewButton}
+          onPress={() => { setCertificatePreviewExpanded(false); setCertificatePreviewOpen(true); }}
+        >
+          <Text style={styles.certificatePreviewButtonText}>{previewLabel}</Text>
+        </Pressable>
+      ) : null}
+
+      <Modal
+        visible={certificatePreviewOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setCertificatePreviewOpen(false)}
+      >
+        <SafeAreaView style={styles.certificatePreviewOverlay}>
+          <View style={styles.certificatePreviewHeader}>
+            <Text style={styles.certificatePreviewHeaderText}>{previewInfo}</Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={closeLabel}
+              style={styles.certificatePreviewClose}
+              onPress={() => setCertificatePreviewOpen(false)}
+            >
+              <Text style={styles.certificatePreviewCloseText}>×</Text>
+            </Pressable>
+          </View>
+          <ScrollView
+            key={certificatePreviewExpanded ? 'expanded' : 'fitted'}
+            horizontal={certificatePreviewExpanded}
+            style={styles.certificatePreviewScroll}
+            contentContainerStyle={styles.certificatePreviewScrollContent}
+          >
+            {certificatePreview ? (
+              <USGRecognitionCertificate
+                certificate={certificatePreview}
+                width={certificateWidth}
+                fitToScreen={!certificatePreviewExpanded}
+              />
+            ) : null}
+          </ScrollView>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={zoomLabel}
+            style={styles.certificatePreviewZoomButton}
+            onPress={() => setCertificatePreviewExpanded((current) => !current)}
+          >
+            <Text style={styles.certificatePreviewZoomButtonText}>{zoomLabel}</Text>
+          </Pressable>
+          <View style={styles.recognitionExportActionsDisabled}>
+            <View style={styles.recognitionExportRow}>
+              <Pressable disabled accessibilityRole="button" accessibilityState={{ disabled: true }} style={styles.recognitionExportButton}>
+                <Text style={styles.recognitionExportLabel}>{{ bg: 'Свали PDF', en: 'Download PDF', it: 'Scarica PDF' }[language]}</Text>
+              </Pressable>
+              <Pressable disabled accessibilityRole="button" accessibilityState={{ disabled: true }} style={styles.recognitionExportButton}>
+                <Text style={styles.recognitionExportLabel}>{{ bg: 'Запази снимка', en: 'Save image', it: 'Salva immagine' }[language]}</Text>
+              </Pressable>
+            </View>
+            <Pressable disabled accessibilityRole="button" accessibilityState={{ disabled: true }} style={styles.recognitionExportWideButton}>
+              <Text style={styles.recognitionExportLabel}>{{ bg: 'Печат / Споделяне', en: 'Print / Share', it: 'Stampa / Condividi' }[language]}</Text>
+            </Pressable>
+            <Text style={styles.recognitionExportHelp}>{{ bg: 'Достъпно след официално издаване на сертификата.', en: 'Available after the certificate is officially issued.', it: 'Disponibile dopo il rilascio ufficiale del certificato.' }[language]}</Text>
+          </View>
+        </SafeAreaView>
+      </Modal>
 
       <View style={styles.votePanel}>
         <View style={styles.voteHeading}>
@@ -682,6 +765,123 @@ function createStyles(colors) {
       color: colors.goldSoft,
       fontSize: 9,
       marginTop: 2,
+    },
+    certificatePreviewButton: {
+      borderWidth: 1,
+      borderColor: colors.gold,
+      borderRadius: radius.md,
+      paddingVertical: 13,
+      paddingHorizontal: 12,
+      alignItems: 'center',
+      marginTop: 12,
+      backgroundColor: colors.activeSurface,
+    },
+    certificatePreviewButtonText: {
+      color: colors.gold,
+      fontSize: 12,
+      fontWeight: '800',
+    },
+    certificatePreviewOverlay: {
+      flex: 1,
+      backgroundColor: '#090909',
+    },
+    certificatePreviewHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      gap: 12,
+    },
+    certificatePreviewHeaderText: {
+      flex: 1,
+      color: colors.goldSoft,
+      fontSize: 12,
+      lineHeight: 18,
+    },
+    certificatePreviewClose: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.gold,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    certificatePreviewCloseText: {
+      color: colors.gold,
+      fontSize: 28,
+      lineHeight: 32,
+    },
+    certificatePreviewScroll: {
+      flex: 1,
+    },
+    certificatePreviewScrollContent: {
+      flexGrow: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 14,
+      paddingHorizontal: 14,
+    },
+    certificatePreviewZoomButton: {
+      marginHorizontal: 16,
+      marginBottom: 8,
+      borderWidth: 1,
+      borderColor: colors.gold,
+      borderRadius: radius.md,
+      backgroundColor: colors.activeSurface,
+      minHeight: 46,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 18,
+    },
+    certificatePreviewZoomButtonText: {
+      color: colors.gold,
+      fontSize: 12,
+      fontWeight: '800',
+      textAlign: 'center',
+    },
+    recognitionExportActionsDisabled: {
+      marginHorizontal: 16,
+      marginBottom: 12,
+      gap: 7,
+    },
+    recognitionExportRow: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    recognitionExportButton: {
+      flex: 1,
+      minHeight: 40,
+      paddingHorizontal: 5,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      opacity: 0.52,
+    },
+    recognitionExportWideButton: {
+      minHeight: 40,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      opacity: 0.52,
+    },
+    recognitionExportLabel: {
+      color: colors.textSoft,
+      fontWeight: '700',
+      fontSize: 11,
+      textAlign: 'center',
+    },
+    recognitionExportHelp: {
+      color: colors.textMuted,
+      fontSize: 10,
+      textAlign: 'center',
+      paddingBottom: 2,
     },
     votePanel: {
       borderRadius: radius.md,
