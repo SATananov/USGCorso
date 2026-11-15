@@ -64,9 +64,15 @@ If `pm path` already returns a package path, **check the existing installation f
 
 - The emulator needs internet access for Supabase-backed features. A GPS/location simulation may be needed for map demonstrations.
 - Camera and other native features may behave differently from physical hardware. Prefer a phone for camera/OCR validation.
-- API keys and backend availability are not included as credentials in this guide. Demo account credentials must be provided privately, not publicly in the repository.
+- API keys and backend configuration secrets are not included in this guide. Dedicated exam login credentials are listed in the [SoftUni Demo section of README](https://github.com/SATananov/USGCorso#softuni-demo).
 
 ## SoftUni Demonstration — examiner walkthrough
+
+**Exam accounts and sign-in**
+
+Use the dedicated **Regular User** account for authentication, persistent sessions, CRUD and forms. Use the dedicated **Administrator** account to inspect administration and moderation features. Both accounts are intended for exam evaluation only.
+
+For the email addresses and passwords, see **[SoftUni Demo Accounts in README](https://github.com/SATananov/USGCorso#softuni-demo)**. Sign in through the normal USGCorso login screen; the demonstration does not bypass authentication.
 
 From the welcome screen tap **CONTINUE**, then **SoftUni Demonstration**. Expand sections **01–06**:
 
@@ -85,4 +91,4 @@ From the welcome screen tap **CONTINUE**, then **SoftUni Demonstration**. Expand
 
 - Confirmed previously: successful emulator boot, welcome screen and SoftUni Demonstration rendering.
 - Not automatically confirmed: every flow in sections 01–05, fresh-device permissions, backend operations, or native features in all emulator images.
-- Signing keystore and passwords are private and **must never be included** in a public release, README, ZIP, or exam submission.
+- Android signing keystores, signing passwords, API keys and production secrets must never be included in a public release, README, ZIP or exam submission. The separate, temporary SoftUni exam account credentials are documented in README for evaluation and must be disabled or rotated after the exam.
