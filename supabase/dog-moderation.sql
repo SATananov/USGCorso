@@ -60,15 +60,26 @@ begin
     return new;
   end if;
 
-  if caller_is_admin then
-    return new;
-  end if;
-
   if tg_op = 'INSERT' then
     new.moderation_status := 'pending';
     new.moderation_note := null;
     new.moderated_at := null;
     new.moderated_by := null;
+    return new;
+  end if;
+
+  if caller_is_admin
+    and new.moderation_status in (
+      'approved', 'rejected', 'needs_changes'
+    )
+    and (
+      new.moderation_status is distinct from old.moderation_status
+      or (
+        new.moderated_by = auth.uid()
+        and new.moderated_at is distinct from old.moderated_at
+      )
+    )
+  then
     return new;
   end if;
 
@@ -86,7 +97,9 @@ begin
     or old.description is distinct from new.description
     or old.photo_path is distinct from new.photo_path;
 
-  if public_content_changed then
+  if public_content_changed
+    or old.moderation_status = 'private'
+  then
     new.moderation_status := 'pending';
     new.moderation_note := null;
     new.moderated_at := null;
@@ -96,7 +109,6 @@ begin
   return new;
 end;
 $$;
-
 drop trigger if exists dogs_apply_moderation_state on public.dogs;
 
 create trigger dogs_apply_moderation_state
