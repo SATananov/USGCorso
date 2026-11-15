@@ -35,10 +35,18 @@ https://usg-cane-corso-platform.com/
 
 The application includes a **SoftUni exam demonstration menu (01-06)** with direct navigation to implemented features. After launching the Android app, tap **SOFTUNI 01-06** at the bottom of the screen.
 
-**Demo accounts for exam evaluation only:**
+**SoftUni demo accounts (exam only):**
 
-Use separate disposable demo accounts for the exam. Credentials are provided privately to the examiner, not stored in this public repository.
-Rotate any previously published demo account passwords and ensure these accounts contain no real user data or privileged production access.
+These temporary accounts contain experimental data and are provided for independent exam evaluation.
+
+| Role | Email | Password | Use |
+| --- | --- | --- | --- |
+| Regular user | `SoftUniUser@demo.com` | `SoftUniUser123!@#` | Login, session persistence, forms, and CRUD |
+| Administrator | `SoftUniAdmin@demo.com` | `SoftUniAdmin123!@#` | Admin panel and content moderation |
+
+**How to sign in:** Install the Android APK from the [APK section](#apk--install-usgcorso), open USG Corso, tap **Continue**, choose **SoftUni Demonstration**, and select **Test real sign in**. Enter the credentials above. Sign out before switching accounts.
+
+**Temporary exam access:** These credentials are public in the README and provide access to the connected demo backend. Use only experimental data. After the exam, disable both accounts, remove the credentials from the README, and retire the SoftUni demonstration flow. Rotating passwords afterward is recommended because Git history retains previous versions.
 
 **Exam walkthrough:**
 
