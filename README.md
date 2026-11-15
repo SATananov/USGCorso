@@ -64,6 +64,8 @@ The administrator account is for admin moderation features; the regular user acc
 
 For Windows laptop / Android Emulator installation and step-by-step grading, see **[Examiner Guide](EXAMINER_GUIDE.md)**.
 
+[↑ Back to top](#jump-to)
+
 ---
 
 ## APK — Install USGCorso
@@ -86,6 +88,8 @@ For full installation steps and the examiner walkthrough, see the **[Examiner Gu
 
 The exam APK is published on GitHub Releases. It is an **Android app**, not a Windows `.exe` file.
 
+[↑ Back to top](#jump-to)
+
 ---
 
 ## Exam Status
@@ -104,6 +108,8 @@ Current status:
 - Final exam APK/download link: published and verified; see [APK](#apk)
 - Android on-device Knowledge translation: implemented (manual action, BG/EN/IT)
 - Tesseract OCR and OCR Test Lab: implemented and tested; document accuracy varies
+
+[↑ Back to top](#jump-to)
 
 ---
 
@@ -148,6 +154,8 @@ The application uses a Bottom Tab Navigator for the main areas and a Stack Navig
 Knowledge is public educational content. Other public tabs can show limited guest previews, while personal actions and user-owned data require authentication.
 
 Supabase provides authentication, database data, storage and Edge Functions. Native mobile features include Google Maps, device location, camera, image selection, Tesseract OCR, QR support and Android ML Kit translation.
+
+[↑ Back to top](#jump-to)
 
 ---
 
@@ -410,6 +418,8 @@ A standalone Android preview build profile is also configured.
 
 The signed exam APK is available through the [APK download section](#apk). The Google Play edition is planned for later development.
 
+[↑ Back to top](#jump-to)
+
 ---
 
 # Current Implementation
@@ -580,6 +590,8 @@ This area explains the idea and philosophy behind USG.
 - The manual ML Kit path is distinct from the earlier experimental Supabase translation job queue. The repository retains `supabase/migrations/translation_03c_fix_fail_rpc.sql` as database migration history, not evidence of a deployed cloud translator.
 - A new native Android build is required when changing native translation or OCR modules. Metro alone cannot add native modules to an already installed binary.
 
+[↑ Back to top](#jump-to)
+
 ---
 
 # Technology
@@ -612,6 +624,8 @@ The project currently uses (verified against `package.json` and native module so
 - Expo GL
 - Three.js
 - Safe Area Context
+
+[↑ Back to top](#jump-to)
 
 ---
 
@@ -677,6 +691,8 @@ Native Android functionality should be tested with the configured Android Develo
 
 Expo Go is not the main verification environment for the native project features.
 
+[↑ Back to top](#jump-to)
+
 ---
 
 # Development Status
@@ -719,6 +735,8 @@ Planned or incomplete areas include:
 - production access policy for the OCR diagnostic screen
 - broader editorial review and translation coverage for historical Knowledge content
 - integration with the wider USG Cane Corso Platform
+
+[↑ Back to top](#jump-to)
 
 ---
 
