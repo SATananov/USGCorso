@@ -16,7 +16,11 @@
                                   "environment":  "development",
                                   "android":  {
                                                   "buildType":  "apk"
-                                              }
+                                              },
+                                  "channel":  "preview"
+                              },
+                  "production":  {
+                                  "channel":  "production"
                               }
               }
 }
