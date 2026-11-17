@@ -30,7 +30,6 @@ jobs:
     outputs:
       channel: ${{ steps.config.outputs.channel }}
       eas_environment: ${{ steps.config.outputs.eas_environment }}
-      project_id: ${{ steps.config.outputs.project_id }}
       runtime_version: ${{ steps.config.outputs.runtime_version }}
       app_version: ${{ steps.config.outputs.app_version }}
     steps:
@@ -122,7 +121,6 @@ jobs:
           const outputs = {
             channel: profile.channel,
             eas_environment: environment,
-            project_id: projectId,
             runtime_version: runtimeVersion,
             app_version: appConfig.version,
           };
@@ -207,14 +205,13 @@ jobs:
       - name: Verify remote EAS channel mapping
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-          EAS_PROJECT_ID: ${{ needs.validate.outputs.project_id }}
           PREVIEW_CHANNEL: ${{ needs.validate.outputs.channel }}
         run: |
           if [ -z "$EXPO_TOKEN" ]; then
             echo "The ota-preview environment must provide EXPO_TOKEN."
             exit 1
           fi
-          npx --yes "eas-cli@27.9.0" channel:view "$PREVIEW_CHANNEL" --project-id "$EAS_PROJECT_ID" --json --non-interactive --limit=100 > "$RUNNER_TEMP/eas-channel.json"
+          npx --yes "eas-cli@27.9.0" channel:view "$PREVIEW_CHANNEL" --json --non-interactive --limit=100 > "$RUNNER_TEMP/eas-channel.json"
           node - "$RUNNER_TEMP/eas-channel.json" "$PREVIEW_CHANNEL" <<'NODE'
           const fs = require('node:fs');
           const [file, expectedChannel] = process.argv.slice(2);
@@ -239,7 +236,6 @@ jobs:
         if: ${{ inputs.publish_update }}
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-          EAS_PROJECT_ID: ${{ needs.validate.outputs.project_id }}
           PREVIEW_CHANNEL: ${{ needs.validate.outputs.channel }}
           EAS_ENVIRONMENT: ${{ needs.validate.outputs.eas_environment }}
           RUNTIME_VERSION: ${{ needs.validate.outputs.runtime_version }}
@@ -258,7 +254,7 @@ jobs:
             echo "A non-production EAS environment and EXPO_TOKEN are required."
             exit 1
           fi
-          npx --yes "eas-cli@27.9.0" update --project-id "$EAS_PROJECT_ID" --channel "$PREVIEW_CHANNEL" --environment "$EAS_ENVIRONMENT" --platform android --message "Preview OTA ${APP_VERSION} runtime ${RUNTIME_VERSION} (${GITHUB_SHA:0:7})" --non-interactive
+          npx --yes "eas-cli@27.9.0" update --channel "$PREVIEW_CHANNEL" --environment "$EAS_ENVIRONMENT" --platform android --message "Preview OTA ${APP_VERSION} runtime ${RUNTIME_VERSION} (${GITHUB_SHA:0:7})" --non-interactive
 
       - name: Finish validation-only run
         if: ${{ !inputs.publish_update }}
