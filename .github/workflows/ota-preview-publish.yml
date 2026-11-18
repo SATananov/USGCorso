@@ -206,12 +206,13 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           PREVIEW_CHANNEL: ${{ needs.validate.outputs.channel }}
+          EAS_ENVIRONMENT: ${{ needs.validate.outputs.eas_environment }}
         run: |
           if [ -z "$EXPO_TOKEN" ]; then
             echo "The ota-preview environment must provide EXPO_TOKEN."
             exit 1
           fi
-          npx --yes "eas-cli@27.9.0" channel:view "$PREVIEW_CHANNEL" --json --non-interactive --limit=100 > "$RUNNER_TEMP/eas-channel.json"
+          GOOGLE_MAPS_ANDROID_API_KEY=bootstrap-placeholder npx --yes "eas-cli@27.9.0" env:exec "$EAS_ENVIRONMENT" 'npx --yes "eas-cli@27.9.0" channel:view "$PREVIEW_CHANNEL" --json --non-interactive --limit=100' --non-interactive > "$RUNNER_TEMP/eas-channel.json"
           node - "$RUNNER_TEMP/eas-channel.json" "$PREVIEW_CHANNEL" <<'NODE'
           const fs = require('node:fs');
           const [file, expectedChannel] = process.argv.slice(2);
