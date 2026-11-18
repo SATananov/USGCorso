@@ -1,0 +1,32 @@
+{
+  "kind": "read_only_github_workflow_identity_observation",
+  "observedAt": "2026-11-18",
+  "repository": "SATananov/USGCorso",
+  "repositoryId": 1436603966,
+  "workflowPath": ".github/workflows/ota-preview-publish.yml",
+  "main": {
+    "ref": "refs/heads/main",
+    "commit": "5e4a0e36ae1164573366634540edf4a8f019c4b7",
+    "gitBlobSha1": "d385fe2981263b2877262601077d987afd9e60be",
+    "fileSha256": null,
+    "role": "dispatch_registration_only",
+    "approval": false
+  },
+  "candidate": {
+    "ref": "refs/heads/feature/eas-ota",
+    "commit": "0d8eade5e844fdeba9b471e049d90603139888d8",
+    "gitBlobSha1": "c1e3d682602309b0e0ba2d87b013e316e7ca1834",
+    "fileSha256": null,
+    "role": "candidate_preview_validation_and_optional_publication_untrusted",
+    "approval": false
+  },
+  "trustedPublisher": {
+    "selected": false,
+    "approvedWorkflowCommit": null,
+    "approvedWorkflowFileSha256": null,
+    "artifactAttemptBindingVerified": false,
+    "attestationVerified": false,
+    "releaseAuthorized": false
+  },
+  "scope": "observation_only_not_an_authenticated_gate"
+}
