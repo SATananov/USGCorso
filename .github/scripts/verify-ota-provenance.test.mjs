@@ -12,7 +12,7 @@ function fixture() {
   const contents = Buffer.from('fixture-only-archive-bytes');
   fs.writeFileSync(archive, contents);
   const digest = `sha256:${crypto.createHash('sha256').update(contents).digest('hex')}`;
-  const policy = { repository: 'SATananov/USGCorso', repositoryId: 12345, workflowId: 42, workflowRunPath: '.github/workflows/ota-artifact-export.yml@main', sourceSha: 'a'.repeat(40), runId: 910, runAttempt: 2, artifactId: 650, artifactName: 'usgcorso-android-ota', event: 'workflow_dispatch', branch: 'main' };
+  const policy = { repository: 'SATananov/USGCorso', repositoryId: 12345, workflowId: 42, workflowRunPath: '.github/workflows/ota-artifact-export.yml', sourceSha: 'a'.repeat(40), runId: 910, runAttempt: 2, artifactId: 650, artifactName: 'usgcorso-android-ota', event: 'workflow_dispatch', branch: 'main' };
   const run = { id: policy.runId, run_attempt: policy.runAttempt, workflow_id: policy.workflowId, path: policy.workflowRunPath, head_sha: policy.sourceSha, head_branch: policy.branch, event: policy.event, status: 'completed', conclusion: 'success', repository: { id: policy.repositoryId, full_name: policy.repository }, head_repository: { id: policy.repositoryId, full_name: policy.repository }, url: `https://api.github.com/repos/${policy.repository}/actions/runs/${policy.runId}` };
   const artifact = { id: policy.artifactId, name: policy.artifactName, expired: false, size_in_bytes: contents.length, digest, url: `https://api.github.com/repos/${policy.repository}/actions/artifacts/${policy.artifactId}`, workflow_run: { id: policy.runId, repository_id: policy.repositoryId, head_repository_id: policy.repositoryId, head_branch: policy.branch, head_sha: policy.sourceSha } };
   return { dir, archive, policy, run, artifact };
@@ -30,8 +30,8 @@ const cases = [
   ['reject repository ID mismatch', f => { f.run.repository.id = 42; }],
   ['reject head fork', f => { f.run.head_repository.id = 17; }],
   ['reject source SHA mismatch', f => { f.run.head_sha = 'b'.repeat(40); }],
-  ['reject workflow path mismatch', f => { f.run.path = '.github/workflows/evil.yml@main'; }],
-  ['reject non-main workflow', f => { f.policy.workflowRunPath = '.github/workflows/ota-artifact-export.yml@feature/eas-ota'; }],
+  ['reject workflow path mismatch', f => { f.run.path = '.github/workflows/evil.yml'; }],
+  ['reject ref-qualified workflow path', f => { f.policy.workflowRunPath = '.github/workflows/ota-artifact-export.yml@feature/eas-ota'; }],
   ['reject workflow ID mismatch', f => { f.run.workflow_id = 8; }],
   ['reject run ID mismatch', f => { f.run.id = 8; }],
   ['reject run attempt mismatch', f => { f.run.run_attempt = 1; }],
@@ -230,5 +230,35 @@ test('demonstrate artifact workflow_run cannot independently establish run attem
   f.policy.runAttempt = 3;
   f.run.run_attempt = 3;
   assert.deepEqual(f.artifact, original);
+  assert.equal(verifyProvenance(f).scope, 'offline-consistency-only');
+}));
+
+
+for (const [name, adjust] of [
+  ['old @main path in policy', f => { f.policy.workflowRunPath += '@main'; }],
+  ['old @main path in run', f => { f.run.path += '@main'; }],
+  ['other path in policy without matching run', f => { f.policy.workflowRunPath = '.github/workflows/evil.yml'; }],
+  ['other path in run', f => { f.run.path = '.github/workflows/evil.yml'; }],
+  ['traversal workflow path', f => { f.policy.workflowRunPath = '.github/workflows/../evil.yml'; }],
+  ['absolute workflow path', f => { f.policy.workflowRunPath = '/.github/workflows/ota-artifact-export.yml'; }],
+  ['workflow path with query string', f => { f.policy.workflowRunPath += '?ref=main'; }],
+  ['workflow path with full ref', f => { f.policy.workflowRunPath += '@refs/heads/main'; }],
+  ['run branch inconsistent with trusted main policy', f => { f.run.head_branch = 'feature/eas-ota'; }],
+]) {
+  test(`reject ${name}`, () => checked(f => {
+    adjust(f);
+    assert.throws(() => verifyProvenance(f));
+  }));
+}
+test('accept exact canonical unqualified workflow API path with main-only policy', () => checked(f => {
+  assert.equal(f.policy.workflowRunPath, '.github/workflows/ota-artifact-export.yml');
+  assert.equal(f.run.path, f.policy.workflowRunPath);
+  assert.equal(f.policy.branch, 'main');
+  assert.equal(f.run.head_branch, 'main');
+  assert.equal(verifyProvenance(f).scope, 'offline-consistency-only');
+}));
+test('offline data cannot independently authenticate a substituted file path', () => checked(f => {
+  f.policy.workflowRunPath = '.github/workflows/another-trusted-looking.yml';
+  f.run.path = f.policy.workflowRunPath;
   assert.equal(verifyProvenance(f).scope, 'offline-consistency-only');
 }));

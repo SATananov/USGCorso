@@ -37,7 +37,7 @@ function policyCheck(policy) {
   positive(policy.runAttempt, 'runAttempt');
   positive(policy.artifactId, 'artifactId');
   if (typeof policy.sourceSha !== 'string' || !SHA40.test(policy.sourceSha)) reject('policy: invalid source SHA');
-  if (typeof policy.workflowRunPath !== 'string' || !/^\.github\/workflows\/[a-zA-Z0-9._-]+\.ya?ml@main$/.test(policy.workflowRunPath)) reject('policy: workflow must resolve to main');
+  if (typeof policy.workflowRunPath !== 'string' || !/^\.github\/workflows\/[a-zA-Z0-9._-]+\.ya?ml$/.test(policy.workflowRunPath)) reject('policy: workflow path must use the exact unqualified API file path');
   if (typeof policy.artifactName !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(policy.artifactName)) reject('policy: invalid artifact name');
   if (!['push', 'workflow_dispatch'].includes(policy.event)) reject('policy: unsupported event');
   same(policy.branch, 'main', 'policy branch');
