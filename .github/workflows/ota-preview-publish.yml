@@ -1,0 +1,37 @@
+name: OTA preview publication (Android)
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish_update:
+        description: Publish after validation (default is validation only)
+        required: true
+        type: boolean
+        default: false
+      confirmation:
+        description: Enter exactly PUBLISH PREVIEW OTA to authorize publication
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  dispatch-registration:
+    name: Default branch dispatch registration only
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify default branch only
+        env:
+          PUBLISH_UPDATE: ${{ inputs.publish_update }}
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "Registration-only workflow refuses non-main ref."
+            exit 1
+          fi
+          if [ "$PUBLISH_UPDATE" = "true" ]; then
+            echo "Publication is disabled from main."
+            exit 1
+          fi
+          echo "Default-branch registration only; no OTA was published."
