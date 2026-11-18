@@ -1,0 +1,40 @@
+{
+  "fixture_kind": "read_only_observation_not_authenticated_release_evidence",
+  "observed_on": "2026-11-18",
+  "source_endpoint": "https://api.github.com/repos/SATananov/USGCorso/actions/runs/44241063989",
+  "attempt_endpoint": "https://api.github.com/repos/SATananov/USGCorso/actions/runs/44241063989/attempts/1",
+  "artifacts_endpoint": "https://api.github.com/repos/SATananov/USGCorso/actions/runs/44241063989/artifacts",
+  "run": {
+    "id": 44241063989,
+    "run_attempt": 1,
+    "workflow_id": 422159467,
+    "path": ".github/workflows/ota-preview-publish.yml",
+    "head_branch": "feature/eas-ota",
+    "head_sha": "0d8eade5e844fdeba9b471e049d90603139888d8",
+    "event": "workflow_dispatch",
+    "status": "completed",
+    "conclusion": "success",
+    "repository_id": 1436603966,
+    "head_repository_id": 1436603966
+  },
+  "attempt": {
+    "id": 44241063989,
+    "run_attempt": 1,
+    "path": ".github/workflows/ota-preview-publish.yml",
+    "workflow_id": 422159467,
+    "head_sha": "0d8eade5e844fdeba9b471e049d90603139888d8",
+    "status": "completed",
+    "conclusion": "success"
+  },
+  "artifacts": {
+    "total_count": 0,
+    "items": []
+  },
+  "evidence_limits": {
+    "has_uploaded_candidate_artifact": false,
+    "has_artifact_attempt_binding": false,
+    "has_verified_cryptographic_attestation": false,
+    "has_release_authorization": false,
+    "can_publish": false
+  }
+}
