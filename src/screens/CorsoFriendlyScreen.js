@@ -1330,9 +1330,15 @@ navigation }) {
         return;
       }
 
-      const position = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
+      let position;
+      try {
+        position = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+      } catch {
+        setErrorText(copy.locationError);
+        return;
+      }
 
       const currentLocation = {
         latitude: position.coords.latitude,
@@ -1778,7 +1784,9 @@ navigation }) {
           {errorText ? (
             <View style={styles.errorBanner}>
               <Text style={styles.errorText}>{errorText}</Text>
-              <Text style={styles.errorHelp}>{copy.locationSettingsHint}</Text>
+              {(errorText === copy.locationDenied || errorText === copy.locationError) ? (
+                <Text style={styles.errorHelp}>{copy.locationSettingsHint}</Text>
+              ) : null}
             </View>
           ) : null}
         </View>

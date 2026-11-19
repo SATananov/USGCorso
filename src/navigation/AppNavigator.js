@@ -55,6 +55,15 @@ import { useTheme } from '../theme/ThemeContext';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
+export const MAIN_TAB_ROUTES = [
+  'Home', 'My Corso', 'Corso Friendly', 'Knowledge', 'Community',
+  'Services', 'Events', 'Corso Match', 'About',
+];
+
+export function getMainTabBarHeight(bottomInset) {
+  return 57 + Math.max(bottomInset, 8);
+}
+
 const tabIcons = {
   Home: require('../../assets/icons/about-usg.png'),
   'My Corso': require('../../assets/icons/my-corso.png'),

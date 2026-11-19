@@ -5,7 +5,7 @@ import { recordCareNotification } from './src/care/corsoCareInbox';
 import { getMyDogs } from './src/dogs/dogService';
 import { activateCareReminderSession, clearInactiveCareReminders, reconcileCareReminders } from './src/care/corsoCareReminderSync';
 import * as Linking from 'expo-linking';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import {
@@ -14,7 +14,7 @@ import {
   NavigationContainer,
 } from '@react-navigation/native';
 
-import AppNavigator from './src/navigation/AppNavigator';
+import AppNavigator, { getMainTabBarHeight, MAIN_TAB_ROUTES } from './src/navigation/AppNavigator';
 import { CommunityProvider } from './src/community/CommunityContext';
 import USGIntro3DDirect from './src/components/USGIntro3DDirect';
 import { AppControlProvider } from './src/app/AppControlContext';
@@ -52,7 +52,11 @@ function AppContent() {
   const recoveryUrl = Linking.useLinkingURL();
   const [completedRecoveryUrl, setCompletedRecoveryUrl] = useState(null);
   const { isDark, colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const { session, loading, signOut } = useAuth();
+  const demoFloatingBottom = MAIN_TAB_ROUTES.includes(currentRouteName)
+    ? getMainTabBarHeight(insets.bottom) + 8
+    : Math.max(insets.bottom, 8) + 12;
   const isSoftUniDemoUser = ['softuniadmin@demo.com', 'softuniuser@demo.com'].includes(
     (session?.user?.email || '').trim().toLowerCase()
   );
@@ -315,7 +319,7 @@ function AppContent() {
           </View>
         ) : null}
         {(isSoftUniDemoUser || (demoGuest && (guestMode || Boolean(session)))) && !demoPanel ? (
-          <View pointerEvents="box-none" style={demoReturnStyles.floatingLayer}>
+          <View pointerEvents="box-none" style={[demoReturnStyles.floatingLayer, { bottom: demoFloatingBottom }]}>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={language === 'bg' ? 'Отвори менюто СофтУни' : language === 'it' ? 'Apri il menu SoftUni' : 'Open SoftUni menu'}
@@ -423,7 +427,6 @@ const demoReturnStyles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 118,
     alignItems: 'center',
     zIndex: 12,
   },
