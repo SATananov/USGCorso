@@ -492,75 +492,7 @@ function AddPlaceForm({ copy, colors, user, onCreated }) {
           await selectPoint(latitude, longitude);
         }}
       >
-        <View
-          style={{
-            width: 52,
-            height: 66,
-            alignItems: 'center',
-          }}
-        >
-          <View
-            style={{
-              width: 46,
-              height: 46,
-              borderRadius: 23,
-              backgroundColor: '#070708',
-              borderWidth: 3,
-              borderColor: '#d4af37',
-              alignItems: 'center',
-              justifyContent: 'center',
-              shadowColor: '#d4af37',
-              shadowOpacity: 0.55,
-              shadowRadius: 9,
-              elevation: 9,
-            }}
-          >
-            {values.category === 'pet_shop' ? (
-              <View style={{ width: 24, height: 24, position: 'relative' }}>
-                <View style={{ position: 'absolute', left: 7, top: 9, width: 11, height: 10, borderRadius: 7, backgroundColor: '#d4af37' }} />
-                <View style={{ position: 'absolute', left: 2, top: 5, width: 6, height: 7, borderRadius: 4, backgroundColor: '#d4af37' }} />
-                <View style={{ position: 'absolute', left: 7, top: 1, width: 6, height: 7, borderRadius: 4, backgroundColor: '#d4af37' }} />
-                <View style={{ position: 'absolute', right: 5, top: 1, width: 6, height: 7, borderRadius: 4, backgroundColor: '#d4af37' }} />
-                <View style={{ position: 'absolute', right: 0, top: 5, width: 6, height: 7, borderRadius: 4, backgroundColor: '#d4af37' }} />
-              </View>
-            ) : (
-              <Text
-                style={{
-                  color: '#d4af37',
-                  fontSize: 19,
-                  fontWeight: '900',
-                }}
-              >
-                {getPlaceMarkerSymbol(values.category)}
-              </Text>
-            )}
-          </View>
-          <View
-            style={{
-              width: 18,
-              height: 18,
-              marginTop: -8,
-              backgroundColor: '#070708',
-              borderRightWidth: 3,
-              borderBottomWidth: 3,
-              borderColor: '#d4af37',
-              transform: [{ rotate: '45deg' }],
-            }}
-          />
-          <View
-            style={{
-              width: 8,
-              height: 8,
-              marginTop: 1,
-              borderRadius: 4,
-              backgroundColor: '#d4af37',
-              shadowColor: '#d4af37',
-              shadowOpacity: 0.9,
-              shadowRadius: 5,
-              elevation: 6,
-            }}
-          />
-        </View>
+        <USGMapMarker category={values.category} selected />
       </Marker>
     );
   }
