@@ -39,6 +39,100 @@ import {
 import { reverseGeocodePlace } from '../places/geocodingService';
 import { useTheme } from '../theme/ThemeContext';
 
+const GPS_TIMEOUT_MS = 15000;
+const GPS_MAX_AGE_MS = 60000;
+const GPS_FUTURE_SKEW_MS = 10000;
+
+const gpsStatusCopy = {
+  bg: {
+    disabled: 'Местоположението е изключено в настройките на устройството.',
+    timeout: 'GPS позицията не беше получена навреме. Опитай отново.',
+    unavailable: 'GPS позицията е недостъпна. Провери местоположението на устройството.',
+    stale: 'Получената GPS позиция е остаряла. Провери GPS и опитай отново.',
+    invalid: 'Получена е невалидна GPS позиция. Опитай отново.',
+  },
+  en: {
+    disabled: 'Device location services are turned off.',
+    timeout: 'GPS location timed out. Please try again.',
+    unavailable: 'GPS location is unavailable. Check device location services.',
+    stale: 'The GPS position is outdated. Check GPS and try again.',
+    invalid: 'An invalid GPS position was received. Please try again.',
+  },
+  it: {
+    disabled: 'La localizzazione del dispositivo è disattivata.',
+    timeout: 'Tempo scaduto per la posizione GPS. Riprova.',
+    unavailable: 'Posizione GPS non disponibile. Controlla la localizzazione.',
+    stale: 'La posizione GPS ricevuta non è aggiornata. Controlla il GPS e riprova.',
+    invalid: 'La posizione GPS ricevuta non è valida. Riprova.',
+  },
+};
+
+async function getFreshGpsPosition() {
+  if (!(await Location.hasServicesEnabledAsync())) {
+    const error = new Error('Location services disabled');
+    error.code = 'USG_GPS_DISABLED';
+    throw error;
+  }
+
+  let timer;
+
+  try {
+    const position = await Promise.race([
+      Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
+      new Promise((resolve, reject) => {
+        timer = setTimeout(() => {
+          const error = new Error('GPS request timed out');
+          error.code = 'USG_GPS_TIMEOUT';
+          reject(error);
+        }, GPS_TIMEOUT_MS);
+      }),
+    ]);
+
+    const latitude = position?.coords?.latitude;
+    const longitude = position?.coords?.longitude;
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude) ||
+        Math.abs(latitude) > 90 || Math.abs(longitude) > 180) {
+      const error = new Error('Invalid GPS coordinates');
+      error.code = 'USG_GPS_INVALID';
+      throw error;
+    }
+
+    const timestamp = position?.timestamp;
+    const age = Date.now() - timestamp;
+    if (!Number.isFinite(timestamp) || !Number.isFinite(age) ||
+        age > GPS_MAX_AGE_MS || age < -GPS_FUTURE_SKEW_MS) {
+      const error = new Error('Outdated GPS position');
+      error.code = 'USG_GPS_STALE';
+      throw error;
+    }
+
+    return position;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function gpsFailureMessage(error, copy, language) {
+  const messages = gpsStatusCopy[language] ?? gpsStatusCopy.en;
+  const code = typeof error?.code === 'string' ? error.code : '';
+  const message = typeof error?.message === 'string' ? error.message : '';
+  const safeCode = /^[A-Za-z0-9_-]{1,60}$/.test(code) ? code : 'UNKNOWN';
+  const safeDetail = message.replace(/-?\d+(?:\.\d+)?/g, '#')
+    .replace(/[^A-Za-z .:_-]/g, ' ').slice(0, 120);
+
+  console.warn('[USG GPS] Location request failed', { code: safeCode, detail: safeDetail });
+
+  if (code === 'USG_GPS_DISABLED') return messages.disabled;
+  if (code === 'USG_GPS_STALE') return messages.stale;
+  if (code === 'USG_GPS_INVALID') return messages.invalid;
+  if (code === 'USG_GPS_TIMEOUT' || /timed? out|timeout/i.test(message)) return messages.timeout;
+  if (/unavailable|location services disabled|provider/i.test(message) || /LOCATION_UNAVAILABLE/i.test(code)) {
+    return messages.unavailable;
+  }
+
+  return `${copy.locationError} [${safeCode}]`;
+}
+
 const DEFAULT_REGION = {
   latitude: 42.7339,
   longitude: 25.4858,
@@ -1050,6 +1144,7 @@ navigation }) {
   const [mapSharingEnabled, setMapSharingEnabled] = useState(false);
   const [visibleMapUsers, setVisibleMapUsers] = useState([]);
   const [presenceSaving, setPresenceSaving] = useState(false);
+  const [nearMeLoading, setNearMeLoading] = useState(false);
   const [selectedPlaceId, setSelectedPlaceId] = useState(null);
   const [selectedMember, setSelectedMember] = useState(null);
 
@@ -1260,41 +1355,49 @@ navigation }) {
   }
 
   async function goNearMe() {
-    setErrorText('');
-    const permission = await Location.requestForegroundPermissionsAsync();
+    if (nearMeLoading) return;
 
-    if (permission.status !== 'granted') {
-      setErrorText(copy.locationDenied);
-      return;
-    }
+    setNearMeLoading(true);
+    setErrorText('');
 
     try {
-      const position = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
+      const permission = await Location.requestForegroundPermissionsAsync();
+
+      if (permission.status !== 'granted') {
+        setErrorText(copy.locationDenied);
+        return;
+      }
+
+      const position = await getFreshGpsPosition();
       const currentLocation = {
         latitude: position.coords.latitude,
         longitude: position.coords.longitude,
       };
 
       setUserLocation(currentLocation);
-
-      if (mapSharingEnabled) {
-        await setMyMapPresence(
-          user.id,
-          currentLocation.latitude,
-          currentLocation.longitude,
-          true
-        );
-      }
-
       mapRef.current?.animateToRegion({
         ...currentLocation,
         latitudeDelta: 0.08,
         longitudeDelta: 0.08,
       });
-    } catch {
-      setErrorText(copy.locationError);
+
+      if (mapSharingEnabled) {
+        try {
+          const result = await setMyMapPresence(
+            user.id,
+            currentLocation.latitude,
+            currentLocation.longitude,
+            true
+          );
+          if (result.error) setErrorText(copy.mapPresence.error);
+        } catch {
+          setErrorText(copy.mapPresence.error);
+        }
+      }
+    } catch (error) {
+      setErrorText(gpsFailureMessage(error, copy, language));
+    } finally {
+      setNearMeLoading(false);
     }
   }
 
@@ -1323,20 +1426,16 @@ navigation }) {
         return;
       }
 
-      const permission = await Location.requestForegroundPermissionsAsync();
-
-      if (permission.status !== 'granted') {
-        setErrorText(copy.locationDenied);
-        return;
-      }
-
       let position;
       try {
-        position = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-        });
-      } catch {
-        setErrorText(copy.locationError);
+        const permission = await Location.requestForegroundPermissionsAsync();
+        if (permission.status !== 'granted') {
+          setErrorText(copy.locationDenied);
+          return;
+        }
+        position = await getFreshGpsPosition();
+      } catch (error) {
+        setErrorText(gpsFailureMessage(error, copy, language));
         return;
       }
 
@@ -1757,8 +1856,12 @@ navigation }) {
           />
 
           <View style={styles.mapActions}>
-            <Pressable style={styles.nearButton} onPress={goNearMe}>
-              <Text style={styles.nearButtonText}>{copy.nearMe}</Text>
+            <Pressable style={styles.nearButton} onPress={goNearMe} disabled={nearMeLoading}>
+              {nearMeLoading ? (
+                <ActivityIndicator color="#d4af37" size="small" />
+              ) : (
+                <Text style={styles.nearButtonText}>{copy.nearMe}</Text>
+              )}
             </Pressable>
             <Pressable
               style={[
@@ -1784,7 +1887,7 @@ navigation }) {
           {errorText ? (
             <View style={styles.errorBanner}>
               <Text style={styles.errorText}>{errorText}</Text>
-              {(errorText === copy.locationDenied || errorText === copy.locationError) ? (
+              {errorText === copy.locationDenied ? (
                 <Text style={styles.errorHelp}>{copy.locationSettingsHint}</Text>
               ) : null}
             </View>
