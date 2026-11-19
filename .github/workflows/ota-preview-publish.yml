@@ -255,7 +255,7 @@ jobs:
             echo "A non-production EAS environment and EXPO_TOKEN are required."
             exit 1
           fi
-          GOOGLE_MAPS_ANDROID_API_KEY=bootstrap-placeholder npx --yes "eas-cli@27.9.0" env:exec "$EAS_ENVIRONMENT" 'if [ -z "$GOOGLE_MAPS_ANDROID_API_KEY" ] || [ "$GOOGLE_MAPS_ANDROID_API_KEY" = "bootstrap-placeholder" ]; then echo "EAS development Maps key is unavailable; refusing OTA publication."; exit 1; fi; npx --yes "eas-cli@27.9.0" update --channel "$PREVIEW_CHANNEL" --environment "$EAS_ENVIRONMENT" --platform android --message "Preview OTA ${APP_VERSION} runtime ${RUNTIME_VERSION} (${GITHUB_SHA:0:7})" --non-interactive' --non-interactive
+          GOOGLE_MAPS_ANDROID_API_KEY=bootstrap-placeholder npx --yes "eas-cli@27.9.0" env:exec "$EAS_ENVIRONMENT" 'if [ -z "$GOOGLE_MAPS_ANDROID_API_KEY" ] || [ "$GOOGLE_MAPS_ANDROID_API_KEY" = "bootstrap-placeholder" ]; then echo "EAS development Maps key is unavailable; refusing OTA publication."; exit 1; fi; npx --yes "eas-cli@27.9.0" update --channel "$PREVIEW_CHANNEL" --environment "$EAS_ENVIRONMENT" --platform android --message "Preview OTA ${APP_VERSION} runtime ${RUNTIME_VERSION} (${GITHUB_SHA})" --non-interactive' --non-interactive
 
       - name: Finish validation-only run
         if: ${{ !inputs.publish_update }}
