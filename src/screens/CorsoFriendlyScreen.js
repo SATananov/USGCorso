@@ -40,6 +40,7 @@ import { reverseGeocodePlace } from '../places/geocodingService';
 import { useTheme } from '../theme/ThemeContext';
 
 const GPS_TIMEOUT_MS = 15000;
+const GPS_WATCH_TIMEOUT_MS = 12000;
 const GPS_MAX_AGE_MS = 60000;
 const GPS_FUTURE_SKEW_MS = 10000;
 
@@ -67,6 +68,72 @@ const gpsStatusCopy = {
   },
 };
 
+function validateGpsPosition(position) {
+  const latitude = position?.coords?.latitude;
+  const longitude = position?.coords?.longitude;
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude) ||
+      Math.abs(latitude) > 90 || Math.abs(longitude) > 180) {
+    const error = new Error('Invalid GPS coordinates');
+    error.code = 'USG_GPS_INVALID';
+    throw error;
+  }
+
+  const timestamp = position?.timestamp;
+  const age = Date.now() - timestamp;
+  if (!Number.isFinite(timestamp) || !Number.isFinite(age) ||
+      age > GPS_MAX_AGE_MS || age < -GPS_FUTURE_SKEW_MS) {
+    const error = new Error('Outdated GPS position');
+    error.code = 'USG_GPS_STALE';
+    throw error;
+  }
+
+  return position;
+}
+
+async function getGpsPositionFromWatch() {
+  let subscription = null;
+  let stopped = false;
+  let timer;
+
+  try {
+    const position = await Promise.race([
+      new Promise((resolve, reject) => {
+        Location.watchPositionAsync(
+          { accuracy: Location.Accuracy.Balanced, timeInterval: 1000, distanceInterval: 0 },
+          (update) => {
+            if (stopped) return;
+            try {
+              resolve(validateGpsPosition(update));
+            } catch (error) {
+              if (error.code === 'USG_GPS_INVALID' || error.code === 'USG_GPS_STALE') {
+                console.warn('[USG GPS] Watch discarded invalid or stale sample', error.code);
+              } else {
+                reject(error);
+              }
+            }
+          }
+        ).then((result) => {
+          if (stopped) result.remove();
+          else subscription = result;
+        }, reject);
+      }),
+      new Promise((resolve, reject) => {
+        timer = setTimeout(() => {
+          const error = new Error('GPS watch timed out');
+          error.code = 'USG_GPS_WATCH_TIMEOUT';
+          reject(error);
+        }, GPS_WATCH_TIMEOUT_MS);
+      }),
+    ]);
+
+    return position;
+  } finally {
+    stopped = true;
+    clearTimeout(timer);
+    subscription?.remove();
+  }
+}
+
 async function getFreshGpsPosition() {
   if (!(await Location.hasServicesEnabledAsync())) {
     const error = new Error('Location services disabled');
@@ -88,25 +155,17 @@ async function getFreshGpsPosition() {
       }),
     ]);
 
-    const latitude = position?.coords?.latitude;
-    const longitude = position?.coords?.longitude;
-    if (!Number.isFinite(latitude) || !Number.isFinite(longitude) ||
-        Math.abs(latitude) > 90 || Math.abs(longitude) > 180) {
-      const error = new Error('Invalid GPS coordinates');
-      error.code = 'USG_GPS_INVALID';
+    return validateGpsPosition(position);
+  } catch (error) {
+    if (error?.code !== 'USG_GPS_TIMEOUT' &&
+        !/timed? out|timeout|unavailable|provider/i.test(error?.message ?? '')) {
       throw error;
     }
 
-    const timestamp = position?.timestamp;
-    const age = Date.now() - timestamp;
-    if (!Number.isFinite(timestamp) || !Number.isFinite(age) ||
-        age > GPS_MAX_AGE_MS || age < -GPS_FUTURE_SKEW_MS) {
-      const error = new Error('Outdated GPS position');
-      error.code = 'USG_GPS_STALE';
-      throw error;
-    }
-
-    return position;
+    console.warn('[USG GPS] Current position failed; trying temporary watch', {
+      code: error?.code ?? 'UNKNOWN',
+    });
+    return await getGpsPositionFromWatch();
   } finally {
     clearTimeout(timer);
   }
