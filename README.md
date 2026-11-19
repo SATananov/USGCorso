@@ -717,6 +717,23 @@ The FIX05 location helper attempts `expo-location` `getCurrentPositionAsync` wit
 
 These are **manual functional results with emulated GPS locations**, not a guarantee of behavior on physical Android devices. The precise contribution of the watch fallback versus the freshly available native provider fix has not been isolated. Physical-device testing and additional lifecycle/poor-signal scenarios remain outside this verification. The `main` branch and existing production/exam APK were not changed for these tests.
 
+## FIX06 — November 19, 2026
+
+The Add Place location-picker map could turn into a white screen after selecting a point. The Android log reported `ReferenceError: Property 'getPlaceMarkerSymbol' doesn't exist` in `AddPlaceForm`. The undefined marker symbol call was removed and the existing `USGMapMarker` component is now used for the selected, draggable map marker. Only `src/screens/CorsoFriendlyScreen.js` changed in the fix.
+
+- Fix commit on isolated `feature/eas-ota`: `c5087994f086616d69dcc5b7701641a55cab1227` (`fix: repair AddPlace map marker white screen`).
+- Automatic OTA checks: [44508906884](https://github.com/SATananov/USGCorso/actions/runs/44508906884) — passed on FIX06 commit.
+- Validation-only workflow: [44510179165](https://github.com/SATananov/USGCorso/actions/runs/44510179165) — passed, without publication.
+- Android Preview OTA publication: [44510724486](https://github.com/SATananov/USGCorso/actions/runs/44510724486) — passed.
+- [EAS update group](https://expo.dev/accounts/satanana/projects/usg-corso/updates/0d3baed3-8b42-4302-aece-9c61088b971a): `0d3baed3-8b42-4302-aece-9c61088b971a`.
+- Android update ID: `01a1f377-d8b0-7f9a-85a7-e8ea9a6d8a3c`; EAS branch `preview`, runtime `1.0.0`, Android only.
+
+### Manual Add Place picker verification
+
+After restarting the Android Preview app, the user confirmed on Pixel 7a (`emulator-5556`, Android 15) that the large Google map rendered, the selected gold marker appeared, dragging or reselecting a location worked, and closing the map returned to the Add Place form without a white screen. No place was submitted as part of this test.
+
+This is a manual regression check of the affected flow on one emulator, not a claim of exhaustive Android testing or physical-device compatibility. The `main` branch and original exam APK were not changed.
+
 ---
 
 # Development Status
