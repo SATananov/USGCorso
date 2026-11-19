@@ -27,6 +27,7 @@ https://usg-cane-corso-platform.com/
 - [OCR & On-Device Translation](#ocr--on-device-translation)
 - [Technology](#technology)
 - [Run Instructions](#run-instructions)
+- [GPS / Android Preview Verification](#gps--android-preview-verification)
 - [Development Status](#development-status)
 
 ---
@@ -686,6 +687,35 @@ Expo Go is not the main verification environment for the native project features
 - Post-naming Git checkpoint before this README-only update: `04d4a6f` (`main`, November 11, 2026). This is a repository checkpoint, not a newly verified Android APK.
 - The working Android development build and OCR/translation flows were manually tested during the cleanup sequence; this is not a claim of comprehensive automated release certification.
 - This README update changes documentation only. Supabase RPCs, migration history and native build configuration remain unchanged.
+
+---
+
+# GPS / Android Preview Verification
+
+## FIX05 — November 19, 2026
+
+GPS validation was performed on the isolated `feature/eas-ota` branch, commit `f4da17f` (`fix: add temporary GPS watch fallback`). The JavaScript-only FIX05 was published to the EAS `preview` branch, runtime `1.0.0`, without creating a new APK.
+
+- Validation-only GitHub Actions run: [44485190040](https://github.com/SATananov/USGCorso/actions/runs/44485190040) — passed, with no OTA publication.
+- Preview publication GitHub Actions run: [44485757764](https://github.com/SATananov/USGCorso/actions/runs/44485757764) — passed.
+- [EAS update group](https://expo.dev/accounts/satanana/projects/usg-corso/updates/623843bd-9690-4a3e-801f-d7ceb39722c6): `623843bd-9690-4a3e-801f-d7ceb39722c6`.
+- Android update ID: `01a1f2df-8103-78a6-9982-df77c5e4fcb6`.
+
+### Manual emulator checks
+
+| Function | Pixel 7a — Android 15 / API 35 | Medium Phone — Android 17 / API 37 |
+| --- | --- | --- |
+| Google Maps rendering | Passed | Passed |
+| Near Me: move map to location | Passed | Passed |
+| Show Me: display user marker | Passed | Passed |
+| Hide Me: hide map presence | Passed | Passed |
+| Show Me again without additional GPS injection | Passed | Passed |
+
+Both emulators initially reported GPS timeouts. New location coordinates were supplied through the Android Emulator for controlled testing. On Android 17, early `geo fix` commands returned `OK` while the GPS/fused cached coordinates remained unchanged; after requesting current location in Google Maps and injecting a new fix, the cached positions updated and the app's location controls worked. The Android 17 Google Play system image was API 37.0, revision 7.
+
+The FIX05 location helper attempts `expo-location` `getCurrentPositionAsync` with a 15-second JavaScript timeout. For timeout/provider failures, it attempts a temporary `watchPositionAsync` subscription with a 12-second timeout. Returned coordinates and timestamps must pass validation before use; the temporary watch subscription is removed when finished. A JavaScript timeout does not necessarily cancel the underlying native one-time location request.
+
+These are **manual functional results with emulated GPS locations**, not a guarantee of behavior on physical Android devices. The precise contribution of the watch fallback versus the freshly available native provider fix has not been isolated. Physical-device testing and additional lifecycle/poor-signal scenarios remain outside this verification. The `main` branch and existing production/exam APK were not changed for these tests.
 
 ---
 
