@@ -46,8 +46,9 @@ const styles = StyleSheet.create({
   dock: {
     height: 46,
     backgroundColor: '#08080a',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     justifyContent: 'center',
+    paddingRight: 14,
   },
   overlay: {
     position: 'absolute',
