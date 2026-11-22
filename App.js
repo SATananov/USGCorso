@@ -1,10 +1,13 @@
 import { StatusBar } from 'expo-status-bar';
+import * as Updates from 'expo-updates';
+import { consumeOtaReloadIntent } from './src/ota/otaReloadIntent';
+import USGOtaManager from './src/ota/USGOtaManager';
 import * as Notifications from 'expo-notifications';
 import { recordCareNotification } from './src/care/corsoCareInbox';
 import { getMyDogs } from './src/dogs/dogService';
 import { activateCareReminderSession, clearInactiveCareReminders, reconcileCareReminders } from './src/care/corsoCareReminderSync';
 import * as Linking from 'expo-linking';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import {
@@ -13,7 +16,7 @@ import {
   NavigationContainer,
 } from '@react-navigation/native';
 
-import AppNavigator from './src/navigation/AppNavigator';
+import AppNavigator, { getMainTabBarHeight, MAIN_TAB_ROUTES } from './src/navigation/AppNavigator';
 import { CommunityProvider } from './src/community/CommunityContext';
 import USGIntro3DDirect from './src/components/USGIntro3DDirect';
 import { AppControlProvider } from './src/app/AppControlContext';
@@ -29,6 +32,7 @@ import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 
 function AppContent() {
   const [showIntro, setShowIntro] = useState(true);
+  const [otaReloadMatched, setOtaReloadMatched] = useState(null);
   const [guestMode, setGuestMode] = useState(false);
   const [demoGuest, setDemoGuest] = useState(false);
   const [demoDestination, setDemoDestination] = useState(null);
@@ -39,14 +43,28 @@ function AppContent() {
   const [demoAuthTarget, setDemoAuthTarget] = useState(null);
   const [demoAuthBusy, setDemoAuthBusy] = useState(false);
   const demoNavigationRef = useRef(null);
+  const [currentRouteName, setCurrentRouteName] = useState(null);
   const recoveryUrl = Linking.useLinkingURL();
   const [completedRecoveryUrl, setCompletedRecoveryUrl] = useState(null);
   const { isDark, colors } = useTheme();
+  const insets = useSafeAreaInsets();
+  const demoFloatingBottom = MAIN_TAB_ROUTES.includes(currentRouteName)
+    ? getMainTabBarHeight(insets.bottom) + 8
+    : Math.max(insets.bottom, 8) + 12;
   const { session, loading, signOut } = useAuth();
   const isSoftUniDemoUser = ['softuniadmin@demo.com', 'softuniuser@demo.com'].includes(
     (session?.user?.email || '').trim().toLowerCase()
   );
   const wasSignedInRef = useRef(false);
+
+  useEffect(() => {
+    let active = true;
+    consumeOtaReloadIntent(Updates.updateId)
+      .then((matched) => { if (active) setOtaReloadMatched(matched); })
+      .catch(() => { if (active) setOtaReloadMatched(false); });
+    return () => { active = false; };
+  }, []);
+
 
   useEffect(() => {
     if (loading) return;
@@ -61,6 +79,10 @@ function AppContent() {
     setDemoPanel(false);
     demoViewState.current = { expanded: null, scrollY: 0 };
   }, [loading, session?.user?.id]);
+  useEffect(() => {
+    if (otaReloadMatched && !loading && session?.user?.id) setShowIntro(false);
+  }, [otaReloadMatched, loading, session?.user?.id]);
+
   const { language } = useLanguage();
 
   useEffect(() => {
@@ -143,7 +165,15 @@ function AppContent() {
       </AppControlProvider>
     );
   }
-  if (showIntro) {
+  if (otaReloadMatched === null || (otaReloadMatched && loading)) {
+    return (
+      <AppControlProvider replayIntro={replayIntro} leaveGuestMode={leaveGuestMode}>
+        <StatusBar style={isDark ? 'light' : 'dark'} />
+        <AuthLoadingScreen />
+      </AppControlProvider>
+    );
+  }
+  if (showIntro && !(otaReloadMatched && session?.user?.id)) {
     return (
       <AppControlProvider replayIntro={replayIntro} leaveGuestMode={leaveGuestMode}>
         <StatusBar style="light" />
@@ -204,15 +234,23 @@ function AppContent() {
           <NavigationContainer
             ref={demoNavigationRef}
             theme={navigationTheme}
-            onReady={() => setDemoNavigationReady(true)}
+            onReady={() => {
+              setDemoNavigationReady(true);
+              setCurrentRouteName(demoNavigationRef.current?.getCurrentRoute()?.name ?? null);
+            }}
+            onStateChange={() => {
+              const nextRouteName = demoNavigationRef.current?.getCurrentRoute()?.name ?? null;
+              setCurrentRouteName((current) => current === nextRouteName ? current : nextRouteName);
+            }}
           >
             <StatusBar style={isDark ? 'light' : 'dark'} />
             <AuthSignedInBanner />
             <AppNavigator />
           </NavigationContainer>
         </CommunityProvider>
+        <USGOtaManager active={currentRouteName === 'Home' && !demoPanel && !demoAuthPrompt && !showIntro} />
         {(isSoftUniDemoUser || (demoGuest && (guestMode || Boolean(session)))) && !demoPanel ? (
-          <View pointerEvents="box-none" style={demoReturnStyles.floatingLayer}>
+          <View pointerEvents="box-none" style={[demoReturnStyles.floatingLayer, { bottom: demoFloatingBottom }]}>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={language === 'bg' ? 'Отвори менюто СофтУни' : language === 'it' ? 'Apri il menu SoftUni' : 'Open SoftUni menu'}
@@ -320,7 +358,7 @@ const demoReturnStyles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 118,
+    bottom: 166,
     alignItems: 'center',
     zIndex: 12,
   },

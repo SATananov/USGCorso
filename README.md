@@ -21,6 +21,7 @@ https://usg-cane-corso-platform.com/
 - [SoftUni Demo](#softuni-demo)
 
 - [APK](#apk--install-usgcorso)
+- [OTA Updates — Android Preview](#ota-updates--android-preview)
 - [Exam Status](#exam-status)
 - [Visual Project Scheme](#visual-project-scheme)
 - [Functional Guide](#functional-guide)
@@ -92,6 +93,37 @@ The exam APK is published on GitHub Releases. It is an **Android app**, not a Wi
 
 ---
 
+## OTA Updates — Android Preview
+
+USGCorso has a **tested Android OTA-preview update path** using Expo Updates / EAS Update. This is a post-exam development and verification workflow; it **does not replace or modify** the original SoftUni exam APK linked above. The Google Play release is not yet published.
+
+### Android build and update compatibility
+
+- Original SoftUni exam APK: `USGCorso_1.0.0_SOFTUNI.apk`, Android package `com.usgcorso.mobile`, `versionCode=1`.
+- An **independently built, original-key-signed Android OTA-preview candidate** with `versionCode=2` was installed successfully over the exam APK on a Samsung Galaxy A13, preserving the app installation. It was a separate validation build, not a replacement for the exam download.
+- The update-capable candidate uses Expo project ID `6487907d-d936-4b56-95e4-dc349d0a8c47`, Android update channel / EAS branch `ota-preview`, and runtime version `1.0.0-usg-ota-preview`.
+- Successful over-install required the same Android signing certificate as the original APK. Signing credentials and keystore files are **not** stored in this repository and must never be added to Git.
+- Existing exam APK users do **not** receive OTA updates from an APK that was built without this OTA configuration. OTA availability depends on the installed build, its channel and its runtime compatibility.
+
+### Verified EAS Update tests — 22 November 2026
+
+| Test | Android update ID | Device-observed result |
+| --- | --- | --- |
+| OTA TEST 01 | `01a202e3-9510-77e3-996a-25be44d56df4` | Update delivered without APK reinstall; `OTA TEST 01` appeared on Home. The first reload returned to the intro/login gateway even though the session remained available. |
+| OTA TEST 02 | `01a20304-fe0e-7714-a64d-f4674f8ad009` | OTA restart-navigation patch delivered; `OTA TEST 02` appeared on Home. |
+| OTA TEST 03 | `01a20316-c736-7eb3-ab80-08ec7022e8c6` | After tapping Update, the application stayed on Home and the marker changed to `OTA TEST 03`, without reinstall or returning to the login gateway. |
+
+**Device tested:** Samsung Galaxy A13 (SM-A137F), Android. These are on-device results for this OTA-preview setup, not a claim that all Android devices or every feature were retested.
+
+The OTA restart-navigation implementation lives in `App.js`, `src/ota/USGOtaManager.js` and `src/ota/otaReloadIntent.js`. A time-limited, update-ID-matched, single-use reload intent allows an authenticated session to return directly to Home after an OTA-triggered JS reload; normal cold-start and authentication flows remain separate.
+
+**OTA limitations:** Compatible JavaScript and bundled asset changes may be distributed through EAS Update. Changes to native Expo modules, Android permissions, native dependencies, signing, or incompatible runtime configuration require a new native Android build and suitable runtime/version planning. A successful OTA publication alone is not proof of successful installation; device verification is required.
+
+**Verification status:** The three test updates above were published to `ota-preview`. As of this documentation checkpoint, `OTA TEST 03` is still the visible temporary Home marker on the tested device; its cleanup is a separate future OTA update, not yet claimed as published. The local `main` navigation patch was applied on 22 November 2026; Git commit/push and any future OTA publication are separate, explicit actions.
+
+[↑ Back to top](#jump-to)
+
+---
 ## Exam Status
 
 Current status:
