@@ -1,7 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import * as Updates from 'expo-updates';
-import { consumeOtaReloadIntent } from './src/ota/otaReloadIntent';
-import USGOtaManager from './src/ota/USGOtaManager';
+import { clearOtaReloadIntent, consumeOtaReloadIntent, markOtaReloadIntent } from './src/ota/otaReloadIntent';
 import * as Notifications from 'expo-notifications';
 import { recordCareNotification } from './src/care/corsoCareInbox';
 import { getMyDogs } from './src/dogs/dogService';
@@ -10,7 +9,7 @@ import * as Linking from 'expo-linking';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AppState, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   DarkTheme,
   DefaultTheme,
@@ -45,14 +44,22 @@ function AppContent() {
   const [demoAuthBusy, setDemoAuthBusy] = useState(false);
   const demoNavigationRef = useRef(null);
   const [currentRouteName, setCurrentRouteName] = useState(null);
+  const [isAppForeground, setIsAppForeground] = useState(AppState.currentState === 'active');
+  const [readyUpdateId, setReadyUpdateId] = useState(null);
+  const [isApplyingUpdate, setIsApplyingUpdate] = useState(false);
+  const appStateRef = useRef(AppState.currentState || 'active');
+  const updateCheckRef = useRef({ inFlight: false, lastCheckedAt: 0 });
+  const readyUpdateIdsRef = useRef(new Set());
+  const dismissedUpdateIdsRef = useRef(new Set());
+  const reloadRequestedRef = useRef(false);
   const recoveryUrl = Linking.useLinkingURL();
   const [completedRecoveryUrl, setCompletedRecoveryUrl] = useState(null);
   const { isDark, colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { session, loading, signOut } = useAuth();
   const demoFloatingBottom = MAIN_TAB_ROUTES.includes(currentRouteName)
     ? getMainTabBarHeight(insets.bottom) + 8
     : Math.max(insets.bottom, 8) + 12;
-  const { session, loading, signOut } = useAuth();
   const isSoftUniDemoUser = ['softuniadmin@demo.com', 'softuniuser@demo.com'].includes(
     (session?.user?.email || '').trim().toLowerCase()
   );
@@ -84,8 +91,65 @@ function AppContent() {
     if (otaReloadMatched && !loading && session?.user?.id) setShowIntro(false);
   }, [otaReloadMatched, loading, session?.user?.id]);
 
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
+  const { isStartupProcedureRunning, isUpdatePending, downloadedUpdate } = Updates.useUpdates();
 
+  const offerDownloadedUpdate = useCallback((updateId) => {
+    if (!updateId || updateId === Updates.updateId) return;
+    readyUpdateIdsRef.current.add(updateId);
+    if (!dismissedUpdateIdsRef.current.has(updateId)) setReadyUpdateId(updateId);
+  }, []);
+
+  useEffect(() => {
+    if (Updates.isEnabled && isUpdatePending) offerDownloadedUpdate(downloadedUpdate?.updateId);
+  }, [downloadedUpdate?.updateId, isUpdatePending, offerDownloadedUpdate]);
+
+  const checkForForegroundUpdate = useCallback(async () => {
+    const now = Date.now();
+    if (!Updates.isEnabled || isStartupProcedureRunning || isUpdatePending || updateCheckRef.current.inFlight) return;
+    if (now - updateCheckRef.current.lastCheckedAt < 10 * 60 * 1000) return;
+    updateCheckRef.current.inFlight = true;
+    updateCheckRef.current.lastCheckedAt = now;
+    try {
+      const check = await Updates.checkForUpdateAsync();
+      const updateId = check.isAvailable ? check.manifest?.id : null;
+      if (!updateId || updateId === Updates.updateId || readyUpdateIdsRef.current.has(updateId) || dismissedUpdateIdsRef.current.has(updateId)) return;
+      const result = await Updates.fetchUpdateAsync();
+      if (result.isNew) offerDownloadedUpdate(result.manifest?.id);
+    } catch {} finally {
+      updateCheckRef.current.inFlight = false;
+    }
+  }, [isStartupProcedureRunning, isUpdatePending, offerDownloadedUpdate]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      const previousState = appStateRef.current;
+      appStateRef.current = nextState;
+      setIsAppForeground(nextState === 'active');
+      if (nextState === 'active' && previousState !== 'active') checkForForegroundUpdate();
+    });
+    return () => subscription.remove();
+  }, [checkForForegroundUpdate]);
+
+  function deferReadyUpdate() {
+    if (!readyUpdateId || isApplyingUpdate) return;
+    dismissedUpdateIdsRef.current.add(readyUpdateId);
+    setReadyUpdateId((current) => current === readyUpdateId ? null : current);
+  }
+
+  async function applyReadyUpdate() {
+    if (!readyUpdateId || isApplyingUpdate || reloadRequestedRef.current || !readyUpdateIdsRef.current.has(readyUpdateId)) return;
+    reloadRequestedRef.current = true;
+    setIsApplyingUpdate(true);
+    try {
+      await markOtaReloadIntent(readyUpdateId).catch(() => {});
+      await Updates.reloadAsync();
+    } catch {
+      await clearOtaReloadIntent().catch(() => {});
+      reloadRequestedRef.current = false;
+      setIsApplyingUpdate(false);
+    }
+  }
   useEffect(() => {
     if (loading) return undefined;
     let active = true;
@@ -249,7 +313,37 @@ function AppContent() {
             <AppNavigator />
           </NavigationContainer>
         </CommunityProvider>
-        <USGOtaManager active={currentRouteName === 'Home' && !demoPanel && !demoAuthPrompt && !showIntro} />
+
+        {readyUpdateId && currentRouteName === 'Home' && isAppForeground && !demoAuthPrompt && !demoPanel ? (
+          <View pointerEvents="box-none" style={otaNotificationStyles.layer}>
+            <View style={[otaNotificationStyles.card, { backgroundColor: colors.surface, borderColor: colors.gold }]}>
+              <Text style={[otaNotificationStyles.title, { color: colors.gold }]}>{t('otaUpdate.title')}</Text>
+              <Text style={[otaNotificationStyles.message, { color: colors.textSoft }]}>{t('otaUpdate.message')}</Text>
+              <View style={otaNotificationStyles.actions}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('otaUpdate.later')}
+                  accessibilityState={{ disabled: isApplyingUpdate }}
+                  disabled={isApplyingUpdate}
+                  onPress={deferReadyUpdate}
+                  style={({ pressed }) => [otaNotificationStyles.secondaryButton, { borderColor: colors.gold }, pressed && otaNotificationStyles.pressed, isApplyingUpdate && otaNotificationStyles.disabled]}
+                >
+                  <Text style={[otaNotificationStyles.secondaryText, { color: colors.gold }]}>{t('otaUpdate.later')}</Text>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('otaUpdate.updateNow')}
+                  accessibilityState={{ busy: isApplyingUpdate, disabled: isApplyingUpdate }}
+                  disabled={isApplyingUpdate}
+                  onPress={applyReadyUpdate}
+                  style={({ pressed }) => [otaNotificationStyles.primaryButton, { backgroundColor: colors.gold }, pressed && otaNotificationStyles.pressed, isApplyingUpdate && otaNotificationStyles.disabled]}
+                >
+                  <Text style={otaNotificationStyles.primaryText}>{t('otaUpdate.updateNow')}</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        ) : null}
         {(isSoftUniDemoUser || (demoGuest && (guestMode || Boolean(session)))) && !demoPanel ? (
           <View pointerEvents="box-none" style={[demoReturnStyles.floatingLayer, { bottom: demoFloatingBottom }]}>
             <Pressable
@@ -361,7 +455,6 @@ const demoReturnStyles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 166,
     alignItems: 'center',
     zIndex: 12,
   },
@@ -395,4 +488,18 @@ const demoReturnStyles = StyleSheet.create({
     justifyContent: 'center',
   },
   label: { fontSize: 11, fontWeight: '800', textAlign: 'center' },
+});
+
+const otaNotificationStyles = StyleSheet.create({
+  layer: { position: 'absolute', left: 12, right: 12, bottom: 166, alignItems: 'center', zIndex: 20, elevation: 20 },
+  card: { width: '100%', maxWidth: 520, borderWidth: 1, borderRadius: 18, padding: 14 },
+  title: { fontSize: 15, fontWeight: '900' },
+  message: { fontSize: 12, lineHeight: 17, marginTop: 5 },
+  actions: { flexDirection: 'row', gap: 8, marginTop: 12 },
+  primaryButton: { flex: 1, minHeight: 44, borderRadius: 999, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10 },
+  secondaryButton: { flex: 1, minHeight: 44, borderRadius: 999, borderWidth: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10 },
+  primaryText: { color: '#070708', fontSize: 11, fontWeight: '900' },
+  secondaryText: { fontSize: 11, fontWeight: '900' },
+  pressed: { opacity: 0.75 },
+  disabled: { opacity: 0.55 },
 });

@@ -1,0 +1,133 @@
+name: OTA checks
+
+on:
+  push:
+    branches:
+      - feature/eas-ota
+  pull_request:
+    branches:
+      - main
+      - feature/eas-ota
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Static and dependency checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out full history
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22.13.0
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Validate Expo OTA configuration and dependencies
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const readJson = (path) => JSON.parse(fs.readFileSync(path, 'utf8').replace(/^\uFEFF/, ''));
+          const pkg = readJson('package.json');
+          const lock = readJson('package-lock.json');
+          const appJson = readJson('app.json');
+          const eas = readJson('eas.json');
+          const app = appJson.expo;
+          const projectId = app?.extra?.eas?.projectId;
+          const updatesUrl = app?.updates?.url;
+          const failures = [];
+          const check = (ok, message) => { if (!ok) failures.push(message); };
+
+          check(Boolean(projectId), 'Expo project ID is missing.');
+          check(updatesUrl === `https://u.expo.dev/${projectId}`, 'Expo Updates URL does not match the project ID.');
+          check(app?.plugins?.includes('expo-updates'), 'expo-updates config plugin is missing.');
+          check(app?.runtimeVersion?.policy === 'appVersion', 'Runtime version policy must remain appVersion.');
+          check(typeof app?.version === 'string' && app.version.length > 0, 'Expo app version is missing.');
+          check(eas?.build?.preview?.channel === 'preview', 'Preview build channel must be preview.');
+          check(eas?.build?.production?.channel === 'production', 'Production build channel must be production.');
+          check(typeof pkg.dependencies?.['expo-updates'] === 'string', 'expo-updates must be a direct dependency.');
+          check(lock.packages?.['']?.dependencies?.['expo-updates'] === pkg.dependencies?.['expo-updates'], 'package-lock.json expo-updates entry does not match package.json.');
+
+          for (const [directory, expectedName] of [['modules/usg-ocr', 'usg-ocr'], ['modules/usg-translate', 'usg-translate']]) {
+            const modulePackage = JSON.parse(fs.readFileSync(`${directory}/package.json`, 'utf8'));
+            check(modulePackage.name === expectedName, `${directory}/package.json has an unexpected package name.`);
+          }
+
+          const dynamicConfig = fs.readFileSync('app.config.js', 'utf8');
+          check(dynamicConfig.includes("require('./app.json')"), 'app.config.js must continue to read app.json.');
+          check(dynamicConfig.includes('...base'), 'app.config.js must preserve the app.json configuration.');
+          check(!/\b(runtimeVersion|updates|channel)\s*:/.test(dynamicConfig), 'app.config.js must not hardcode OTA runtime or channel settings.');
+
+          if (failures.length) {
+            console.error(failures.join('\n'));
+            process.exit(1);
+          }
+          console.log('Expo OTA configuration and lockfile checks passed.');
+          NODE
+
+      - name: Verify expo-updates installation
+        run: npm ls expo-updates --depth=0
+
+      - name: Verify Android Expo module autolinking
+        run: |
+          node <<'NODE'
+          const { execFileSync } = require('node:child_process');
+          const output = execFileSync('node_modules/.bin/expo-modules-autolinking', ['resolve', '--platform', 'android', '--json'], { encoding: 'utf8' });
+          const result = JSON.parse(output);
+          const packages = new Set((result.modules || []).map((module) => module.packageName));
+          const missing = ['usg-ocr', 'usg-translate'].filter((name) => !packages.has(name));
+          if (missing.length) {
+            console.error(`Android autolinking did not resolve: ${missing.join(', ')}`);
+            process.exit(1);
+          }
+          console.log('Both local Expo modules resolve for Android.');
+          NODE
+
+      - name: Parse tracked JavaScript and JSX
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const { execFileSync } = require('node:child_process');
+          const parser = require('@babel/parser');
+          const files = execFileSync('git', ['ls-files', '-z', '--', '*.js', '*.jsx'], { encoding: 'utf8' })
+            .split('\0')
+            .filter(Boolean);
+          const failures = [];
+          for (const file of files) {
+            try {
+              parser.parse(fs.readFileSync(file, 'utf8'), { sourceType: 'unambiguous', plugins: ['jsx'] });
+            } catch (error) {
+              failures.push(`${file}:${error.loc?.line ?? 0}:${error.loc?.column ?? 0} ${error.message}`);
+            }
+          }
+          if (failures.length) {
+            console.error(failures.join('\n'));
+            process.exit(1);
+          }
+          console.log(`Parsed ${files.length} tracked JavaScript/JSX files.`);
+          NODE
+
+      - name: Check changed-line whitespace
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            git diff --check "${PR_BASE_SHA}...HEAD"
+          elif [ -n "$PUSH_BEFORE_SHA" ] && [ "$PUSH_BEFORE_SHA" != "0000000000000000000000000000000000000000" ]; then
+            git diff --check "${PUSH_BEFORE_SHA}...HEAD"
+          else
+            git diff --check HEAD^ HEAD
+          fi

@@ -3,6 +3,13 @@
                 "version":  "\u003e= 16.0.0"
             },
     "build":  {
+                  "exam": {
+                    "developmentClient": false,
+                    "distribution": "internal",
+                    "environment": "production",
+                    "android": { "buildType": "apk" },
+                    "channel": "production"
+                  },
                   "development":  {
                                       "developmentClient":  true,
                                       "distribution":  "internal",
@@ -16,7 +23,11 @@
                                   "environment":  "development",
                                   "android":  {
                                                   "buildType":  "apk"
-                                              }
+                                              },
+                                  "channel":  "preview"
+                              },
+                  "production":  {
+                                  "channel":  "production"
                               }
               }
 }

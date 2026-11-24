@@ -20,6 +20,7 @@ export const translations = {
       adminServices: 'USG Admin Services',
       adminInbox: 'USG Admin Inbox',
     },
+    otaUpdate: { title: 'Update available', message: 'A new USGCorso update is ready. You can apply it now or later.', updateNow: 'Update now', later: 'Later' },
     home: {
       subtitle: 'The Cane Corso Mobile Ecosystem',
       sections: {
@@ -341,6 +342,7 @@ export const translations = {
       adminServices: 'USG Администрация — Услуги',
       adminInbox: 'USG Администрация — Входящи',
     },
+    otaUpdate: { title: 'Налична е актуализация', message: 'Нова актуализация на USGCorso е готова. Можеш да я приложиш сега или по-късно.', updateNow: 'Обнови сега', later: 'По-късно' },
     home: {
       subtitle: 'Мобилната екосистема за Кане Корсо',
       sections: {
@@ -662,6 +664,7 @@ export const translations = {
       adminServices: 'USG Amministrazione — Servizi',
       adminInbox: 'USG Amministrazione — Posta in arrivo',
     },
+    otaUpdate: { title: 'Aggiornamento disponibile', message: 'Un nuovo aggiornamento di USGCorso è pronto. Puoi applicarlo ora o più tardi.', updateNow: 'Aggiorna ora', later: 'Più tardi' },
     home: {
       subtitle: 'L’ecosistema mobile del Cane Corso',
       sections: {
