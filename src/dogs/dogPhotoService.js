@@ -13,16 +13,19 @@ const BUCKET = 'corso-photos';
 
 export async function getDogPhotoUrl(path) {
   if (!path) {
-    return { data: null, error: null };
+    return { data: null, error: null, expiresAt: null };
   }
 
+  const expiresIn = 3600;
+  const requestedAt = Date.now();
   const { data, error } = await supabase.storage
     .from(BUCKET)
-    .createSignedUrl(path, 3600);
+    .createSignedUrl(path, expiresIn);
 
   return {
     data: data?.signedUrl ?? null,
     error,
+    expiresAt: data?.signedUrl ? requestedAt + expiresIn * 1000 : null,
   };
 }
 

@@ -21,6 +21,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '../auth/AuthContext';
 import GeoSelector from '../components/GeoSelector';
+import DogPhotoViewer from '../components/DogPhotoViewer';
 import USGProgressBar from '../components/USGProgressBar';
 import { dogCopy } from '../dogs/dogCopy';
 import {
@@ -60,6 +61,9 @@ const photoCopy = {
     addPhoto: 'КАЧИ СНИМКА',
     changePhoto: 'СМЕНИ СНИМКА',
     removePhoto: 'ИЗТРИЙ СНИМКА',
+    photoLoadError: 'Снимката не можа да се зареди.',
+    photoRefreshError: 'Връзката към снимката не можа да се обнови.',
+    retryPhoto: 'ОПИТАЙ ОТНОВО',
     removePhotoConfirm: 'Сигурни ли сте, че искате да изтриете снимката на Корсо?',
     photoWorking: 'ОБРАБОТВА СЕ...',
     permission: 'Нужно е разрешение за достъп до снимките.',
@@ -72,6 +76,9 @@ const photoCopy = {
     addPhoto: 'ADD PHOTO',
     changePhoto: 'CHANGE PHOTO',
     removePhoto: 'REMOVE PHOTO',
+    photoLoadError: 'Photo could not be loaded.',
+    photoRefreshError: 'Photo link could not be refreshed.',
+    retryPhoto: 'RETRY',
     removePhotoConfirm: 'Are you sure you want to remove the Corso photo?',
     photoWorking: 'WORKING...',
     permission: 'Photo library permission is required.',
@@ -84,6 +91,9 @@ const photoCopy = {
     addPhoto: 'AGGIUNGI FOTO',
     changePhoto: 'CAMBIA FOTO',
     removePhoto: 'RIMUOVI FOTO',
+    photoLoadError: 'Impossibile caricare la foto.',
+    photoRefreshError: 'Impossibile aggiornare il collegamento alla foto.',
+    retryPhoto: 'RIPROVA',
     removePhotoConfirm: 'Vuoi rimuovere la foto del Corso?',
     photoWorking: 'ELABORAZIONE...',
     permission: 'È necessaria l’autorizzazione per accedere alle foto.',
@@ -207,6 +217,7 @@ route, navigation }) {
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const [dogs, setDogs] = useState([]);
+  const dogsLoadRequestRef = useRef(0);
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState(null);
   const [formOpen, setFormOpen] = useState(false);
@@ -222,6 +233,8 @@ route, navigation }) {
   const [citiesLoading, setCitiesLoading] = useState(false);
 
   const loadDogs = useCallback(async () => {
+    const requestId = ++dogsLoadRequestRef.current;
+
     if (!user) {
       setDogs([]);
       setLoading(false);
@@ -231,17 +244,27 @@ route, navigation }) {
     setLoading(true);
     setError('');
 
-    const { data, error: loadError } = await getMyDogs(user.id);
+    try {
+      const { data, error: loadError } = await getMyDogs(user.id);
+      if (requestId !== dogsLoadRequestRef.current) return;
 
-    if (loadError) {
-      setDogs([]);
-      setError(copy.loadError);
-      setLoading(false);
-      return;
+      if (loadError) {
+        setDogs([]);
+        setError(copy.loadError);
+        return;
+      }
+
+      setDogs(data ?? []);
+    } catch {
+      if (requestId === dogsLoadRequestRef.current) {
+        setDogs([]);
+        setError(copy.loadError);
+      }
+    } finally {
+      if (requestId === dogsLoadRequestRef.current) {
+        setLoading(false);
+      }
     }
-
-    setDogs(data ?? []);
-    setLoading(false);
   }, [copy.loadError, user]);
 
   const loadCountries = useCallback(async () => {
@@ -294,12 +317,16 @@ route, navigation }) {
 
   useFocusEffect(
     useCallback(() => {
-      loadDogs();
+      void loadDogs();
 
       if (route?.params?.openAddDog) {
         openNewDog();
         navigation.setParams({ openAddDog: false });
       }
+
+      return () => {
+        dogsLoadRequestRef.current += 1;
+      };
     }, [loadDogs, navigation, route?.params?.openAddDog])
   );
 
@@ -588,6 +615,7 @@ route, navigation }) {
                     );
 
                     if (result.error) {
+                      if (result.deleted) await loadDogs();
                       setError(text.removeError);
                       return;
                     }
@@ -612,9 +640,10 @@ route, navigation }) {
                     return;
                   }
 
-                  const { error: deleteError } = await deleteDog(user.id, dog.id);
+                  const deleteResult = await deleteDog(user.id, dog.id);
 
-                  if (deleteError) {
+                  if (deleteResult.error) {
+                    if (deleteResult.deleted) await loadDogs();
                     setError(copy.deleteError);
                     return;
                   }
@@ -1064,7 +1093,7 @@ function DogForm({
       </AccordionSection>
 
       <View style={styles.formActions}>
-        <Pressable style={styles.secondaryButton} onPress={onCancel}>
+        <Pressable style={styles.secondaryButton} onPress={onCancel} disabled={saving}>
           <Text style={styles.secondaryButtonText}>{copy.cancel}</Text>
         </Pressable>
 
@@ -1096,6 +1125,23 @@ function AccordionSection({ title, open, onPress, styles, children }) {
   );
 }
 
+function getPhotoRefreshDelay({ photoUrl, expiresAt, photoStatus, refreshError, now }) {
+  if (!photoUrl || !expiresAt || photoStatus !== 'ready' || refreshError) {
+    return null;
+  }
+  return Math.max(1000, expiresAt - now - 5 * 60 * 1000);
+}
+
+function isCurrentPhotoRequest(path, generation, currentPath, currentGeneration) {
+  return path === currentPath && generation === currentGeneration;
+}
+
+function getPhotoRefreshOutcome(reason, result) {
+  if (!result || result.error || !result.data) {
+    return reason === 'scheduled' ? 'scheduled-error' : 'photo-error';
+  }
+  return 'success';
+}
 function DogPhotoPanel({
   dog,
   language,
@@ -1106,42 +1152,183 @@ function DogPhotoPanel({
 }) {
   const text = photoCopy[language] ?? photoCopy.en;
   const [photoUrl, setPhotoUrl] = useState('');
+  const [expiresAt, setExpiresAt] = useState(null);
+  const [photoStatus, setPhotoStatus] = useState(dog.photo_path ? 'loading' : 'empty');
+  const [refreshError, setRefreshError] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [imageRevision, setImageRevision] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const photoPathRef = useRef(dog.photo_path);
+  const photoUrlRef = useRef('');
+  const photoUrlPathRef = useRef(null);
+  const generationRef = useRef(0);
+  const inFlightRef = useRef(null);
+  const automaticRetryPathRef = useRef(null);
 
-  useEffect(() => {
-    let active = true;
+  photoPathRef.current = dog.photo_path;
 
-    async function loadPhoto() {
-      if (!dog.photo_path) {
-        setPhotoUrl('');
-        return;
-      }
-
-      const { data } = await getDogPhotoUrl(dog.photo_path);
-
-      if (active) {
-        setPhotoUrl(data ?? '');
-      }
+  const refreshPhotoUrl = useCallback((reason = 'manual') => {
+    const path = dog.photo_path;
+    if (!path || photoPathRef.current !== path) {
+      return Promise.resolve(false);
     }
 
-    loadPhoto();
+    if (inFlightRef.current?.path === path) {
+      return inFlightRef.current.promise;
+    }
+
+    const generation = generationRef.current;
+    setRefreshing(true);
+    const request = (async () => {
+      try {
+        const result = await getDogPhotoUrl(path);
+        if (!isCurrentPhotoRequest(path, generation, photoPathRef.current, generationRef.current)) {
+          return false;
+        }
+        const outcome = getPhotoRefreshOutcome(reason, result);
+        if (outcome !== 'success') {
+          if (outcome === 'scheduled-error') {
+            setRefreshError(true);
+          } else {
+            setPhotoStatus('error');
+          }
+          return false;
+        }
+
+        photoUrlRef.current = result.data;
+        photoUrlPathRef.current = path;
+        setPhotoUrl(result.data);
+        setExpiresAt(result.expiresAt ?? null);
+        setPhotoStatus('ready');
+        setRefreshError(false);
+        if (reason === 'image' || reason === 'manual') {
+          setImageRevision((current) => current + 1);
+        }
+        return true;
+      } catch {
+        if (isCurrentPhotoRequest(path, generation, photoPathRef.current, generationRef.current)) {
+          if (reason === 'scheduled') {
+            setRefreshError(true);
+          } else {
+            setPhotoStatus('error');
+          }
+        }
+        return false;
+      } finally {
+        if (isCurrentPhotoRequest(path, generation, photoPathRef.current, generationRef.current)) {
+          setRefreshing(false);
+        }
+        if (inFlightRef.current?.promise === request) {
+          inFlightRef.current = null;
+        }
+      }
+    })();
+
+    inFlightRef.current = { path, promise: request };
+    return request;
+  }, [dog.photo_path]);
+
+  useEffect(() => {
+    const path = dog.photo_path;
+    const generation = ++generationRef.current;
+    photoUrlRef.current = '';
+    photoUrlPathRef.current = null;
+    automaticRetryPathRef.current = null;
+    setPhotoUrl('');
+    setExpiresAt(null);
+    setPhotoStatus(path ? 'loading' : 'empty');
+    setRefreshError(false);
+    setRefreshing(false);
+
+    if (path) {
+      void refreshPhotoUrl('initial');
+    }
 
     return () => {
-      active = false;
+      if (generationRef.current === generation) {
+        generationRef.current += 1;
+      }
+      if (inFlightRef.current?.path === path) {
+        inFlightRef.current = null;
+      }
     };
-  }, [dog.photo_path]);
+  }, [dog.photo_path, refreshPhotoUrl]);
+
+  useEffect(() => {
+    const refreshDelay = getPhotoRefreshDelay({
+      photoUrl,
+      expiresAt,
+      photoStatus,
+      refreshError,
+      now: Date.now(),
+    });
+    if (refreshDelay === null) {
+      return undefined;
+    }
+
+    const timer = setTimeout(() => {
+      void refreshPhotoUrl('scheduled');
+    }, refreshDelay);
+    return () => clearTimeout(timer);
+  }, [expiresAt, photoStatus, photoUrl, refreshError, refreshPhotoUrl]);
+
+  const handleImageError = useCallback((failedUrl) => {
+    const path = dog.photo_path;
+    if (!path || photoUrlPathRef.current !== path || failedUrl !== photoUrlRef.current) {
+      return;
+    }
+
+    setPhotoStatus('error');
+    if (automaticRetryPathRef.current === path) {
+      return;
+    }
+
+    automaticRetryPathRef.current = path;
+    const generation = generationRef.current;
+    void refreshPhotoUrl('image').then((succeeded) => {
+      if (!succeeded && isCurrentPhotoRequest(path, generation, photoPathRef.current, generationRef.current)) {
+        setPhotoStatus('error');
+      }
+    });
+  }, [dog.photo_path, refreshPhotoUrl]);
+
+  function retryPhoto() {
+    if (refreshing || !dog.photo_path) {
+      return;
+    }
+    automaticRetryPathRef.current = dog.photo_path;
+    setRefreshError(false);
+    setPhotoStatus('loading');
+    void refreshPhotoUrl('manual');
+  }
+
+  const showPhotoError = photoStatus === 'error';
 
   return (
     <View style={styles.photoPanel}>
       <View style={styles.photoFrame}>
-        {photoUrl ? (
+        {photoUrl && !showPhotoError ? (
           <Pressable style={styles.photoTapTarget} onPress={() => setPreviewOpen(true)}>
             <Image
+              key={imageRevision}
               source={{ uri: photoUrl }}
               style={styles.dogPhoto}
               resizeMode="contain"
+              onError={() => handleImageError(photoUrl)}
             />
           </Pressable>
+        ) : showPhotoError ? (
+          <View style={styles.photoFallback}>
+            <Text style={styles.photoErrorText}>{text.photoLoadError}</Text>
+            <Pressable
+              accessibilityRole="button"
+              disabled={refreshing}
+              onPress={retryPhoto}
+              style={styles.photoRetryButton}
+            >
+              <Text style={styles.photoRetryText}>{text.retryPhoto}</Text>
+            </Pressable>
+          </View>
         ) : (
           <View style={styles.photoFallback}>
             <Text style={styles.photoFallbackText}>
@@ -1151,30 +1338,30 @@ function DogPhotoPanel({
         )}
       </View>
 
-      <Modal
-        visible={previewOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setPreviewOpen(false)}
-      >
+      {refreshError && photoStatus === 'ready' ? (
         <Pressable
-          style={styles.photoPreviewBackdrop}
-          onPress={() => setPreviewOpen(false)}
+          accessibilityRole="button"
+          disabled={refreshing}
+          onPress={retryPhoto}
+          style={styles.photoRefreshRetry}
         >
-          <Pressable
-            style={styles.photoPreviewClose}
-            onPress={() => setPreviewOpen(false)}
-          >
-            <Text style={styles.photoPreviewCloseText}>×</Text>
-          </Pressable>
-
-          <Image
-            source={{ uri: photoUrl }}
-            style={styles.photoPreviewImage}
-            resizeMode="contain"
-          />
+          <Text style={styles.photoRetryText}>{text.retryPhoto}</Text>
         </Pressable>
-      </Modal>
+      ) : null}
+      <DogPhotoViewer
+        visible={previewOpen}
+        uri={photoUrl}
+        resetKey={dog.photo_path}
+        imageRevision={imageRevision}
+        imageError={showPhotoError || refreshError || (previewOpen && photoStatus === 'loading')}
+        errorLabel={showPhotoError ? text.photoLoadError : text.photoRefreshError}
+        retryLabel={text.retryPhoto}
+        onImageError={handleImageError}
+        onRetry={retryPhoto}
+        retrying={refreshing}
+        onClose={() => setPreviewOpen(false)}
+        styles={styles}
+      />
 
       <View style={styles.photoActions}>
         <Pressable
@@ -1743,7 +1930,51 @@ function createStyles(colors) {
       justifyContent: 'center',
       backgroundColor: colors.activeSurface,
     },
-    photoFallbackText: {
+    photoErrorText: {
+      color: colors.textSoft,
+      fontSize: 13,
+      textAlign: 'center',
+      paddingHorizontal: 12,
+    },
+    photoRetryButton: {
+      minHeight: 44,
+      borderRadius: 9,
+      borderWidth: 1,
+      borderColor: colors.gold,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 14,
+      marginTop: 8,
+    },
+    photoRefreshRetry: {
+      minHeight: 44,
+      alignSelf: 'flex-end',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 6,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+    },
+    photoRetryText: {
+      color: colors.gold,
+      fontSize: 12,
+      fontWeight: '800',
+    },
+    photoPreviewErrorOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 3,
+    },
+    photoPreviewErrorCard: {
+      maxWidth: 300,
+      alignItems: 'center',
+      padding: 18,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+    },    photoFallbackText: {
       color: colors.gold,
       fontSize: 42,
       fontWeight: '900',
@@ -1755,7 +1986,7 @@ function createStyles(colors) {
     },
     photoPrimaryButton: {
       flex: 1,
-      minHeight: 38,
+      minHeight: 48,
       borderRadius: 9,
       alignItems: 'center',
       justifyContent: 'center',
@@ -1764,12 +1995,12 @@ function createStyles(colors) {
     },
     photoPrimaryText: {
       color: colors.background,
-      fontSize: 9,
+      fontSize: 12,
       fontWeight: '900',
     },
     photoSecondaryButton: {
       flex: 1,
-      minHeight: 38,
+      minHeight: 48,
       borderRadius: 9,
       alignItems: 'center',
       justifyContent: 'center',
@@ -1779,7 +2010,7 @@ function createStyles(colors) {
     },
     photoSecondaryText: {
       color: colors.textSoft,
-      fontSize: 9,
+      fontSize: 12,
       fontWeight: '800',
     },
     moderationStatus: {
@@ -1842,16 +2073,20 @@ function createStyles(colors) {
     cardActions: { flexDirection: 'row', gap: 10, marginTop: 14 },
     editButton: {
       flex: 1,
+      minHeight: 48,
       alignItems: 'center',
+      justifyContent: 'center',
       borderRadius: radius.md,
       borderWidth: 1,
       borderColor: colors.gold,
       paddingVertical: 10,
     },
-    editButtonText: { color: colors.gold, fontSize: 10, fontWeight: '900' },
+    editButtonText: { color: colors.gold, fontSize: 12, fontWeight: '900' },
     deleteButton: {
       flex: 1,
+      minHeight: 48,
       alignItems: 'center',
+      justifyContent: 'center',
       borderRadius: radius.md,
       borderWidth: 1,
       borderColor: colors.danger || '#b85c5c',
@@ -1859,7 +2094,7 @@ function createStyles(colors) {
     },
     deleteButtonText: {
       color: colors.danger || '#b85c5c',
-      fontSize: 10,
+      fontSize: 12,
       fontWeight: '900',
     },
     emptyCard: {
