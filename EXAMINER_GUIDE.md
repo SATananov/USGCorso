@@ -87,6 +87,21 @@ From the welcome screen tap **CONTINUE**, then **SoftUni Demonstration**. Expand
 
 **Guest access is intentional product behavior** because USGCorso is being developed as a real application. The demonstration does not bypass authentication, but guest-visible routes may differ from the *literal* protected-route wording of the course specification. This difference is disclosed rather than represented as automatic compliance.
 
+## Final APK acceptance checklist
+
+Run these checks on the candidate standalone APK before replacing the README download link. Use disposable test records and dedicated exam accounts. Record pass/fail and device/build details; a successful source check is not a runtime pass.
+
+| Section | Acceptance check |
+| --- | --- |
+| 01 | Open Knowledge, Corso Friendly and My Materials list entries and inspect their corresponding details. The last two use the signed-in workflow. |
+| 02 | Test login, registration validation, logout, cold restart without re-entering credentials, guest public content, and denial of personal/admin access without the required session or role. |
+| 03 | Create a test material, read it, edit it, refresh from the server, then delete only that test record. |
+| 04 | Test invalid email, weak password, mismatched confirmation, two non-text controls, keyboard visibility and safe areas. |
+| 05 | Test camera/gallery and location permissions and results; on a saved dog photo test pinch, pan, double-tap, X and Android Back. OCR and translation are additional checks. |
+| 06 | Verify standalone startup without Metro, package, signing certificate, version, release asset and SHA-256. |
+
+The photo gesture and route guard checks refer to the newer source candidate, not a claim about the currently published `softuni-v1.0.0` binary. Do not run SQL review scripts or change production policies as part of this walkthrough.
+
 ## Verification boundaries
 
 - Confirmed previously: successful emulator boot, welcome screen and SoftUni Demonstration rendering.

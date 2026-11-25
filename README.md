@@ -89,6 +89,8 @@ For full installation steps and the examiner walkthrough, see the **[Examiner Gu
 
 The exam APK is published on GitHub Releases. It is an **Android app**, not a Windows `.exe` file.
 
+The currently linked release is `softuni-v1.0.0`, built from source checkpoint `68bf1886aec978b4a0ce8be5cf777f046567fdcc`. Later source changes, including the new My Corso photo viewer and route guards, are not verified in that binary. A new standalone release and acceptance tests are required before claiming those changes are available in the exam APK.
+
 [↑ Back to top](#jump-to)
 
 ---
@@ -215,7 +217,7 @@ USG Corso is designed with a production-oriented access model.
 
 A guest can access limited public content without creating an account.
 
-The main public area is **Knowledge**, because educational information about the breed should remain easy to access.
+The main public area is **Knowledge**, because educational information about the breed should remain easy to access. Public Community Questions and limited guest previews are also available. Posting questions requires sign-in.
 
 Personal data and account-based actions stay protected.
 
@@ -234,7 +236,7 @@ Depending on the section, the user can:
 - open list and details screens
 - use location, map, camera and image tools
 
-Admin users have additional moderation screens for supported public content.
+Admin users have additional moderation screens for supported public content. In the current source, personal stack screens check the session and access token before rendering; administrative stack screens also check the user role through Supabase. These client-side guards complement, but do not replace, backend authorization. The intentional guest access differs from the literal exam requirement to show only authentication screens when signed out.
 
 ---
 
@@ -251,9 +253,14 @@ The authentication flow includes:
 - forgotten password recovery
 - setting a new password
 
-Supabase manages the authenticated session.
+Supabase manages the authenticated session using AsyncStorage with session persistence and automatic token refresh enabled.
 
-When the application is restarted, an existing valid session can be restored automatically.
+1. On startup the app restores the saved session with `getSession` and listens for authentication changes.
+2. After the intro, a user with a valid session enters the main app without entering credentials again; otherwise the authentication gateway is shown unless Guest mode is selected.
+3. Successful login establishes a session. Registration may require email confirmation before sign-in is available.
+4. Logout calls Supabase sign-out and removes access to authenticated content.
+
+Cold-start and logout behavior must be verified on the final APK.
 
 Protected personal actions require authentication.
 
@@ -266,7 +273,7 @@ The application uses two main React Navigation navigator types:
 - Bottom Tab Navigator
 - Native Stack Navigator
 
-The bottom tabs give access to the main application areas.
+The root app chooses between the intro, authentication gateway, and main navigation according to its startup, session and guest state. The native stack contains the `Main` route, which hosts nine bottom tabs: Home, My Corso, Corso Friendly, Knowledge, Community, Services, Events, Corso Match and About.
 
 The Stack Navigator is used for details screens, settings, materials, administration and other screens opened from the main areas.
 
@@ -287,7 +294,15 @@ Examples:
 - Knowledge list → Knowledge details
 - admin moderation list → moderation details
 
-Details screens receive an ID or object through route parameters.
+Details screens receive an ID or object through route parameters. Three concrete examples are:
+
+| List | Details route | Parameter |
+| --- | --- | --- |
+| Knowledge | `KnowledgePublicDetails` | `item` |
+| Corso Friendly | `PlaceDetails` | `placeId` |
+| My Materials | `MyMaterialDetails` | `item` |
+
+Tap a list entry to open the corresponding details screen.
 
 ---
 
@@ -338,6 +353,8 @@ Users can delete supported content that belongs to them where the application fl
 
 Admin users can also delete supported moderated content.
 
+In My Corso, successful create, update and delete operations reload the dog list from Supabase through `loadDogs()`. This demonstrates server-backed mutations and refreshed UI rather than a local-only change.
+
 ### Pull-to-Refresh
 
 Server-backed list screens use pull-to-refresh where appropriate.
@@ -360,20 +377,13 @@ The project includes forms for:
 
 The forms validate different types of fields.
 
-Examples:
+Registration validates three distinct fields in `authValidation.js`:
 
-- email must have a valid format
-- required fields cannot be empty
-- password uses several rules
-
-Password validation includes:
-
-- required value
-- minimum length
-- uppercase letter
-- lowercase letter
-- number
-- special character
+| Field | Rules |
+| --- | --- |
+| Email | Required, valid email format |
+| Password | Required, at least six characters, uppercase, lowercase, number and special character |
+| Confirm password | Required, must match password |
 
 The application also uses controls beyond normal text inputs, including:
 
@@ -389,7 +399,11 @@ They use safe-area and keyboard-aware layouts where needed.
 
 ---
 
-## 9. Native Device Features
+## 9. Validation Rules and Input Verification
+
+Try an invalid email, a weak password and a mismatched confirmation before entering valid registration data. In My Corso, test a switch and the image picker; in Corso Friendly, test map coordinate selection. Check that the keyboard does not hide the focused input.
+
+## 10. Native Device Features
 
 USG Corso uses several mobile-specific features:
 
@@ -412,7 +426,7 @@ Knowledge details can request Google ML Kit **on-device** translation when the c
 
 ---
 
-## 10. Typical User Flow
+## 11. Typical User Flow
 
 A normal user journey can be:
 
@@ -425,7 +439,7 @@ A normal user journey can be:
 
 ---
 
-## 11. Error & Edge Case Handling
+## 12. Error & Edge Case Handling
 
 The application handles common states such as:
 
@@ -442,7 +456,7 @@ Normal application feedback uses the USG visual style.
 
 ---
 
-## 12. APK / Build
+## Additional: APK / Build
 
 The project is tested with an Android Development Build during development, including the native Tesseract and Google ML Kit integrations.
 
