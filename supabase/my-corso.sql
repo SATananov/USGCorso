@@ -24,15 +24,12 @@ where community_visible = true;
 
 alter table public.dogs enable row level security;
 
-drop policy if exists "dogs_select_owner_or_shared" on public.dogs;
-create policy "dogs_select_owner_or_shared"
+drop policy if exists dogs_select_owner_or_shared on public.dogs;
+create policy dogs_select_owner_or_shared
 on public.dogs
 for select
 to authenticated
-using (
-  owner_id = auth.uid()
-  or community_visible = true
-);
+using (owner_id = auth.uid());
 
 drop policy if exists "dogs_insert_owner" on public.dogs;
 create policy "dogs_insert_owner"
@@ -64,6 +61,8 @@ using (
   owner_id = auth.uid()
 );
 
-revoke all on table public.dogs from anon;
+revoke all privileges on table public.dogs from public, anon;
+revoke all privileges on table public.dogs from authenticated;
 grant select, insert, update, delete on table public.dogs to authenticated;
 grant all on table public.dogs to service_role;
+revoke truncate, references, trigger on table public.dogs from authenticated;

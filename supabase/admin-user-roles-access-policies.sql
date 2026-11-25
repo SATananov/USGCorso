@@ -24,6 +24,7 @@ as $$
 $$;
 
 revoke all on function public.is_admin() from public;
+revoke all on function public.is_admin() from anon;
 grant execute on function public.is_admin() to authenticated;
 
 drop policy if exists "user_roles_select_own_or_admin" on public.user_roles;

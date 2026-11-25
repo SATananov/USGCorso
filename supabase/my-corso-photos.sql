@@ -1,3 +1,22 @@
+begin;
+
+do $$
+begin
+  if to_regclass('public.dogs') is null
+    or to_regprocedure('public.is_admin()') is null
+    or not exists (
+      select 1
+      from information_schema.columns
+      where table_schema = 'public'
+        and table_name = 'dogs'
+        and column_name = 'moderation_status'
+    )
+  then
+    raise exception 'dog moderation and Admin prerequisites must be applied before Community photos';
+  end if;
+end;
+$$;
+
 alter table public.dogs
 add column if not exists photo_path text;
 
@@ -24,7 +43,26 @@ set
 drop policy if exists "corso photos owner insert" on storage.objects;
 drop policy if exists "corso photos owner update" on storage.objects;
 drop policy if exists "corso photos owner delete" on storage.objects;
-drop policy if exists "corso photos authenticated read" on storage.objects;
+
+do $$
+declare
+  policy_row record;
+begin
+  for policy_row in
+    select policyname
+    from pg_policies
+    where schemaname = 'storage'
+      and tablename = 'objects'
+      and cmd = 'SELECT'
+      and qual ilike '%corso-photos%'
+  loop
+    execute format(
+      'drop policy if exists %I on storage.objects',
+      policy_row.policyname
+    );
+  end loop;
+end;
+$$;
 
 create policy "corso photos owner insert"
 on storage.objects
@@ -69,7 +107,11 @@ using (
     where d.photo_path = storage.objects.name
       and (
         d.owner_id = auth.uid()
-        or d.community_visible = true
+        or public.is_admin()
+        or (
+          d.community_visible = true
+          and d.moderation_status = 'approved'
+        )
       )
   )
 );
@@ -123,6 +165,7 @@ as $$
   left join public.profiles p
     on p.id = d.owner_id
   where d.community_visible = true
+    and d.moderation_status = 'approved'
   order by d.created_at desc;
 $$;
 
@@ -130,3 +173,5 @@ revoke all on function public.community_corso_list() from public;
 revoke all on function public.community_corso_list() from anon;
 grant execute on function public.community_corso_list() to authenticated;
 grant execute on function public.community_corso_list() to service_role;
+
+commit;

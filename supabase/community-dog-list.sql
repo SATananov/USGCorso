@@ -1,5 +1,30 @@
 begin;
 
+do $$
+begin
+  if to_regclass('public.dogs') is null
+    or to_regclass('public.profiles') is null
+    or to_regprocedure('public.is_admin()') is null
+    or not exists (
+      select 1
+      from information_schema.columns
+      where table_schema = 'public'
+        and table_name = 'dogs'
+        and column_name = 'moderation_status'
+    )
+    or not exists (
+      select 1
+      from information_schema.columns
+      where table_schema = 'public'
+        and table_name = 'dogs'
+        and column_name = 'photo_path'
+    )
+  then
+    raise exception 'dog moderation, photo and Admin prerequisites must be applied first';
+  end if;
+end;
+$$;
+
 drop function if exists public.community_corso_list();
 
 create function public.community_corso_list()

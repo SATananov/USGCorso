@@ -4,11 +4,23 @@ alter table public.dogs
   add column if not exists moderation_status text,
   add column if not exists moderation_note text,
   add column if not exists moderated_at timestamptz,
-  add column if not exists moderated_by uuid references auth.users(id) on delete set null;
+  add column if not exists moderated_by uuid references auth.users(id) on delete set null,
+  add column if not exists photo_path text;
+
+do $$
+begin
+  if to_regclass('public.dogs') is null then
+    raise exception 'public.dogs is missing';
+  end if;
+  if to_regprocedure('public.is_admin()') is null then
+    raise exception 'public.is_admin() is required before dog moderation';
+  end if;
+end;
+$$;
 
 update public.dogs
 set moderation_status = case
-  when community_visible then 'approved'
+  when community_visible then 'pending'
   else 'private'
 end
 where moderation_status is null;
@@ -47,6 +59,7 @@ as $$
 declare
   caller_is_admin boolean := false;
   public_content_changed boolean := false;
+  moderation_metadata_changed boolean := false;
 begin
   if auth.uid() is not null then
     caller_is_admin := public.is_admin();
@@ -83,6 +96,32 @@ begin
     return new;
   end if;
 
+  moderation_metadata_changed :=
+    new.moderation_note is distinct from old.moderation_note
+    or new.moderated_at is distinct from old.moderated_at
+    or new.moderated_by is distinct from old.moderated_by;
+
+  if not caller_is_admin then
+    if new.moderation_status is distinct from old.moderation_status
+      and new.moderation_status <> 'pending'
+    then
+      raise exception 'only administrators may set moderation decisions'
+        using errcode = '42501';
+    end if;
+
+    if moderation_metadata_changed
+      and not (
+        new.moderation_status = 'pending'
+        and new.moderation_note is null
+        and new.moderated_at is null
+        and new.moderated_by is null
+      )
+    then
+      raise exception 'only administrators may edit moderation metadata'
+        using errcode = '42501';
+    end if;
+  end if;
+
   public_content_changed :=
     old.community_visible is distinct from new.community_visible
     or old.name is distinct from new.name
@@ -109,12 +148,30 @@ begin
   return new;
 end;
 $$;
+revoke all on function public.apply_dog_moderation_state() from public;
+revoke all on function public.apply_dog_moderation_state() from anon;
+revoke all on function public.apply_dog_moderation_state() from authenticated;
+
 drop trigger if exists dogs_apply_moderation_state on public.dogs;
 
 create trigger dogs_apply_moderation_state
 before insert or update on public.dogs
 for each row
 execute function public.apply_dog_moderation_state();
+
+drop policy if exists dogs_select_owner_or_shared on public.dogs;
+create policy dogs_select_owner_or_shared
+on public.dogs
+for select
+to authenticated
+using (
+  owner_id = auth.uid()
+  or public.is_admin()
+  or (
+    community_visible = true
+    and moderation_status = 'approved'
+  )
+);
 
 create or replace function public.admin_list_dogs_by_moderation(
   target_status text default null
@@ -270,9 +327,13 @@ end;
 $$;
 
 revoke all on function public.admin_list_dogs_by_moderation(text) from public;
+revoke all on function public.admin_list_dogs_by_moderation(text) from anon;
 revoke all on function public.admin_set_dog_moderation(uuid, text, text) from public;
+revoke all on function public.admin_set_dog_moderation(uuid, text, text) from anon;
 revoke all on function public.admin_clear_dog_description(uuid, text) from public;
+revoke all on function public.admin_clear_dog_description(uuid, text) from anon;
 revoke all on function public.submit_my_dog_for_moderation(uuid) from public;
+revoke all on function public.submit_my_dog_for_moderation(uuid) from anon;
 
 grant execute on function public.admin_list_dogs_by_moderation(text) to authenticated;
 grant execute on function public.admin_set_dog_moderation(uuid, text, text) to authenticated;
