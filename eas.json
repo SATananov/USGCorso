@@ -1,33 +1,47 @@
-﻿{
-    "cli":  {
-                "version":  "\u003e= 16.0.0"
-            },
-    "build":  {
-                  "exam": {
-                    "developmentClient": false,
-                    "distribution": "internal",
-                    "environment": "production",
-                    "android": { "buildType": "apk" },
-                    "channel": "production"
-                  },
-                  "development":  {
-                                      "developmentClient":  true,
-                                      "distribution":  "internal",
-                                      "android":  {
-                                                      "buildType":  "apk"
-                                                  }
-                                  },
-                  "preview":  {
-                                  "developmentClient":  false,
-                                  "distribution":  "internal",
-                                  "environment":  "development",
-                                  "android":  {
-                                                  "buildType":  "apk"
-                                              },
-                                  "channel":  "preview"
-                              },
-                  "production":  {
-                                  "channel":  "production"
-                              }
-              }
+{
+  "cli": {
+    "version": ">= 16.0.0"
+  },
+  "build": {
+    "exam": {
+      "developmentClient": false,
+      "distribution": "internal",
+      "environment": "production",
+      "android": {
+        "buildType": "apk"
+      },
+      "channel": "production"
+    },
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "preview": {
+      "developmentClient": false,
+      "distribution": "internal",
+      "environment": "development",
+      "android": {
+        "buildType": "apk"
+      },
+      "channel": "preview"
+    },
+    "production": {
+      "channel": "production"
+    },
+    "otaPreview": {
+      "distribution": "internal",
+      "channel": "ota-preview",
+      "environment": "preview",
+      "developmentClient": false,
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "USGCORSO_OTA_RUNTIME_VERSION": "1.0.0-usg-ota-preview"
+      }
+    }
+  }
 }

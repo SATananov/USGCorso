@@ -6,9 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/usg-app-icon.png",
     "userInterfaceStyle": "light",
-    "ios": {
-      "supportsTablet": true
-    },
+    "ios": { "supportsTablet": true },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#050505",
@@ -29,12 +27,11 @@
       "policy": "appVersion"
     },
     "extra": {
-      "eas": {
-        "projectId": "6487907d-d936-4b56-95e4-dc349d0a8c47"
-      }
+      "eas": { "projectId": "6487907d-d936-4b56-95e4-dc349d0a8c47" }
     },
-    "androidStatusBar": {
-      "translucent": false
+    "androidStatusBar": { "translucent": false },
+    "updates": {
+      "url": "https://u.expo.dev/6487907d-d936-4b56-95e4-dc349d0a8c47"
     }
   }
 }
