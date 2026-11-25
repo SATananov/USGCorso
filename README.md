@@ -115,7 +115,7 @@ USGCorso has a **tested Android OTA-preview update path** using Expo Updates / E
 
 **Device tested:** Samsung Galaxy A13 (SM-A137F), Android. These are on-device results for this OTA-preview setup, not a claim that all Android devices or every feature were retested.
 
-The OTA restart-navigation implementation lives in `App.js`, `src/ota/USGOtaManager.js` and `src/ota/otaReloadIntent.js`. A time-limited, update-ID-matched, single-use reload intent allows an authenticated session to return directly to Home after an OTA-triggered JS reload; normal cold-start and authentication flows remain separate.
+The OTA restart-navigation implementation lives in `App.js` and `src/ota/otaReloadIntent.js`. A time-limited, update-ID-matched, single-use reload intent allows an authenticated session to return directly to Home after an OTA-triggered JS reload; normal cold-start and authentication flows remain separate.
 
 **OTA limitations:** Compatible JavaScript and bundled asset changes may be distributed through EAS Update. Changes to native Expo modules, Android permissions, native dependencies, signing, or incompatible runtime configuration require a new native Android build and suitable runtime/version planning. A successful OTA publication alone is not proof of successful installation; device verification is required.
 

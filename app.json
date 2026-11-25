@@ -29,9 +29,6 @@
     "extra": {
       "eas": { "projectId": "6487907d-d936-4b56-95e4-dc349d0a8c47" }
     },
-    "androidStatusBar": { "translucent": false },
-    "updates": {
-      "url": "https://u.expo.dev/6487907d-d936-4b56-95e4-dc349d0a8c47"
-    }
+    "androidStatusBar": { "translucent": false }
   }
 }

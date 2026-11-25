@@ -1,7 +1,5 @@
 import { supabase } from '../lib/supabase';
 
-// Review reads and moderation writes are authorized by server-side RPC checks;
-// the Admin screen role gate is only a navigation guard.
 export async function getAdminCommunityContent() {
   const result = await supabase.rpc('community_admin_list_content', {
     p_question_limit: 100,

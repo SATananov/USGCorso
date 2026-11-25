@@ -463,7 +463,6 @@ function AddPlaceForm({ copy, colors, language, user, profile, profileLoaded, on
             return;
           }
         } catch {
-          // Keep the existing map location if the address provider is unavailable.
         }
       }
 
@@ -656,7 +655,6 @@ function AddPlaceForm({ copy, colors, language, user, profile, profileLoaded, on
         };
       }
     } catch {
-      // Try the device geocoder if the app geocoding service is unavailable.
     }
 
     if (!locationData) {
@@ -675,7 +673,6 @@ function AddPlaceForm({ copy, colors, language, user, profile, profileLoaded, on
           };
         }
       } catch {
-        // Keep the selected point and allow manual location entry.
       }
     }
 
