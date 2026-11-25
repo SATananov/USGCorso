@@ -13,7 +13,7 @@
         "foregroundImage": "./assets/usg-app-icon-foreground.png"
       },
       "package": "com.usgcorso.mobile",
-      "versionCode": 3,
+      "versionCode": 4,
       "softwareKeyboardLayoutMode": "resize"
     },
     "web": {
