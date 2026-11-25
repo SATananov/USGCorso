@@ -515,6 +515,8 @@ Users can create, view, edit and delete dog profiles.
 
 Dog photos are stored with Supabase Storage.
 
+Tapping a saved dog photo opens a full-screen viewer with pinch zoom, panning while zoomed, and double-tap zoom/reset. Close it with X or Android Back.
+
 Users can also choose whether a dog can be shared with the community.
 
 ---

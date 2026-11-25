@@ -61,6 +61,9 @@ const content = {
     formRegister: 'ФОРМА ЗА РЕГИСТРАЦИЯ', formMaterial: 'ФОРМА ЗА МАТЕРИАЛ И ВАЛИДАЦИЯ',
     camera: 'КАМЕРА / ГАЛЕРИЯ / OCR', location: 'МЕСТОПОЛОЖЕНИЕ И КАРТА',
     translation: 'ML KIT ПРЕВОД — ЗНАНИЕ', careCalendar: 'КАЛЕНДАР И ИСТОРИЯ НА ГРИЖИТЕ',
+    photoGestures: 'MY CORSO — СНИМКА И ЖЕСТОВЕ',
+    photoGestureInstructions: 'Отвори снимката на кучето.\nУвеличи с два пръста.\nПремести увеличената снимка.\nИзползвай двойно докосване за zoom/reset.\nЗатвори с X или Android Back.',
+    photoGestureAccountNote: 'Ако в демонстрационния акаунт няма куче със снимка, избери или добави профил със снимка след вход.',
     navigationCheck: 'СПИСЪК → ПОДРОБНОСТИ: Отвори „Знание“, избери материал и провери детайлния екран. Навигацията предава параметри към детайлите.',
     sessionCheck: 'СЕСИЯ: Влез в акаунт, затвори напълно и отвори приложението отново — трябва да останеш влязъл. За изход използвай действието „Изход“ в акаунта, след което провери защитен екран.',
     refreshCheck: 'ОБНОВЯВАНЕ ЧРЕЗ ИЗДЪРПВАНЕ: В „Моите материали“ издърпай списъка надолу за ново зареждане от Supabase.',
@@ -85,6 +88,9 @@ const content = {
     formRegister: 'REGISTRATION FORM', formMaterial: 'MATERIAL FORM AND VALIDATION',
     camera: 'CAMERA / GALLERY / OCR', location: 'LOCATION AND MAP',
     translation: 'ML KIT TRANSLATION — KNOWLEDGE', careCalendar: 'CARE CALENDAR AND HISTORY',
+    photoGestures: 'MY CORSO — PHOTO GESTURES',
+    photoGestureInstructions: 'Open the dog photo.\nPinch with two fingers to zoom.\nPan the zoomed photo.\nDouble-tap to zoom/reset.\nClose with X or Android Back.',
+    photoGestureAccountNote: 'If the demonstration account has no dog photo, choose or add a dog profile with a photo after signing in.',
     navigationCheck: 'LIST → DETAILS: Open Knowledge, select an item and inspect its details screen. Route parameters identify the selected content.',
     sessionCheck: 'SESSION: Sign in, fully close and reopen the application — the session should persist. Use the account sign-out action, then verify a protected screen.',
     refreshCheck: 'PULL-TO-REFRESH: On My Materials, swipe the list down to reload from Supabase.',
@@ -109,6 +115,9 @@ const content = {
     formRegister: 'MODULO DI REGISTRAZIONE', formMaterial: 'MODULO MATERIALE E VALIDAZIONE',
     camera: 'FOTOCAMERA / GALLERIA / OCR', location: 'POSIZIONE E MAPPA',
     translation: 'TRADUZIONE ML KIT — CONOSCENZE', careCalendar: 'CALENDARIO E STORICO DELLE CURE',
+    photoGestures: 'MY CORSO — FOTO E GESTI',
+    photoGestureInstructions: 'Apri la foto del cane.\nIngrandisci con due dita.\nSposta la foto ingrandita.\nTocca due volte per zoom/ripristino.\nChiudi con X o Android Back.',
+    photoGestureAccountNote: 'Se l’account demo non ha una foto del cane, scegli o aggiungi un profilo con foto dopo aver effettuato l’accesso.',
     navigationCheck: 'ELENCO → DETTAGLI: Apri Knowledge, scegli un elemento e verifica i dettagli. I parametri di navigazione identificano il contenuto.',
     sessionCheck: 'SESSIONE: Accedi, chiudi completamente e riapri l’app — la sessione deve restare attiva. Esci dall’account e verifica una schermata protetta.',
     refreshCheck: 'PULL-TO-REFRESH: In I miei materiali, trascina l’elenco verso il basso per ricaricarlo da Supabase.',
@@ -229,6 +238,16 @@ export default function AuthSoftUniDemoScreen({ onBack, onLogin, onOpenKnowledge
                             <Text style={styles.realDemoText}>{label} →</Text>
                           </Pressable>
                         ))}
+                      </View>
+                    ) : null}
+                    {index === 4 && onOpenFeature ? (
+                      <View style={styles.authDemoActions}>
+                        <Text style={styles.detailLabel}>{copy.photoGestures}</Text>
+                        <Text style={styles.exampleText}>{copy.photoGestureInstructions}</Text>
+                        <Text style={styles.authDemoNote}>{copy.photoGestureAccountNote}</Text>
+                        <Pressable accessibilityRole="button" onPress={() => onOpenFeature('My Corso')} style={styles.realDemoButton}>
+                          <Text style={styles.realDemoText}>{copy.photoGestures} →</Text>
+                        </Pressable>
                       </View>
                     ) : null}
                     {index === 2 && onOpenFeature ? (

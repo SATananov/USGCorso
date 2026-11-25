@@ -195,6 +195,8 @@ function AppContent() {
     if (!navigator?.isReady()) return false;
     if (destination === 'CorsoFriendly') {
       navigator.navigate('Main', { screen: 'Corso Friendly' });
+    } else if (destination === 'My Corso') {
+      navigator.navigate('Main', { screen: 'My Corso' });
     } else {
       navigator.navigate(destination);
     }
