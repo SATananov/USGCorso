@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useLanguage } from '../i18n/LanguageContext';
 import { recognizeTextFromImage } from '../ocr/ocrService';
@@ -19,6 +20,7 @@ import { scanQrFromImage } from '../qr/qrService';
 
 const sourceCopy = {
   bg: {
+    lowConfidence: 'Ниска надеждност на OCR. Провери текста спрямо снимката.',
     title: 'Избери източник',
     text: 'Снимай текста сега или избери изображение от телефона.',
     camera: 'КАМЕРА',
@@ -39,6 +41,7 @@ const sourceCopy = {
     qrFound: 'Открит QR код',
   },
   en: {
+    lowConfidence: 'Low OCR confidence. Check the text against the image.',
     title: 'Choose source',
     text: 'Take a photo now or choose an image from your phone.',
     camera: 'CAMERA',
@@ -59,6 +62,7 @@ const sourceCopy = {
     qrFound: 'QR code detected',
   },
   it: {
+    lowConfidence: 'Bassa affidabilità OCR. Controlla il testo rispetto alla foto.',
     title: 'Scegli la fonte',
     text: 'Scatta una foto ora oppure scegli un’immagine dal telefono.',
     camera: 'FOTOCAMERA',
@@ -92,6 +96,7 @@ export default function ScanTextButton({
   const [scanning, setScanning] = useState(false);
   const [sourceVisible, setSourceVisible] = useState(false);
   const [resultText, setResultText] = useState('');
+  const [lowConfidence, setLowConfidence] = useState(false);
   const [resultVisible, setResultVisible] = useState(false);
   const [qrCodes, setQrCodes] = useState([]);
   const [info, setInfo] = useState(null);
@@ -99,6 +104,7 @@ export default function ScanTextButton({
   function closeResult() {
     setResultVisible(false);
     setResultText('');
+    setLowConfidence(false);
     setQrCodes([]);
   }
 
@@ -149,6 +155,7 @@ export default function ScanTextButton({
       }
 
       setQrCodes(detectedQrCodes);
+      setLowConfidence(Boolean(recognizedText && ocrResult.status === 'fulfilled' && ocrResult.value?.confidence != null && ocrResult.value.confidence < 55));
 
       const qrText = detectedQrCodes
         .map((code, index) =>
@@ -365,11 +372,14 @@ export default function ScanTextButton({
         animationType="slide"
         transparent
         visible={resultVisible}
+        statusBarTranslucent
+        navigationBarTranslucent
         onRequestClose={closeResult}
       >
+        <SafeAreaView style={styles.overlayBottom} edges={['top', 'bottom']}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.overlayBottom}
+          style={styles.keyboardShell}
         >
           <View
             style={[
@@ -404,6 +414,11 @@ export default function ScanTextButton({
               </Pressable>
             </View>
 
+            <ScrollView
+              style={styles.editorScroll}
+              contentContainerStyle={styles.editorScrollContent}
+              keyboardShouldPersistTaps="handled"
+            >
             {qrCodes.length ? (
               <View
                 style={[
@@ -432,10 +447,7 @@ export default function ScanTextButton({
               </View>
             ) : null}
 
-            <ScrollView
-              contentContainerStyle={styles.editorScrollContent}
-              keyboardShouldPersistTaps="handled"
-            >
+              {lowConfidence ? <Text style={[styles.modalText, { color: colors.gold }]}>{copy.lowConfidence}</Text> : null}
               <TextInput
                 value={resultText}
                 onChangeText={setResultText}
@@ -493,6 +505,7 @@ export default function ScanTextButton({
             </View>
           </View>
         </KeyboardAvoidingView>
+        </SafeAreaView>
       </Modal>
     </>
   );
@@ -548,8 +561,11 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 18,
   },
+  keyboardShell: { flex: 1, minHeight: 0, justifyContent: 'flex-end' },
+  editorScroll: { flex: 1, minHeight: 0 },
   editorShell: {
-    height: '92%',
+    flex: 1,
+    minHeight: 0,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     borderWidth: 1,
@@ -610,7 +626,8 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   editor: {
-    minHeight: 430,
+    minHeight: 120,
+    flexGrow: 1,
     borderWidth: 1,
     borderRadius: 18,
     paddingHorizontal: 15,

@@ -20,6 +20,8 @@ import { formatTimestamp } from '../utils/dateTime';
 
 const copy = {
   en: {
+    choose: 'Translation language',
+    showOriginal: 'SHOW ORIGINAL',
     kicker: 'PUBLIC KNOWLEDGE',
     content: 'Content',
     updated: 'Updated',
@@ -36,6 +38,8 @@ const copy = {
     loading: 'Loading article…',
   },
   bg: {
+    choose: 'Език за превод',
+    showOriginal: 'ПОКАЖИ ОРИГИНАЛА',
     kicker: 'ПУБЛИЧНО ЗНАНИЕ',
     content: 'Съдържание',
     updated: 'Обновено',
@@ -52,6 +56,8 @@ const copy = {
     loading: 'Зареждане на статията…',
   },
   it: {
+    choose: 'Lingua di traduzione',
+    showOriginal: 'MOSTRA ORIGINALE',
     kicker: 'CONOSCENZA PUBBLICA',
     content: 'Contenuto',
     updated: 'Aggiornato',
@@ -93,6 +99,11 @@ function formatDate(value, language) {
 }
 
 export default function KnowledgePublicDetailsScreen({ route }) {
+  const { language } = useLanguage();
+  return <KnowledgeArticle key={`${route.params?.item?.id ?? ''}:${language}`} route={route} />;
+}
+
+function KnowledgeArticle({ route }) {
   const backToTopRef = useBackToTopRef(null);
   const [backToTopVisible, setBackToTopVisible] = useBackToTopState(false);
   const { language: backToTopLanguage } = useLanguage();
@@ -105,6 +116,8 @@ export default function KnowledgePublicDetailsScreen({ route }) {
   const [machine, setMachine] = useState(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
+  const [target, setTarget] = useState(null);
+  const [showOriginal, setShowOriginal] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -122,29 +135,29 @@ export default function KnowledgePublicDetailsScreen({ route }) {
 
   const actual = remote?.language === language ? remote.item : null;
   const current = actual ?? item;
-  const needsTranslation = actual?.source_language && actual.source_language !== language && !actual.has_translation;
-  const machineText = machine?.language === language && machine?.id === item?.id ? machine : null;
-  const showFallback = Boolean(needsTranslation && !machineText);
+  const source = actual?.source_language;
+  const supported = ['bg', 'en', 'it'];
+  const sourceTitle = actual?.original_title ?? (!actual?.has_translation ? current?.title : null);
+  const sourceBody = actual?.original_body ?? (!actual?.has_translation ? current?.body : null);
+  const canTranslate = Boolean(actual && supported.includes(source) && (sourceTitle || sourceBody));
+  const selectedTarget = target ?? (source !== language ? language : supported.find((value) => value !== source));
+  const machineText = machine?.id === item?.id ? machine : null;
+  const displayedTitle = machineText?.title ?? (showOriginal ? sourceTitle : current?.title);
+  const displayedBody = machineText?.body ?? (showOriginal ? sourceBody : current?.body);
 
   async function onTranslate() {
-    if (!actual?.source_language || busy) return;
+    if (!canTranslate || busy || !supported.includes(selectedTarget) || selectedTarget === source) return;
     setBusy(true);
     setMessage('');
     try {
-      const sourceTitle = actual.original_title || current.title || '';
-      const sourceBody = actual.original_body || current.body || '';
-      const [translatedTitle, translatedBody] = await Promise.all([
-        sourceTitle ? translateOnDevice(sourceTitle, actual.source_language, language) : Promise.resolve(''),
-        sourceBody ? translateOnDevice(sourceBody, actual.source_language, language) : Promise.resolve(''),
-      ]);
-      setMachine({
-        id: actual.id,
-        language,
-        title: translatedTitle || sourceTitle,
-        body: translatedBody || sourceBody,
-      });
+      const translatedTitle = sourceTitle ? await translateOnDevice(sourceTitle, source, selectedTarget) : '';
+      const translatedBody = sourceBody ? await translateOnDevice(sourceBody, source, selectedTarget) : '';
+      setShowOriginal(false);
+      setMachine({ id: actual.id, language: selectedTarget, title: translatedTitle || sourceTitle, body: translatedBody || sourceBody });
     } catch (error) {
-      const errorText = String(error?.message ?? error);
+      setMachine(null);
+      setShowOriginal(true);
+      const errorText = String(error?.code ?? '') + String(error?.message ?? error);
       setMessage(errorText.includes('MODEL_DOWNLOAD_FAILED') ? labels.wifi : labels.failed);
     } finally {
       setBusy(false);
@@ -175,7 +188,7 @@ export default function KnowledgePublicDetailsScreen({ route }) {
         <View style={styles.hero}>
           <Text style={styles.kicker}>{labels.kicker}</Text>
           <Text style={styles.title}>
-            {machineText?.title || current.title || labels.untitled}
+            {displayedTitle || labels.untitled}
           </Text>
 
           <View style={styles.metaRow}>
@@ -190,25 +203,35 @@ export default function KnowledgePublicDetailsScreen({ route }) {
           </View>
         </View>
 
+        {canTranslate ? (
+          <View style={styles.translationPanel}>
+            <Text style={styles.sectionLabel}>{labels.choose}</Text>
+            <View style={styles.languageRow}>
+              {supported.filter((value) => value !== source).map((value) => (
+                <Pressable key={value} disabled={busy} accessibilityRole="button" accessibilityState={{ selected: selectedTarget === value, disabled: busy }} onPress={() => { setTarget(value); setMessage(''); }} style={[styles.languageButton, selectedTarget === value && { backgroundColor: colors.gold }]}>
+                  <Text style={[styles.translateButtonText, selectedTarget === value && { color: '#08080a' }]}>{value.toUpperCase()}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <Pressable disabled={busy} style={styles.translateButton} onPress={onTranslate}>
+              <Text style={styles.translateButtonText}>{busy ? labels.translating : labels.translate}</Text>
+            </Pressable>
+            <Pressable disabled={busy} style={styles.translateButton} onPress={() => { setMachine(null); setShowOriginal(true); setMessage(''); }}>
+              <Text style={styles.translateButtonText}>{labels.showOriginal} ({source.toUpperCase()})</Text>
+            </Pressable>
+            {busy ? <ActivityIndicator color={colors.gold} /> : null}
+            {machineText ? <Text style={styles.noticeText}>{machineText.language.toUpperCase()} · {labels.machine}</Text> : null}
+            {message ? <Text style={styles.noticeText}>{message}</Text> : null}
+            <Text style={styles.noticeText}>{labels.wifiHint}</Text>
+          </View>
+        ) : null}
         <View style={styles.card}>
           <Text style={styles.sectionLabel}>{labels.content}</Text>
           <Text style={styles.body}>
-            {machineText?.body || current.body || labels.noContent}
+            {displayedBody || labels.noContent}
           </Text>
         </View>
 
-        {showFallback && !busy ? (
-          <Pressable style={styles.translateButton} onPress={onTranslate}>
-            <Text style={styles.translateButtonText}>{labels.translate}</Text>
-          </Pressable>
-        ) : null}
-        {busy ? (
-          <View style={styles.notice}><ActivityIndicator color={colors.gold} /><Text style={styles.noticeText}>{labels.translating}</Text></View>
-        ) : null}
-        {machineText ? <Text style={styles.noticeText}>{labels.machine}</Text> : null}
-        {showFallback && !message ? <Text style={styles.noticeText}>{labels.original}</Text> : null}
-        {showFallback ? <Text style={styles.noticeText}>{labels.wifiHint}</Text> : null}
-        {message ? <Text style={styles.noticeText}>{message}</Text> : null}
         <Text style={styles.footer}>USG — Unico Suo Genere™</Text>
       </ScrollView>
       <USGBackToTop
@@ -291,6 +314,9 @@ function createStyles(colors) {
       fontSize: 15,
       lineHeight: 24,
     },
+    translationPanel: { marginBottom: 14 },
+    languageRow: { flexDirection: 'row', gap: 10 },
+    languageButton: { flex: 1, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: colors.gold, borderRadius: radius.md },
     translateButton: {
       borderWidth: 1,
       borderColor: colors.goldDark,

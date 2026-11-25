@@ -16,9 +16,9 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { recognizeWithTesseract } from '../ocr/providers/tesseractProvider';
 import { useTheme } from '../theme/ThemeContext';
 
-const LANGUAGE_MODELS = { bg: 'bul', en: 'eng', it: 'ita' };
-const LANGUAGES = ['bg', 'en', 'it'];
-const TIMEOUT_MS = 25000;
+const LANGUAGE_MODELS = { bg: 'bul', en: 'eng', it: 'ita', all: 'bul+eng+ita' };
+const LANGUAGES = ['bg', 'en', 'it', 'all'];
+const TIMEOUT_MS = 45000;
 
 const copy = {
   bg: {
@@ -40,7 +40,7 @@ const copy = {
     provider: 'Двигател',
     running: 'Разпознаване...',
     source: 'Избрано изображение',
-    timeout: 'Тестът надхвърли 25 секунди.',
+    timeout: 'Тестът надхвърли 45 секунди.',
   },
   en: {
     title: 'OCR Test Lab',
@@ -61,7 +61,7 @@ const copy = {
     provider: 'Engine',
     running: 'Recognizing...',
     source: 'Selected image',
-    timeout: 'The test exceeded 25 seconds.',
+    timeout: 'The test exceeded 45 seconds.',
   },
   it: {
     title: 'Laboratorio OCR',
@@ -82,7 +82,7 @@ const copy = {
     provider: 'Motore',
     running: 'Riconoscimento...',
     source: 'Immagine selezionata',
-    timeout: 'Il test ha superato 25 secondi.',
+    timeout: 'Il test ha superato 45 secondi.',
   },
 };
 
@@ -105,9 +105,10 @@ export default function OcrTestLabScreen() {
   const { language } = useLanguage();
   const { colors } = useTheme();
   const labels = copy[language] || copy.en;
-  const [modelLanguage, setModelLanguage] = useState(language in LANGUAGE_MODELS ? language : 'en');
+  const [modelLanguage, setModelLanguage] = useState('all');
   const [imageUri, setImageUri] = useState(null);
   const [resultText, setResultText] = useState('');
+  const [confidence, setConfidence] = useState(null);
   const [durationMs, setDurationMs] = useState(null);
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
@@ -139,6 +140,7 @@ export default function OcrTestLabScreen() {
     setImageUri(uri);
     setResultText('');
     setDurationMs(null);
+    setConfidence(null);
     setBusy(true);
     const started = Date.now();
     const model = LANGUAGE_MODELS[modelLanguage];
@@ -149,6 +151,7 @@ export default function OcrTestLabScreen() {
       const elapsed = Date.now() - started;
       setDurationMs(elapsed);
       setResultText(text);
+      setConfidence(result?.confidence ?? null);
       if (!text.trim()) setMessage(labels.empty);
       console.log('[USG_OCR_LAB] success', model, 'characters', text.length, 'elapsedMs', elapsed);
     } catch (error) {
@@ -174,6 +177,7 @@ export default function OcrTestLabScreen() {
     setImageUri(null);
     setResultText('');
     setDurationMs(null);
+    setConfidence(null);
     setMessage('');
   }
 
@@ -232,6 +236,7 @@ export default function OcrTestLabScreen() {
           />
           <Text style={[styles.metrics, { color: colors.textSoft }]}>
             {labels.provider}: Tesseract · {LANGUAGE_MODELS[modelLanguage]} · {labels.chars}: {resultText.length}
+            {confidence == null ? '' : ` · OCR: ${confidence}/100`}
             {durationMs == null ? '' : ` · ${labels.duration}: ${(durationMs / 1000).toFixed(1)} s`}
           </Text>
           {message ? <Text selectable style={[styles.message, { color: colors.gold }]}>{message}</Text> : null}

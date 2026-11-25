@@ -1,11 +1,11 @@
 import { recognizeWithTesseract } from './providers/tesseractProvider';
 
-const OCR_TIMEOUT_MS = 25000;
+const OCR_TIMEOUT_MS = 45000;
 
 function languageForApp(language) {
-  if (language === 'bg') return 'bul';
-  if (language === 'it') return 'ita';
-  return 'eng';
+  if (language === 'bg') return 'bul+eng+ita';
+  if (language === 'it') return 'ita+eng+bul';
+  return 'eng+bul+ita';
 }
 
 function withTimeout(task, ms) {

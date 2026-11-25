@@ -1,7 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function USGBackToTop({ visible, onPress, language = 'en', dock = false, bottomOffset = 12 }) {
+  const insets = useSafeAreaInsets();
   const offset = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -27,7 +29,7 @@ export default function USGBackToTop({ visible, onPress, language = 'en', dock =
   }
 
   return (
-    <View pointerEvents="box-none" style={dock ? styles.dock : [styles.overlay, { bottom: bottomOffset }]}>
+    <View pointerEvents="box-none" style={dock ? styles.dock : [styles.overlay, { bottom: Math.max(bottomOffset, insets.bottom + 12) }]}>
       <Animated.View style={{ transform: [{ translateY: offset }] }}>
         <Pressable
           accessibilityRole="button"

@@ -3,6 +3,8 @@ package expo.modules.usgocr
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import android.media.ExifInterface
 import android.net.Uri
 import com.googlecode.tesseract.android.TessBaseAPI
 import expo.modules.kotlin.modules.Module
@@ -23,7 +25,7 @@ class USGOcrModule : Module() {
 
       prepareLanguageData(context, languages, tessdataDir)
 
-      val bitmap = decodeScaledBitmap(context, uri, 2400)
+      val bitmap = decodeScaledBitmap(context, uri, 3000)
         ?: throw IllegalArgumentException("Unable to decode image")
 
       val tess = TessBaseAPI()
@@ -95,10 +97,10 @@ class USGOcrModule : Module() {
     }
 
     var sampleSize = 1
-    var width = bounds.outWidth
-    var height = bounds.outHeight
+    val width = bounds.outWidth
+    val height = bounds.outHeight
 
-    while (max(width, height) / sampleSize > maxDimension) {
+    while (max(width, height) / (sampleSize * 2) >= maxDimension) {
       sampleSize *= 2
     }
 
@@ -107,7 +109,35 @@ class USGOcrModule : Module() {
       inPreferredConfig = Bitmap.Config.ARGB_8888
     }
 
-    return decodeBitmap(context, uriValue, options)
+    val decoded = decodeBitmap(context, uriValue, options) ?: return null
+    val uri = Uri.parse(uriValue)
+    val orientation = try {
+      context.contentResolver.openInputStream(uri)?.use { stream ->
+        ExifInterface(stream).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
+      } ?: ExifInterface.ORIENTATION_NORMAL
+    } catch (_: Exception) {
+      ExifInterface.ORIENTATION_NORMAL
+    }
+    val matrix = Matrix()
+    when (orientation) {
+      ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.setScale(-1f, 1f)
+      ExifInterface.ORIENTATION_ROTATE_180 -> matrix.setRotate(180f)
+      ExifInterface.ORIENTATION_FLIP_VERTICAL -> matrix.setScale(1f, -1f)
+      ExifInterface.ORIENTATION_TRANSPOSE -> { matrix.setRotate(90f); matrix.postScale(-1f, 1f) }
+      ExifInterface.ORIENTATION_ROTATE_90 -> matrix.setRotate(90f)
+      ExifInterface.ORIENTATION_TRANSVERSE -> { matrix.setRotate(-90f); matrix.postScale(-1f, 1f) }
+      ExifInterface.ORIENTATION_ROTATE_270 -> matrix.setRotate(-90f)
+    }
+    val scale = minOf(1f, maxDimension.toFloat() / max(decoded.width, decoded.height))
+    matrix.postScale(scale, scale)
+    return try {
+      val result = Bitmap.createBitmap(decoded, 0, 0, decoded.width, decoded.height, matrix, true)
+      if (result !== decoded) decoded.recycle()
+      result
+    } catch (error: Exception) {
+      decoded.recycle()
+      throw error
+    }
   }
 
   private fun decodeBitmap(
