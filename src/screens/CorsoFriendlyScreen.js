@@ -1688,6 +1688,7 @@ navigation }) {
   const [userLocation, setUserLocation] = useState(null);
   const [profile, setProfile] = useState(null);
   const [mapSharingEnabled, setMapSharingEnabled] = useState(false);
+  const [presenceHintVisible, setPresenceHintVisible] = useState(true);
   const [visibleMapUsers, setVisibleMapUsers] = useState([]);
   const [presenceSaving, setPresenceSaving] = useState(false);
   const [nearMeLoading, setNearMeLoading] = useState(false);
@@ -1703,6 +1704,7 @@ navigation }) {
   useEffect(() => {
     setProfile(null);
     setProfileLoaded(false);
+    setPresenceHintVisible(true);
   }, [user?.id]);
 
   const filteredPlaces = useMemo(() => {
@@ -1954,6 +1956,7 @@ navigation }) {
           setErrorText(copy.mapPresence.error);
         } else {
           setMapSharingEnabled(false);
+          setPresenceHintVisible(false);
           setUserLocation(null);
           setVisibleMapUsers((current) =>
             current.filter((item) => item.user_id !== user.id)
@@ -1994,6 +1997,7 @@ navigation }) {
       } else {
         setUserLocation(currentLocation);
         setMapSharingEnabled(true);
+        setPresenceHintVisible(false);
         requestAnimationFrame(() => {
           mapRef.current?.animateToRegion({
             ...currentLocation,
@@ -2192,7 +2196,9 @@ navigation }) {
                   : copy.mapPresence.enable}
               </Text>
             </Pressable>
-            <Text style={styles.presencePrivacyHint}>{copy.mapPresence.privacyHint}</Text>
+            {presenceHintVisible ? (
+              <Text style={styles.presencePrivacyHint}>{copy.mapPresence.privacyHint}</Text>
+            ) : null}
           </View>
 
           <MapView
