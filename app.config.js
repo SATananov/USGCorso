@@ -6,6 +6,15 @@ module.exports = () => {
   const base = appJson.expo;
   const mapsKey = process.env.GOOGLE_MAPS_ANDROID_API_KEY;
   const profile = process.env.EAS_BUILD_PROFILE;
+  const requestedAndroidPackage = process.env.USGCORSO_ANDROID_PACKAGE;
+  const softUniDevPackage = 'com.usgcorso.mobile.softunidev';
+
+  if (profile === 'softuniDev' && requestedAndroidPackage !== softUniDevPackage) {
+    throw new Error('softuniDev requires USGCORSO_ANDROID_PACKAGE=com.usgcorso.mobile.softunidev.');
+  }
+  if (requestedAndroidPackage && (profile !== 'softuniDev' || requestedAndroidPackage !== softUniDevPackage)) {
+    throw new Error('USGCORSO_ANDROID_PACKAGE is reserved for the softuniDev profile.');
+  }
   const requestedRuntime = process.env.USGCORSO_OTA_RUNTIME_VERSION;
 
   if (!mapsKey) {
@@ -34,7 +43,8 @@ module.exports = () => {
 
   return {
     ...base,
-    updates: { ...(base.updates ?? {}), enabled: true },
+    android: { ...base.android, package: requestedAndroidPackage || base.android.package },
+    updates: { ...(base.updates ?? {}), enabled: profile !== 'softuniDev' && profile !== 'exam' },
     runtimeVersion: requestedRuntime === previewRuntimeVersion
       ? previewRuntimeVersion
       : { policy: 'appVersion' },

@@ -19,6 +19,17 @@
         "buildType": "apk"
       }
     },
+    "softuniDev": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "environment": "development",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "USGCORSO_ANDROID_PACKAGE": "com.usgcorso.mobile.softunidev"
+      }
+    },
     "preview": {
       "developmentClient": false,
       "distribution": "internal",
