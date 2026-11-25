@@ -1,10 +1,14 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '../auth/AuthContext';
+import { getMyRole } from '../admin/adminService';
+import { useAppControls } from '../app/AppControlContext';
+import USGProgressBar from '../components/USGProgressBar';
 import GuestSectionPreview from '../components/GuestSectionPreview';
 import AboutScreen from '../screens/AboutScreen';
 import AdminScreen from '../screens/AdminScreen';
@@ -202,6 +206,99 @@ function MainTabs({ route }) {
   );
 }
 
+const accessCopy = {
+  bg: { signIn: 'Необходим е вход в акаунта.', signInAction: 'ВХОД', denied: 'Нямате административен достъп.', failed: 'Ролята не можа да бъде проверена.', checking: 'Проверка на достъпа', retry: 'ОПИТАЙ ОТНОВО', home: 'НАЧАЛО' },
+  en: { signIn: 'Please sign in to access this area.', signInAction: 'SIGN IN', denied: 'Administrator access is required.', failed: 'Your role could not be verified.', checking: 'Checking access', retry: 'TRY AGAIN', home: 'HOME' },
+  it: { signIn: 'Accedi per entrare in questa sezione.', signInAction: 'ACCEDI', denied: 'È richiesto l’accesso amministrativo.', failed: 'Impossibile verificare il ruolo.', checking: 'Verifica accesso', retry: 'RIPROVA', home: 'HOME' },
+};
+
+function AccessScreen({ navigation, reason, onRetry }) {
+  const { language } = useLanguage();
+  const { colors } = useTheme();
+  const { leaveGuestMode } = useAppControls();
+  const labels = accessCopy[language] ?? accessCopy.en;
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
+  return (
+    <View style={styles.accessContainer}>
+      {reason === 'checking' ? <USGProgressBar label={labels.checking} /> : (
+        <>
+          <Text style={styles.accessText}>{labels[reason]}</Text>
+          {reason === 'signIn' || reason === 'failed' ? (
+            <Pressable accessibilityRole="button" style={styles.accessButton} onPress={reason === 'signIn' ? leaveGuestMode : onRetry}>
+              <Text style={styles.accessButtonText}>{reason === 'signIn' ? labels.signInAction : labels.retry}</Text>
+            </Pressable>
+          ) : null}
+          <Pressable accessibilityRole="button" style={styles.accessButton} onPress={() => navigation.navigate('Main', { screen: 'Home' })}>
+            <Text style={styles.accessButtonText}>{labels.home}</Text>
+          </Pressable>
+        </>
+      )}
+    </View>
+  );
+}
+
+function AdminAccess({ Screen, screenProps, userId }) {
+  const [status, setStatus] = useState('checking');
+  const [attempt, setAttempt] = useState(0);
+
+  useFocusEffect(useCallback(() => {
+    let active = true;
+    setStatus('checking');
+    async function verifyRole() {
+      try {
+        const { data, error } = await getMyRole(userId);
+        if (active) setStatus(error ? 'failed' : data?.role === 'admin' ? 'allowed' : 'denied');
+      } catch {
+        if (active) setStatus('failed');
+      }
+    }
+    verifyRole();
+    return () => { active = false; };
+  }, [userId, attempt]));
+
+  if (status !== 'allowed') {
+    return <AccessScreen navigation={screenProps.navigation} reason={status} onRetry={() => setAttempt(value => value + 1)} />;
+  }
+
+  return <Screen {...screenProps} />;
+}
+
+function protectScreen(Screen, admin = false) {
+  return function ProtectedScreen(props) {
+    const { session, loading } = useAuth();
+    const userId = session?.user?.id;
+    if (loading) return <AccessScreen navigation={props.navigation} reason="checking" />;
+    if (!userId || !session?.access_token) return <AccessScreen navigation={props.navigation} reason="signIn" />;
+    if (admin) return <AdminAccess key={userId} Screen={Screen} screenProps={props} userId={userId} />;
+    return <Screen key={userId} {...props} />;
+  };
+}
+
+const ProtectedCommunityNewQuestionScreen = protectScreen(CommunityNewQuestionScreen);
+const ProtectedMyCorsoGrowthScreen = protectScreen(MyCorsoGrowthScreen);
+const ProtectedMyCorsoCareScreen = protectScreen(MyCorsoCareScreen);
+const ProtectedMyCorsoQuickAddScreen = protectScreen(MyCorsoScreen);
+const ProtectedMyCorsoDiaryScreen = protectScreen(MyCorsoDiaryScreen);
+const ProtectedCorsoCareRemindersScreen = protectScreen(CorsoCareRemindersScreen);
+const ProtectedMyCorsoBehaviorScreen = protectScreen(MyCorsoBehaviorScreen);
+const ProtectedMyCorsoChallengesScreen = protectScreen(MyCorsoChallengesScreen);
+const ProtectedArenaRankingPreviewScreen = protectScreen(ArenaRankingPreviewScreen);
+const ProtectedMyCorsoWalkTrackerScreen = protectScreen(MyCorsoWalkTrackerScreen);
+const ProtectedMyProfessionalProfileScreen = protectScreen(MyProfessionalProfileScreen);
+const ProtectedMyMaterialsScreen = protectScreen(MyMaterialsScreen);
+const ProtectedMyMaterialDetailsScreen = protectScreen(MyMaterialDetailsScreen);
+const ProtectedOcrTestLabScreen = protectScreen(OcrTestLabScreen);
+const ProtectedAddMaterialScreen = protectScreen(AddMaterialScreen);
+const ProtectedNotificationsScreen = protectScreen(NotificationsScreen);
+const ProtectedAccountSettingsScreen = protectScreen(AccountSettingsScreen);
+const ProtectedAdminScreen = protectScreen(AdminScreen, true);
+const ProtectedAdminServicesScreen = protectScreen(AdminServicesScreen, true);
+const ProtectedAdminInboxScreen = protectScreen(AdminInboxScreen, true);
+const ProtectedAdminPlaceDetailsScreen = protectScreen(AdminPlaceDetailsScreen, true);
+const ProtectedAdminContentDetailsScreen = protectScreen(AdminContentDetailsScreen, true);
+const ProtectedAdminDogDetailsScreen = protectScreen(AdminDogDetailsScreen, true);
+
 export default function AppNavigator({ initialTab = 'Home' }) {
   const { t } = useLanguage();
   const { colors } = useTheme();
@@ -239,7 +336,7 @@ export default function AppNavigator({ initialTab = 'Home' }) {
       />
       <Stack.Screen
         name="CommunityNewQuestion"
-        component={CommunityNewQuestionScreen}
+        component={ProtectedCommunityNewQuestionScreen}
         options={{ title: t('nav.community') }}
       />
       <Stack.Screen
@@ -249,52 +346,52 @@ export default function AppNavigator({ initialTab = 'Home' }) {
       />
       <Stack.Screen
         name="MyCorsoGrowth"
-        component={MyCorsoGrowthScreen}
+        component={ProtectedMyCorsoGrowthScreen}
         options={{ title: t('nav.myCorso') }}
       />
       <Stack.Screen
         name="MyCorsoCare"
-        component={MyCorsoCareScreen}
+        component={ProtectedMyCorsoCareScreen}
         options={{ title: t('nav.myCorso') }}
       />
       <Stack.Screen
         name="MyCorsoQuickAdd"
-        component={MyCorsoScreen}
+        component={ProtectedMyCorsoQuickAddScreen}
         options={{ title: t('nav.myCorso') }}
       />
       <Stack.Screen
         name="MyCorsoDiary"
-        component={MyCorsoDiaryScreen}
+        component={ProtectedMyCorsoDiaryScreen}
         options={{ title: t('nav.myCorso') }}
       />
       <Stack.Screen
         name="CorsoCareReminders"
-        component={CorsoCareRemindersScreen}
+        component={ProtectedCorsoCareRemindersScreen}
         options={{ title: t('nav.myCorso') }}
       />
       <Stack.Screen
         name="MyCorsoBehavior"
-        component={MyCorsoBehaviorScreen}
+        component={ProtectedMyCorsoBehaviorScreen}
         options={{ title: t('nav.myCorso') }}
       />
       <Stack.Screen
         name="MyCorsoChallenges"
-        component={MyCorsoChallengesScreen}
+        component={ProtectedMyCorsoChallengesScreen}
         options={{ title: t('nav.myCorso') }}
       />
       <Stack.Screen
         name="ArenaRankingPreview"
-        component={ArenaRankingPreviewScreen}
+        component={ProtectedArenaRankingPreviewScreen}
         options={{ title: 'USG ARENA' }}
       />
       <Stack.Screen
         name="MyCorsoWalkTracker"
-        component={MyCorsoWalkTrackerScreen}
+        component={ProtectedMyCorsoWalkTrackerScreen}
         options={{ title: t('nav.myCorso') }}
       />
       <Stack.Screen
         name="MyProfessionalProfile"
-        component={MyProfessionalProfileScreen}
+        component={ProtectedMyProfessionalProfileScreen}
         options={{ headerShown: false }}
       />
       <Stack.Screen
@@ -315,32 +412,32 @@ export default function AppNavigator({ initialTab = 'Home' }) {
       />
       <Stack.Screen
         name="Admin"
-        component={AdminScreen}
+        component={ProtectedAdminScreen}
         options={{ title: t('nav.admin') }}
       />
       <Stack.Screen
         name="AdminServices"
-        component={AdminServicesScreen}
+        component={ProtectedAdminServicesScreen}
         options={{ title: t('nav.adminServices') }}
       />
       <Stack.Screen
         name="AdminInbox"
-        component={AdminInboxScreen}
+        component={ProtectedAdminInboxScreen}
         options={{ title: t('nav.adminInbox') }}
       />
       <Stack.Screen
         name="AdminPlaceDetails"
-        component={AdminPlaceDetailsScreen}
+        component={ProtectedAdminPlaceDetailsScreen}
         options={{ title: t('nav.admin') }}
       />
       <Stack.Screen
         name="AdminContentDetails"
-        component={AdminContentDetailsScreen}
+        component={ProtectedAdminContentDetailsScreen}
         options={{ title: t('nav.admin') }}
       />
       <Stack.Screen
         name="AdminDogDetails"
-        component={AdminDogDetailsScreen}
+        component={ProtectedAdminDogDetailsScreen}
         options={{ title: t('nav.admin') }}
       />
       <Stack.Screen
@@ -350,27 +447,27 @@ export default function AppNavigator({ initialTab = 'Home' }) {
       />
       <Stack.Screen
         name="MyMaterials"
-        component={MyMaterialsScreen}
+        component={ProtectedMyMaterialsScreen}
         options={{ title: t('myMaterials.title') }}
       />
       <Stack.Screen
         name="MyMaterialDetails"
-        component={MyMaterialDetailsScreen}
+        component={ProtectedMyMaterialDetailsScreen}
         options={{ title: t('myMaterials.detailsTitle') }}
       />
       <Stack.Screen
         name="OcrTestLab"
-        component={OcrTestLabScreen}
+        component={ProtectedOcrTestLabScreen}
         options={{ title: "OCR Test Lab" }}
       />
       <Stack.Screen
         name="AddMaterial"
-        component={AddMaterialScreen}
+        component={ProtectedAddMaterialScreen}
         options={{ title: t('addMaterial.title') }}
       />
       <Stack.Screen
         name="Notifications"
-        component={NotificationsScreen}
+        component={ProtectedNotificationsScreen}
         options={{ title: t('settings.notificationsCenter') }}
       />
       <Stack.Screen
@@ -385,7 +482,7 @@ export default function AppNavigator({ initialTab = 'Home' }) {
       />
       <Stack.Screen
         name="AccountSettings"
-        component={AccountSettingsScreen}
+        component={ProtectedAccountSettingsScreen}
         options={{ title: t('settings.account') }}
       />
       <Stack.Screen
@@ -404,6 +501,30 @@ export default function AppNavigator({ initialTab = 'Home' }) {
 
 function createStyles(colors) {
   return StyleSheet.create({
+    accessContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 24,
+      gap: 16,
+      backgroundColor: colors.background,
+    },
+    accessText: {
+      color: colors.text,
+      textAlign: 'center',
+      fontSize: 16,
+    },
+    accessButton: {
+      borderWidth: 1,
+      borderColor: colors.gold,
+      borderRadius: 10,
+      paddingHorizontal: 20,
+      paddingVertical: 12,
+    },
+    accessButtonText: {
+      color: colors.gold,
+      fontWeight: '700',
+    },
     tabBarContainer: {
       backgroundColor: colors.tabBackground,
       borderTopWidth: 1,
