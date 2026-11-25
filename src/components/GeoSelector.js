@@ -1,7 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
+  Keyboard,
+  KeyboardAvoidingView,
   Modal,
   Pressable,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -17,29 +20,41 @@ export default function GeoSelector({
   placeholder,
   options,
   loading,
+  allowWhileLoading = false,
   disabled,
   searchPlaceholder,
   emptyText,
+  searchAliases,
+  allowCustom = false,
+  customOptionLabel,
   onPress,
   onSelect,
 }) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const searchInputRef = useRef(null);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
 
   const filtered = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
+    const normalize = (value) => String(value ?? '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLocaleLowerCase()
+      .trim();
+    const normalized = normalize(query);
 
     if (!normalized) {
       return options;
     }
 
-    return options.filter((item) => item.toLowerCase().includes(normalized));
-  }, [options, query]);
+    return options.filter((item) =>
+      [item, ...(searchAliases?.(item) ?? [])].some((candidate) => normalize(candidate).includes(normalized))
+    );
+  }, [options, query, searchAliases]);
 
   function openModal() {
-    if (disabled || loading) {
+    if (disabled || (loading && !allowWhileLoading)) {
       return;
     }
 
@@ -49,9 +64,10 @@ export default function GeoSelector({
   }
 
   function choose(item) {
-    onSelect(item);
     setOpen(false);
     setQuery('');
+    Keyboard.dismiss();
+    onSelect(item);
   }
 
   return (
@@ -72,7 +88,7 @@ export default function GeoSelector({
             ]}
             numberOfLines={1}
           >
-            {loading ? '...' : value || placeholder}
+            {loading && !allowWhileLoading ? '...' : value || placeholder}
           </Text>
           <Text style={styles.chevron}>⌄</Text>
         </Pressable>
@@ -82,28 +98,43 @@ export default function GeoSelector({
         visible={open}
         transparent
         animationType="fade"
-        onRequestClose={() => setOpen(false)}
+        onShow={() => requestAnimationFrame(() => searchInputRef.current?.focus())}
+        onRequestClose={() => {
+          setOpen(false);
+          Keyboard.dismiss();
+        }}
       >
-        <View style={styles.modalRoot}>
+        <KeyboardAvoidingView
+          style={styles.modalRoot}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
           <Pressable
             style={styles.backdrop}
-            onPress={() => setOpen(false)}
+            onPress={() => {
+              setOpen(false);
+              Keyboard.dismiss();
+            }}
           />
 
           <View style={styles.sheet}>
             <TextInput
+              ref={searchInputRef}
               value={query}
               onChangeText={setQuery}
               placeholder={searchPlaceholder}
               placeholderTextColor={colors.textMuted}
               autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="search"
               style={styles.search}
             />
 
             <ScrollView
               keyboardShouldPersistTaps="handled"
-              keyboardDismissMode="on-drag"
+              keyboardDismissMode="none"
+              nestedScrollEnabled
               showsVerticalScrollIndicator={false}
+              style={styles.optionsList}
             >
               {filtered.length ? (
                 filtered.map((item) => (
@@ -118,9 +149,19 @@ export default function GeoSelector({
               ) : (
                 <Text style={styles.empty}>{emptyText}</Text>
               )}
+              {allowCustom && query.trim() ? (
+                <Pressable
+                  onPress={() => choose(query.trim())}
+                  style={styles.option}
+                >
+                  <Text style={[styles.optionText, styles.customOption]}>
+                    {customOptionLabel?.(query.trim()) || query.trim()}
+                  </Text>
+                </Pressable>
+              ) : null}
             </ScrollView>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </>
   );
@@ -172,7 +213,8 @@ function createStyles(colors) {
       backgroundColor: 'rgba(0, 0, 0, 0.72)',
     },
     sheet: {
-      maxHeight: '72%',
+      maxHeight: '78%',
+      flexShrink: 1,
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
       borderWidth: 1,
@@ -180,6 +222,9 @@ function createStyles(colors) {
       backgroundColor: colors.background,
       padding: 16,
       paddingBottom: 24,
+    },
+    optionsList: {
+      flexShrink: 1,
     },
     search: {
       minHeight: 46,
@@ -202,6 +247,10 @@ function createStyles(colors) {
     optionText: {
       color: colors.text,
       fontSize: 13,
+    },
+    customOption: {
+      color: colors.gold,
+      fontWeight: '800',
     },
     empty: {
       color: colors.textMuted,

@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Image,
-  Image as RNImage,
   Pressable,
   StyleSheet,
   Text,

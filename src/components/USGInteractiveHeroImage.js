@@ -10,7 +10,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 
-import { radius, spacing } from '../styles/usgTheme';
+import { radius } from '../styles/usgTheme';
 import { useTheme } from '../theme/ThemeContext';
 
 export default function USGInteractiveHeroImage({

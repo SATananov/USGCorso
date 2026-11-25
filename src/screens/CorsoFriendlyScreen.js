@@ -1,8 +1,11 @@
 import { Image } from 'react-native';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Keyboard,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -19,11 +22,20 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../auth/AuthContext';
 import USGInteractiveHeroImage from '../components/USGInteractiveHeroImage';
 import USGBackToTop from '../components/USGBackToTop';
+import GeoSelector from '../components/GeoSelector';
+import USGDialog from '../components/USGDialog';
 import { useLanguage } from '../i18n/LanguageContext';
-import { getCountryPosition } from '../profile/geoService';
+import {
+  findGeoOption,
+  getCities,
+  getCitySearchAliases,
+  getCountries,
+  getCountryPosition,
+  getCountrySearchAliases,
+} from '../profile/geoService';
 import { getAvatarPreset } from '../profile/avatarPresets';
 import { getMyProfile } from '../profile/profileService';
-import { placeCategories, placeCopy } from '../places/placeCopy';
+import { placeCategories, placeCopy, placeNameTemplates } from '../places/placeCopy';
 import USGMapMarker from '../places/USGMapMarker';
 import {
   getMyMapPresence,
@@ -36,7 +48,7 @@ import {
   getFavoritePlaceIds,
   getPlaceReviewSummaryRows,
 } from '../places/placeService';
-import { reverseGeocodePlace } from '../places/geocodingService';
+import { reverseGeocodePlace, searchPlaceAddress } from '../places/geocodingService';
 import { useTheme } from '../theme/ThemeContext';
 
 const GPS_TIMEOUT_MS = 15000;
@@ -261,13 +273,39 @@ function PlaceCard({
   );
 }
 
-function AddPlaceForm({ copy, colors, user, onCreated }) {
+function AddPlaceForm({ copy, colors, language, user, profile, profileLoaded, onCreated, onLayout }) {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const mapRef = useRef(null);
   const pickerMapRef = useRef(null);
+  const geocodeRequestRef = useRef(0);
+  const searchRequestRef = useRef(0);
+  const selectedSearchLabelRef = useRef('');
+  const cityOptionsRequestRef = useRef(0);
+  const countryPositionRequestRef = useRef(0);
+  const profileDefaultsAppliedRef = useRef(false);
+  const profileDefaultCityAppliedRef = useRef(false);
+  const profileDefaultCountryRef = useRef('');
+  const profileDefaultCityRef = useRef('');
+  const locationTouchedRef = useRef(false);
+  const manuallyEditedLocationFieldsRef = useRef({ country: false, city: false, address: false });
   const [currentLocation, setCurrentLocation] = useState(null);
   const [mapPickerVisible, setMapPickerVisible] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searching, setSearching] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [searchRetry, setSearchRetry] = useState(0);
+  const [searchMessage, setSearchMessage] = useState('');
+  const [searchResult, setSearchResult] = useState(null);
+  const [countries, setCountries] = useState([]);
+  const [cities, setCities] = useState([]);
+  const [citiesLoadedForCountry, setCitiesLoadedForCountry] = useState('');
+  const [countriesLoading, setCountriesLoading] = useState(true);
+  const [citiesLoading, setCitiesLoading] = useState(false);
+  const [geoError, setGeoError] = useState('');
+  const [countryPosition, setCountryPosition] = useState(null);
+  const [pendingLocationChange, setPendingLocationChange] = useState(null);
+  const [selectedNameTemplate, setSelectedNameTemplate] = useState('');
   const [values, setValues] = useState({
     name: '',
     category: 'veterinary',
@@ -284,7 +322,303 @@ function AddPlaceForm({ copy, colors, user, onCreated }) {
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
 
+  useEffect(() => {
+    let active = true;
+    getCountries()
+      .then((options) => {
+        if (active) setCountries(options);
+      })
+      .catch(() => {
+        if (active) setGeoError(copy.form.geoLoadError);
+      })
+      .finally(() => {
+        if (active) setCountriesLoading(false);
+      });
+    return () => { active = false; };
+  }, [copy.form.geoLoadError]);
+
+  useEffect(() => {
+    if (!profileLoaded || countriesLoading || profileDefaultsAppliedRef.current) return;
+    if (profile?.id && profile.id !== user?.id) return;
+    profileDefaultsAppliedRef.current = true;
+
+    const savedCountry = profile?.country?.trim();
+    const matchedCountry = findGeoOption(savedCountry, countries, getCountrySearchAliases);
+    if (!matchedCountry) return;
+
+    profileDefaultCountryRef.current = matchedCountry;
+    profileDefaultCityRef.current = profile?.city?.trim() ?? '';
+    if (
+      locationTouchedRef.current || values.country || values.city || values.address ||
+      values.latitude !== null || values.longitude !== null || currentLocation
+    ) return;
+
+    setValues((current) => {
+      if (
+        locationTouchedRef.current || current.country || current.city || current.address ||
+        current.latitude !== null || current.longitude !== null
+      ) return current;
+      return { ...current, country: matchedCountry };
+    });
+  }, [countries, countriesLoading, currentLocation, profile, profileLoaded, user?.id, values.address, values.city, values.country, values.latitude, values.longitude]);
+
+  useEffect(() => {
+    const requestId = ++cityOptionsRequestRef.current;
+    if (!values.country) {
+      setCities([]);
+      setCitiesLoadedForCountry('');
+      setCitiesLoading(false);
+      return undefined;
+    }
+
+    setCities([]);
+    setCitiesLoadedForCountry('');
+    setCitiesLoading(true);
+    setGeoError('');
+    getCities(values.country)
+      .then((options) => {
+        if (requestId === cityOptionsRequestRef.current) setCities(options);
+      })
+      .catch(() => {
+        if (requestId === cityOptionsRequestRef.current) {
+          setCities([]);
+          setGeoError(copy.form.geoLoadError);
+        }
+      })
+      .finally(() => {
+        if (requestId === cityOptionsRequestRef.current) {
+          setCitiesLoading(false);
+          setCitiesLoadedForCountry(values.country);
+        }
+      });
+
+    return () => {
+      if (requestId === cityOptionsRequestRef.current) cityOptionsRequestRef.current += 1;
+    };
+  }, [copy.form.geoLoadError, values.country]);
+
+  useEffect(() => {
+    if (!profileDefaultsAppliedRef.current || profileDefaultCityAppliedRef.current) return;
+    const savedCity = profileDefaultCityRef.current;
+    const defaultCountry = profileDefaultCountryRef.current;
+    if (!savedCity || !defaultCountry) {
+      profileDefaultCityAppliedRef.current = true;
+      return;
+    }
+    if (values.country !== defaultCountry) {
+      if (locationTouchedRef.current || values.country) profileDefaultCityAppliedRef.current = true;
+      return;
+    }
+    if (citiesLoadedForCountry !== defaultCountry) return;
+
+    profileDefaultCityAppliedRef.current = true;
+    const matchedCity = findGeoOption(
+      savedCity,
+      cities,
+      (city) => getCitySearchAliases(city, defaultCountry)
+    );
+    if (
+      !matchedCity || locationTouchedRef.current || values.city || values.address ||
+      values.latitude !== null || values.longitude !== null || currentLocation
+    ) return;
+
+    setValues((current) => {
+      if (
+        locationTouchedRef.current || current.city || current.address ||
+        current.latitude !== null || current.longitude !== null
+      ) return current;
+      return { ...current, city: matchedCity };
+    });
+  }, [cities, citiesLoadedForCountry, currentLocation, values.address, values.city, values.country, values.latitude, values.longitude]);
+
+  useEffect(() => {
+    if (!mapPickerVisible || values.latitude !== null || currentLocation) return undefined;
+
+    let active = true;
+    const timer = setTimeout(async () => {
+      if (searchResult) {
+        const cityLevel = ['city', 'town', 'village', 'municipality'].includes(searchResult.type);
+        pickerMapRef.current?.animateToRegion({
+          latitude: searchResult.latitude,
+          longitude: searchResult.longitude,
+          latitudeDelta: cityLevel ? 0.08 : 0.018,
+          longitudeDelta: cityLevel ? 0.08 : 0.018,
+        }, 350);
+        return;
+      }
+
+      const cityQuery = [values.city, values.country].filter(Boolean).join(', ');
+      if (cityQuery) {
+        try {
+          const results = await searchPlaceAddress(cityQuery, language);
+          const result = results[0];
+          if (active && result) {
+            const cityLevel = ['city', 'town', 'village', 'municipality'].includes(result.type);
+            pickerMapRef.current?.animateToRegion({
+              latitude: result.latitude,
+              longitude: result.longitude,
+              latitudeDelta: cityLevel ? 0.08 : 0.018,
+              longitudeDelta: cityLevel ? 0.08 : 0.018,
+            }, 350);
+            return;
+          }
+        } catch {
+          // Keep the existing map location if the address provider is unavailable.
+        }
+      }
+
+      if (active && countryPosition) {
+        pickerMapRef.current?.animateToRegion({
+          ...countryPosition,
+          latitudeDelta: 1.2,
+          longitudeDelta: 1.2,
+        }, 300);
+      }
+    }, 120);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [countryPosition, currentLocation, language, mapPickerVisible, values.city, values.country, values.latitude]);
+
+  useEffect(() => {
+    if (!mapPickerVisible) return undefined;
+
+    const query = searchQuery.trim();
+    const requestId = ++searchRequestRef.current;
+    if (query.length < 2 || selectedSearchLabelRef.current === query) {
+      setSuggestions([]);
+      setSearching(false);
+      return undefined;
+    }
+
+    const timer = setTimeout(async () => {
+      setSearching(true);
+      setSearchMessage('');
+      try {
+        const results = await searchPlaceAddress(query, language);
+        if (requestId !== searchRequestRef.current) return;
+        setSuggestions(results);
+        if (!results.length) setSearchMessage(copy.form.searchNotFound);
+      } catch {
+        if (requestId === searchRequestRef.current) {
+          setSuggestions([]);
+          setSearchMessage(copy.form.searchUnavailable);
+        }
+      } finally {
+        if (requestId === searchRequestRef.current) setSearching(false);
+      }
+    }, 400);
+
+    return () => {
+      clearTimeout(timer);
+      if (requestId === searchRequestRef.current) searchRequestRef.current += 1;
+    };
+  }, [copy.form.searchNotFound, copy.form.searchUnavailable, language, mapPickerVisible, searchQuery, searchRetry]);
+
+  function centerMapOnCountry(country) {
+    const requestId = ++countryPositionRequestRef.current;
+    if (!country) {
+      setCountryPosition(null);
+      return;
+    }
+    getCountryPosition(country)
+      .then((position) => {
+        if (requestId === countryPositionRequestRef.current) setCountryPosition(position);
+      })
+      .catch(() => {
+        if (requestId === countryPositionRequestRef.current) {
+          setCountryPosition(null);
+          setGeoError(copy.form.countryPositionUnavailable);
+        }
+      });
+  }
+
+  function applyCountryChange(country) {
+    locationTouchedRef.current = true;
+    manuallyEditedLocationFieldsRef.current = { country: true, city: false, address: false };
+    geocodeRequestRef.current += 1;
+    setGeocoding(false);
+    setValues((current) => ({
+      ...current,
+      country,
+      city: '',
+      address: '',
+      latitude: null,
+      longitude: null,
+    }));
+    setCurrentLocation(null);
+    setSearchResult(null);
+    setMessage('');
+    setGeoError('');
+    centerMapOnCountry(country);
+  }
+
+  function requestCountryChange(country) {
+    locationTouchedRef.current = true;
+    if (country === values.country) return;
+    const hasLocationData = Boolean(
+      values.city || values.address || values.latitude !== null ||
+      values.longitude !== null || currentLocation
+    );
+    if (hasLocationData) {
+      setPendingLocationChange({ field: 'country', value: country });
+      return;
+    }
+    applyCountryChange(country);
+  }
+
+  function applyCityChange(city, clearPoint = false) {
+    locationTouchedRef.current = true;
+    manuallyEditedLocationFieldsRef.current.city = true;
+    if (clearPoint) manuallyEditedLocationFieldsRef.current.address = false;
+    setValues((current) => ({
+      ...current,
+      city,
+      ...(clearPoint ? { address: '', latitude: null, longitude: null } : {}),
+    }));
+    if (clearPoint) {
+      geocodeRequestRef.current += 1;
+      setGeocoding(false);
+      setCurrentLocation(null);
+      setSearchResult(null);
+      if (!countryPosition) centerMapOnCountry(values.country);
+    }
+    setMessage('');
+  }
+
+  function requestCityChange(city) {
+    locationTouchedRef.current = true;
+    if (city === values.city) return;
+    const hasAffectedPoint = Boolean(
+      values.address || values.latitude !== null || values.longitude !== null || currentLocation
+    );
+    if (hasAffectedPoint) {
+      setPendingLocationChange({ field: 'city', value: city });
+      return;
+    }
+    applyCityChange(city);
+  }
+
+  function confirmLocationChange() {
+    const change = pendingLocationChange;
+    setPendingLocationChange(null);
+    if (!change) return;
+    if (change.field === 'country') {
+      applyCountryChange(change.value);
+    } else {
+      applyCityChange(change.value, true);
+    }
+  }
+
   function setField(field, value) {
+    if (field === 'category') setSelectedNameTemplate('');
+    if (field in manuallyEditedLocationFieldsRef.current) {
+      locationTouchedRef.current = true;
+      manuallyEditedLocationFieldsRef.current[field] = true;
+      setMessage('');
+    }
     setValues((current) => ({ ...current, [field]: value }));
   }
 
@@ -300,7 +634,9 @@ function AddPlaceForm({ copy, colors, user, onCreated }) {
   }
 
   async function fillLocationFields(latitude, longitude) {
+    const requestId = ++geocodeRequestRef.current;
     setGeocoding(true);
+    let locationData = null;
 
     try {
       const precise = await reverseGeocodePlace({
@@ -309,19 +645,21 @@ function AddPlaceForm({ copy, colors, user, onCreated }) {
         language,
       });
 
-      if (precise?.result) {
-        setValues((current) => ({
-          ...current,
-          country: precise.result.country || current.country,
-          city: precise.result.city || current.city,
-          address:
-            precise.result.address ||
-            precise.result.formattedAddress ||
-            current.address,
-        }));
-        return;
+      if (
+        precise?.result &&
+        (precise.result.country || precise.result.city || precise.result.address || precise.result.formattedAddress)
+      ) {
+        locationData = {
+          country: precise.result.country,
+          city: precise.result.city,
+          address: precise.result.address || precise.result.formattedAddress,
+        };
       }
     } catch {
+      // Try the device geocoder if the app geocoding service is unavailable.
+    }
+
+    if (!locationData) {
       try {
         const results = await Location.reverseGeocodeAsync({
           latitude,
@@ -329,41 +667,57 @@ function AddPlaceForm({ copy, colors, user, onCreated }) {
         });
         const location = results[0];
 
-        if (!location) {
-          return;
+        if (location) {
+          locationData = {
+            country: location.country,
+            city: location.city || location.subregion || location.district || location.region,
+            address: buildAddress(location),
+          };
         }
-
-        const city =
-          location.city ||
-          location.subregion ||
-          location.district ||
-          location.region ||
-          '';
-
-        const address = buildAddress(location);
-
-        setValues((current) => ({
-          ...current,
-          country: location.country || current.country,
-          city: city || current.city,
-          address: address || current.address,
-        }));
       } catch {
-        return;
+        // Keep the selected point and allow manual location entry.
       }
-    } finally {
-      setGeocoding(false);
     }
+
+    if (requestId !== geocodeRequestRef.current) return false;
+
+    if (locationData) {
+      setValues((current) => ({
+        ...current,
+        country: !manuallyEditedLocationFieldsRef.current.country ? locationData.country || current.country : current.country,
+        city: !manuallyEditedLocationFieldsRef.current.city ? locationData.city || current.city : current.city,
+        address: !manuallyEditedLocationFieldsRef.current.address ? locationData.address || current.address : current.address,
+      }));
+    } else {
+      setMessage(copy.form.geocodingUnavailable);
+    }
+
+    if (requestId === geocodeRequestRef.current) setGeocoding(false);
+    return Boolean(locationData);
   }
 
   async function selectPoint(latitude, longitude) {
+    locationTouchedRef.current = true;
+    const hasManualLocationCorrections = Object.values(manuallyEditedLocationFieldsRef.current).some(Boolean);
+    setSearchResult(null);
+    setMessage('');
     setValues((current) => ({
       ...current,
       latitude,
       longitude,
     }));
+    const selectedRegion = {
+      latitude,
+      longitude,
+      latitudeDelta: 0.012,
+      longitudeDelta: 0.012,
+    };
+    mapRef.current?.animateToRegion(selectedRegion, 250);
 
-    await fillLocationFields(latitude, longitude);
+    const geocoded = await fillLocationFields(latitude, longitude);
+    if (geocoded && hasManualLocationCorrections) {
+      setMessage(copy.form.manualLocationRetained);
+    }
   }
 
   async function setPoint(event) {
@@ -371,16 +725,46 @@ function AddPlaceForm({ copy, colors, user, onCreated }) {
     await selectPoint(latitude, longitude);
   }
 
-  async function useCurrentLocation() {
-    setMessage('');
-    const permission = await Location.requestForegroundPermissionsAsync();
+  async function searchMapLocation() {
+    const query = searchQuery.trim();
+    setSearchMessage('');
 
-    if (permission.status !== 'granted') {
-      setMessage(copy.locationDenied);
+    if (query.length < 2) {
+      setSearchMessage(copy.form.searchNotFound);
       return;
     }
 
+    Keyboard.dismiss();
+    setSearchRetry((current) => current + 1);
+  }
+
+  function selectSearchSuggestion(suggestion) {
+    searchRequestRef.current += 1;
+    selectedSearchLabelRef.current = suggestion.label;
+    setSearchQuery(suggestion.label);
+    setSuggestions([]);
+    setSearchMessage('');
+    setSearchResult(suggestion);
+    Keyboard.dismiss();
+    const cityLevel = ['city', 'town', 'village', 'municipality'].includes(suggestion.type);
+    pickerMapRef.current?.animateToRegion({
+      latitude: suggestion.latitude,
+      longitude: suggestion.longitude,
+      latitudeDelta: cityLevel ? 0.08 : 0.018,
+      longitudeDelta: cityLevel ? 0.08 : 0.018,
+    }, 350);
+  }
+
+  async function useCurrentLocation() {
+    setMessage('');
     try {
+      const permission = await Location.requestForegroundPermissionsAsync();
+
+      if (permission.status !== 'granted') {
+        setMessage(copy.locationDenied);
+        return;
+      }
+
       const position = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
       });
@@ -408,31 +792,18 @@ function AddPlaceForm({ copy, colors, user, onCreated }) {
 
   function openMapPicker() {
     setMapPickerVisible(true);
-
-    const latitude =
-      values.latitude ?? currentLocation?.latitude ?? DEFAULT_REGION.latitude;
-    const longitude =
-      values.longitude ?? currentLocation?.longitude ?? DEFAULT_REGION.longitude;
-
-    setTimeout(() => {
-      pickerMapRef.current?.animateToRegion({
-        latitude,
-        longitude,
-        latitudeDelta: values.latitude !== null || currentLocation ? 0.012 : DEFAULT_REGION.latitudeDelta,
-        longitudeDelta: values.longitude !== null || currentLocation ? 0.012 : DEFAULT_REGION.longitudeDelta,
-      });
-    }, 120);
   }
 
   async function submit() {
     setMessage('');
 
-    if (
-      !values.category ||
-      values.latitude === null ||
-      values.longitude === null
-    ) {
+    if (values.latitude === null || values.longitude === null) {
       setMessage(copy.form.required);
+      return;
+    }
+
+    if (!values.category || !values.country.trim() || !values.city.trim() || !values.address.trim()) {
+      setMessage(copy.form.requiredDetails);
       return;
     }
 
@@ -448,11 +819,25 @@ function AddPlaceForm({ copy, colors, user, onCreated }) {
     };
 
     setSaving(true);
-    const { error } = await createPlace(user.id, payload);
-    setSaving(false);
+    let error = null;
+    try {
+      ({ error } = await createPlace(user.id, payload));
+    } catch (requestError) {
+      error = requestError;
+    } finally {
+      setSaving(false);
+    }
 
     if (error) {
-      setMessage(copy.form.failed);
+      const status = error.status ?? error.statusCode;
+      const code = String(error.code ?? '');
+      if (status === 401 || status === 403 || code === '42501') {
+        setMessage(copy.form.permissionDenied);
+      } else if (error instanceof TypeError || /network|fetch/i.test(String(error.message ?? ''))) {
+        setMessage(copy.form.networkError);
+      } else {
+        setMessage(copy.form.failed);
+      }
       return;
     }
 
@@ -470,7 +855,10 @@ function AddPlaceForm({ copy, colors, user, onCreated }) {
       latitude: null,
       longitude: null,
     });
+    setSelectedNameTemplate('');
     setCurrentLocation(null);
+    setCountryPosition(null);
+    manuallyEditedLocationFieldsRef.current = { country: false, city: false, address: false };
     onCreated?.();
   }
 
@@ -494,6 +882,19 @@ function AddPlaceForm({ copy, colors, user, onCreated }) {
       >
         <USGMapMarker category={values.category} selected />
       </Marker>
+    );
+  }
+
+  function renderSearchResultMarker() {
+    if (!searchResult) return null;
+    return (
+      <Marker
+        coordinate={searchResult}
+        pinColor="#d4af37"
+        title={copy.form.searchResult}
+        description={copy.form.searchResultHint}
+        onPress={() => selectPoint(searchResult.latitude, searchResult.longitude)}
+      />
     );
   }
 
@@ -548,36 +949,30 @@ function AddPlaceForm({ copy, colors, user, onCreated }) {
 
   const previewRegion = {
     latitude:
-      values.latitude ?? currentLocation?.latitude ?? DEFAULT_REGION.latitude,
+      values.latitude ?? currentLocation?.latitude ?? countryPosition?.latitude ??
+        DEFAULT_REGION.latitude,
     longitude:
-      values.longitude ?? currentLocation?.longitude ?? DEFAULT_REGION.longitude,
+      values.longitude ?? currentLocation?.longitude ?? countryPosition?.longitude ??
+        DEFAULT_REGION.longitude,
     latitudeDelta:
-      values.latitude !== null || currentLocation ? 0.012 : DEFAULT_REGION.latitudeDelta,
+      values.latitude !== null || currentLocation ? 0.012 : countryPosition ? 1.2 :
+        DEFAULT_REGION.latitudeDelta,
     longitudeDelta:
-      values.longitude !== null || currentLocation ? 0.012 : DEFAULT_REGION.longitudeDelta,
+      values.latitude !== null || currentLocation ? 0.012 : countryPosition ? 1.2 :
+        DEFAULT_REGION.longitudeDelta,
   };
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.formContent}
-      keyboardShouldPersistTaps="handled"
-      keyboardDismissMode="on-drag"
-    >
+    <>
+    <View style={styles.formContent} onLayout={onLayout}>
       <Text style={styles.formTitle}>{copy.form.title}</Text>
       <Text style={styles.formIntro}>{copy.form.intro}</Text>
-
-      <TextInput
-        value={values.name}
-        onChangeText={(value) => setField('name', value)}
-        placeholder={copy.form.name}
-        placeholderTextColor={colors.textMuted}
-        style={styles.input}
-      />
 
       <Text style={styles.fieldLabel}>{copy.form.category}</Text>
       <ScrollView
         horizontal
-        showsHorizontalScrollIndicator={false}
+        nestedScrollEnabled
+        showsHorizontalScrollIndicator
         contentContainerStyle={styles.categoryRow}
       >
         {placeCategories.map((category) => (
@@ -594,6 +989,7 @@ function AddPlaceForm({ copy, colors, user, onCreated }) {
                 styles.categoryChipText,
                 values.category === category && styles.categoryChipTextActive,
               ]}
+              numberOfLines={1}
             >
               {copy.categories[category]}
             </Text>
@@ -601,20 +997,57 @@ function AddPlaceForm({ copy, colors, user, onCreated }) {
         ))}
       </ScrollView>
 
+      <GeoSelector
+        label={copy.form.nameTemplate}
+        value={selectedNameTemplate}
+        placeholder={copy.form.nameTemplatePlaceholder}
+        options={placeNameTemplates[language]?.[values.category] ?? placeNameTemplates.en[values.category]}
+        searchPlaceholder={copy.form.searchNameTemplate}
+        emptyText={copy.form.noNameTemplates}
+        onSelect={(template) => {
+          setSelectedNameTemplate(template);
+          setField('name', template);
+        }}
+      />
       <TextInput
+        value={values.name}
+        onChangeText={(value) => {
+          setSelectedNameTemplate('');
+          setField('name', value);
+        }}
+        placeholder={copy.form.name}
+        placeholderTextColor={colors.textMuted}
+        style={styles.input}
+      />
+
+      <GeoSelector
+        label={copy.form.country}
         value={values.country}
-        onChangeText={(value) => setField('country', value)}
-        placeholder={copy.form.country}
-        placeholderTextColor={colors.textMuted}
-        style={styles.input}
+        placeholder={copy.form.countryPlaceholder}
+        options={countries}
+        loading={countriesLoading}
+        searchPlaceholder={copy.form.searchCountry}
+        searchAliases={getCountrySearchAliases}
+        emptyText={copy.form.noGeoResults}
+        onSelect={requestCountryChange}
       />
-      <TextInput
+      <GeoSelector
+        label={copy.form.city}
         value={values.city}
-        onChangeText={(value) => setField('city', value)}
-        placeholder={copy.form.city}
-        placeholderTextColor={colors.textMuted}
-        style={styles.input}
+        placeholder={values.country ? copy.form.cityPlaceholder : copy.form.chooseCountryFirst}
+        options={cities}
+        loading={citiesLoading}
+        allowWhileLoading
+        disabled={!values.country}
+        searchPlaceholder={copy.form.searchCity}
+        searchAliases={(city) => getCitySearchAliases(city, values.country)}
+        emptyText={copy.form.noGeoResults}
+        allowCustom
+        customOptionLabel={(city) => copy.form.useManualCity.replace('{city}', city)}
+        onSelect={requestCityChange}
       />
+      {geoError ? <Text style={styles.coordinatesHint}>{geoError}</Text> : null}
+      <Text style={styles.coordinatesHint}>{copy.form.manualCityHint}</Text>
       <View>
         <Text style={styles.fieldLabel}>{copy.form.suggestedAddress}</Text>
         <TextInput
@@ -752,6 +1185,10 @@ function AddPlaceForm({ copy, colors, user, onCreated }) {
         animationType="slide"
         onRequestClose={() => setMapPickerVisible(false)}
       >
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
         <SafeAreaView style={{ flex: 1, backgroundColor: '#070708' }}>
       <View
             style={{
@@ -810,6 +1247,112 @@ function AddPlaceForm({ copy, colors, user, onCreated }) {
                 </Text>
               </Pressable>
             </View>
+            <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
+              <TextInput
+                value={searchQuery}
+                onChangeText={(value) => {
+                  selectedSearchLabelRef.current = '';
+                  setSearchQuery(value);
+                  setSearchMessage('');
+                }}
+                onSubmitEditing={searchMapLocation}
+                placeholder={copy.form.searchPlaceholder}
+                placeholderTextColor="#8d8981"
+                returnKeyType="search"
+                accessibilityLabel={copy.form.searchLabel}
+                style={{
+                  flex: 1,
+                  minHeight: 44,
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: 'rgba(212, 175, 55, 0.45)',
+                  backgroundColor: '#111112',
+                  color: '#f7f3e9',
+                  paddingHorizontal: 12,
+                  fontSize: 14,
+                }}
+              />
+              <Pressable
+                onPress={searchMapLocation}
+                disabled={searching}
+                accessibilityRole="button"
+                accessibilityLabel={copy.form.searchButton}
+                style={{
+                  minWidth: 90,
+                  borderRadius: 12,
+                  backgroundColor: '#d4af37',
+                  paddingHorizontal: 14,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  opacity: searching ? 0.65 : 1,
+                }}
+              >
+                {searching ? (
+                  <ActivityIndicator size="small" color="#070708" />
+                ) : (
+                  <Text style={{ color: '#070708', fontWeight: '900', fontSize: 12 }}>
+                    {copy.form.searchButton}
+                  </Text>
+                )}
+              </Pressable>
+            </View>
+            {searchQuery.trim().length >= 2 && selectedSearchLabelRef.current !== searchQuery.trim() ? (
+              <View
+                style={{
+                  marginTop: 8,
+                  borderWidth: 1,
+                  borderColor: 'rgba(212, 175, 55, 0.35)',
+                  borderRadius: 12,
+                  overflow: 'hidden',
+                  backgroundColor: '#111112',
+                }}
+              >
+                <Text style={{ color: '#d4af37', fontSize: 10, fontWeight: '900', paddingHorizontal: 12, paddingTop: 9 }}>
+                  {copy.form.searchSuggestionsTitle}
+                </Text>
+                {searching ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12 }}>
+                    <ActivityIndicator size="small" color="#d4af37" />
+                    <Text style={{ color: '#aaa69d', fontSize: 11 }}>{copy.form.searchSuggestionsLoading}</Text>
+                  </View>
+                ) : null}
+                {!searching && suggestions.length ? (
+                  <ScrollView
+                    style={{ maxHeight: 172 }}
+                    nestedScrollEnabled
+                    keyboardShouldPersistTaps="always"
+                    showsVerticalScrollIndicator
+                  >
+                    {suggestions.map((suggestion) => (
+                      <Pressable
+                        key={`${suggestion.label}-${suggestion.latitude}-${suggestion.longitude}`}
+                        onPress={() => selectSearchSuggestion(suggestion)}
+                        style={{ minHeight: 46, justifyContent: 'center', paddingHorizontal: 12, paddingVertical: 8, borderTopWidth: 1, borderTopColor: 'rgba(212, 175, 55, 0.18)' }}
+                      >
+                        <Text numberOfLines={2} style={{ color: '#f7f3e9', fontSize: 12, lineHeight: 17 }}>
+                          {suggestion.label}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                ) : null}
+                {suggestions.length || searching ? null : (
+                  <Text style={{ color: '#aaa69d', fontSize: 9, paddingHorizontal: 12, paddingVertical: 8 }}>
+                    {copy.form.searchAttribution}
+                  </Text>
+                )}
+                {suggestions.length ? (
+                  <Text style={{ color: '#aaa69d', fontSize: 9, paddingHorizontal: 12, paddingVertical: 8 }}>
+                    {copy.form.searchAttribution}
+                  </Text>
+                ) : null}
+              </View>
+            ) : null}
+            {searchMessage ? (
+              <Text accessibilityRole="alert" style={{ color: '#f2a6a6', fontSize: 12, marginTop: 7 }}>
+                {searchMessage}
+              </Text>
+            ) : null}
           </View>
 
           <MapView
@@ -826,6 +1369,7 @@ function AddPlaceForm({ copy, colors, user, onCreated }) {
             onPress={setPoint}
           >
             {renderCurrentLocationMarker()}
+            {renderSearchResultMarker()}
             {renderSelectedMarker()}
           </MapView>
 
@@ -918,6 +1462,7 @@ function AddPlaceForm({ copy, colors, user, onCreated }) {
             </View>
           </View>
         </SafeAreaView>
+        </KeyboardAvoidingView>
       </Modal>
 
       {message ? <Text style={styles.formMessage}>{message}</Text> : null}
@@ -931,7 +1476,17 @@ function AddPlaceForm({ copy, colors, user, onCreated }) {
           {saving ? '...' : copy.form.submit}
         </Text>
       </Pressable>
-    </ScrollView>
+    </View>
+    <USGDialog
+      visible={Boolean(pendingLocationChange)}
+      title={pendingLocationChange?.field === 'country' ? copy.form.countryChangeTitle : copy.form.cityChangeTitle}
+      message={pendingLocationChange?.field === 'country' ? copy.form.countryChangeMessage : copy.form.cityChangeMessage}
+      cancelText={copy.form.keepLocation}
+      confirmText={copy.form.clearLocation}
+      onCancel={() => setPendingLocationChange(null)}
+      onConfirm={confirmLocationChange}
+    />
+    </>
   );
 }
 
@@ -1102,7 +1657,10 @@ const USG_MAP_STYLE = [
 export default function CorsoFriendlyScreen({
 navigation }) {
   const scrollRef = useRef(null);
+  const addPlaceStartYRef = useRef(0);
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [profileLoaded, setProfileLoaded] = useState(false);
   const modeRowBottomRef = useRef(0);
   const filterBottomRef = useRef(0);
   const [viewportHeight, setViewportHeight] = useState(0);
@@ -1138,6 +1696,17 @@ navigation }) {
   const [nearMeLoading, setNearMeLoading] = useState(false);
   const [selectedPlaceId, setSelectedPlaceId] = useState(null);
   const [selectedMember, setSelectedMember] = useState(null);
+
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
+    const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
+
+  useEffect(() => {
+    setProfile(null);
+    setProfileLoaded(false);
+  }, [user?.id]);
 
   const filteredPlaces = useMemo(() => {
     const source =
@@ -1225,25 +1794,6 @@ navigation }) {
         );
       }
 
-      if (nextPlaces.length > 0) {
-        requestAnimationFrame(() => {
-          mapRef.current?.fitToCoordinates(
-            nextPlaces.map((place) => ({
-              latitude: Number(place.latitude),
-              longitude: Number(place.longitude),
-            })),
-            {
-              edgePadding: {
-                top: 90,
-                right: 50,
-                bottom: 90,
-                left: 50,
-              },
-              animated: true,
-            }
-          );
-        });
-      }
     }
 
     setLoading(false);
@@ -1271,9 +1821,8 @@ navigation }) {
           return;
         }
 
-        if (!profileError) {
-          setProfile(nextProfile);
-        }
+        setProfile(profileError ? null : nextProfile);
+        setProfileLoaded(true);
 
         if (!presenceResult.error) {
           setMapSharingEnabled(Boolean(presenceResult.data?.sharing_enabled));
@@ -1430,6 +1979,7 @@ navigation }) {
         return;
       }
 
+
       const currentLocation = {
         latitude: position.coords.latitude,
         longitude: position.coords.longitude,
@@ -1474,6 +2024,10 @@ navigation }) {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
       <ScrollView
         ref={scrollRef}
         onScroll={(event) => {
@@ -1482,9 +2036,13 @@ navigation }) {
         }}
         scrollEventThrottle={32}
         onLayout={(event) => setViewportHeight(event.nativeEvent.layout.height)}
-        contentContainerStyle={styles.screenScrollContent}
+        contentContainerStyle={[
+          styles.screenScrollContent,
+          mode === 'add' && styles.screenScrollAddContent,
+        ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -1571,22 +2129,22 @@ navigation }) {
               style={styles.filterOptions}
               contentContainerStyle={styles.filters}
             >
-              {['all', ...placeCategories].map((category) => (
+              {['all', ...placeCategories].map((categoryOption) => (
                 <Pressable
-                  key={category}
+                  key={categoryOption}
                   onPress={() => {
-                    setCategory(category);
+                    setCategory(categoryOption);
                     setFiltersOpen(false);
                   }}
                   style={[
                     styles.filterChip,
                     {
                       borderColor:
-                        category === category ? '#d4af37' : '#5f5124',
+                        categoryOption === category ? '#d4af37' : '#5f5124',
                       backgroundColor:
-                        category === category ? '#1a170d' : '#111112',
+                        categoryOption === category ? '#1a170d' : '#111112',
                     },
-                    category === category && styles.filterChipActive,
+                    categoryOption === category && styles.filterChipActive,
                   ]}
                 >
                   <Text
@@ -1594,17 +2152,17 @@ navigation }) {
                       styles.filterChipText,
                       {
                         color:
-                          category === category
+                          categoryOption === category
                             ? '#d4af37'
                             : '#d7d7d9',
                         fontWeight:
-                          category === category ? '900' : '700',
+                          categoryOption === category ? '900' : '700',
                       },
-                      category === category &&
+                      categoryOption === category &&
                         styles.filterChipTextActive,
                     ]}
                   >
-                    {copy.categories[category]}
+                    {copy.categories[categoryOption]}
                   </Text>
                 </Pressable>
               ))}
@@ -1637,6 +2195,7 @@ navigation }) {
                   : copy.mapPresence.enable}
               </Text>
             </Pressable>
+            <Text style={styles.presencePrivacyHint}>{copy.mapPresence.privacyHint}</Text>
           </View>
 
           <MapView
@@ -1878,7 +2437,7 @@ navigation }) {
           {errorText ? (
             <View style={styles.errorBanner}>
               <Text style={styles.errorText}>{errorText}</Text>
-              {errorText === copy.locationDenied ? (
+              {(errorText === copy.locationDenied || errorText === copy.locationError || Object.values(gpsStatusCopy[language] ?? gpsStatusCopy.en).includes(errorText)) ? (
                 <Text style={styles.errorHelp}>{copy.locationSettingsHint}</Text>
               ) : null}
             </View>
@@ -1914,17 +2473,33 @@ navigation }) {
         <AddPlaceForm
           copy={copy}
           colors={colors}
+          language={language}
           user={user}
+          profile={profile}
+          profileLoaded={profileLoaded}
+          onLayout={(event) => {
+            addPlaceStartYRef.current = event.nativeEvent.layout.y;
+          }}
           onCreated={() => loadPlaces(true)}
         />
       ) : null}
           </ScrollView>
-      <USGBackToTop
-        dock
-        visible={showBackToTop}
-        language={language}
-        onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
-      />
+      </KeyboardAvoidingView>
+      {mode === 'add' ? (
+        <USGBackToTop
+          visible={showBackToTop && !keyboardVisible}
+          language={language}
+          bottomOffset={68}
+          onPress={() => scrollRef.current?.scrollTo({ y: addPlaceStartYRef.current, animated: true })}
+        />
+      ) : (
+        <USGBackToTop
+          dock
+          visible={showBackToTop}
+          language={language}
+          onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -1937,6 +2512,9 @@ function createStyles(colors) {
     },
     screenScrollContent: {
       paddingBottom: 28,
+    },
+    screenScrollAddContent: {
+      paddingBottom: 140,
     },
     hero: {
       paddingHorizontal: 16,
@@ -2100,6 +2678,8 @@ function createStyles(colors) {
       right: 14,
       bottom: 14,
       zIndex: 20,
+      maxWidth: 230,
+      alignItems: 'flex-end',
     },
     presenceControl: {
       minHeight: 38,
@@ -2122,6 +2702,18 @@ function createStyles(colors) {
     },
     presenceControlTextActive: {
       color: '#070708',
+    },
+    presencePrivacyHint: {
+      marginTop: 6,
+      maxWidth: 220,
+      paddingHorizontal: 9,
+      paddingVertical: 6,
+      borderRadius: 8,
+      color: '#d7d7d9',
+      backgroundColor: 'rgba(7, 7, 8, 0.88)',
+      fontSize: 10,
+      lineHeight: 14,
+      textAlign: 'right',
     },
     memberMarkerWrap: {
       width: 58,

@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState, useRef } from 'react';
 import {
   useWindowDimensions,
+  AppState,
   Image,
   Modal,
   Pressable,
@@ -48,27 +49,53 @@ export default function CommunityScreen({ navigation }) {
   const [error, setError] = useState('');
   const [votingDogId, setVotingDogId] = useState(null);
 
-  const loadCommunity = useCallback(async () => {
-    setLoading(true);
-    setError('');
-
-    const { data, error: loadError } = await getCommunityCorsos();
-
-    if (loadError) {
-      setCorsos([]);
-      setError(copy.loadError);
-      setLoading(false);
-      return;
-    }
-
-    setCorsos(data ?? []);
-    setLoading(false);
-  }, [copy.loadError]);
+  const requestVersion = useRef(0);
 
   useFocusEffect(
     useCallback(() => {
-      loadCommunity();
-    }, [loadCommunity])
+      let focused = true;
+      setCorsos([]);
+      setLoading(true);
+      setError('');
+
+      const refreshCommunity = async () => {
+        if (!focused || AppState.currentState !== 'active') return;
+        const version = ++requestVersion.current;
+
+        try {
+          const { data, error: loadError } = await getCommunityCorsos();
+          if (!focused || version !== requestVersion.current) return;
+          setCorsos(loadError ? [] : data ?? []);
+          setError(loadError ? copy.loadError : '');
+        } catch {
+          if (!focused || version !== requestVersion.current) return;
+          setCorsos([]);
+          setError(copy.loadError);
+        } finally {
+          if (focused && version === requestVersion.current) setLoading(false);
+        }
+      };
+
+      refreshCommunity();
+      const interval = setInterval(refreshCommunity, 35000);
+      const subscription = AppState.addEventListener('change', (state) => {
+        if (state === 'active') {
+          setLoading(true);
+          refreshCommunity();
+        } else {
+          requestVersion.current += 1;
+          setCorsos([]);
+          setLoading(true);
+        }
+      });
+
+      return () => {
+        focused = false;
+        requestVersion.current += 1;
+        clearInterval(interval);
+        subscription.remove();
+      };
+    }, [copy.loadError])
   );
 
   const changeVote = useCallback(async (corso) => {

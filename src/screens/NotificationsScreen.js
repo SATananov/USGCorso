@@ -14,7 +14,7 @@ import { useAuth } from '../auth/AuthContext';
 import { getCareInbox, getCareInboxTarget, markCareInboxRead, markAllCareInboxRead } from '../care/corsoCareInbox';
 
 import { useLanguage } from '../i18n/LanguageContext';
-import { useRef as useBackToTopRef, useState as useBackToTopState, useEffect as useBackToTopEffect } from 'react';
+import { useRef as useBackToTopRef, useState as useBackToTopState } from 'react';
 import USGBackToTop from '../components/USGBackToTop';
 import {
   getNotifications,

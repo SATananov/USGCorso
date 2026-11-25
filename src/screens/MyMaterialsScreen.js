@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../auth/AuthContext';
 import { getMyContentItems } from '../governance/contentGovernanceService';
 import { useLanguage } from '../i18n/LanguageContext';
-import { useRef as useBackToTopRef, useState as useBackToTopState, useEffect as useBackToTopEffect } from 'react';
+import { useRef as useBackToTopRef, useState as useBackToTopState } from 'react';
 import USGBackToTop from '../components/USGBackToTop';
 import { radius, spacing } from '../styles/usgTheme';
 import { useTheme } from '../theme/ThemeContext';

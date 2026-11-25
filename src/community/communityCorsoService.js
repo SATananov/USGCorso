@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
-import { getDogPhotoUrl } from '../dogs/dogPhotoService';
+
+const COMMUNITY_PHOTO_TTL_SECONDS = 60;
 
 export async function getCommunityCorsos() {
   const [result, summary] = await Promise.all([
@@ -30,11 +31,13 @@ export async function getCommunityCorsos() {
         return { ...corso, photo_url: null };
       }
 
-      const photo = await getDogPhotoUrl(corso.photo_path);
+      const signed = await supabase.storage
+        .from('corso-photos')
+        .createSignedUrl(corso.photo_path, COMMUNITY_PHOTO_TTL_SECONDS);
 
       return {
         ...corso,
-        photo_url: photo.data ?? null,
+        photo_url: signed.data?.signedUrl ?? null,
       };
     })
   );

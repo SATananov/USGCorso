@@ -13,7 +13,7 @@ import { getMyDogs } from '../dogs/dogService';
 import { getDogPhotoUrl } from '../dogs/dogPhotoService';
 import { getMyProfile } from '../profile/profileService';
 import {
-  createPersonalChallenge, getChallengeCatalog, getDogActivities,
+  createPersonalChallenge, getChallengeCatalog,
   getArenaProgressSnapshot, getDogAchievements, getDogChallenges,
   getDogTimeline, joinChallenge, recordActivity,
 } from '../challenges/challengeService';
