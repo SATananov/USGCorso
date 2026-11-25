@@ -1,6 +1,6 @@
+import USGZoomImage from './USGZoomImage';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Image,
   Pressable,
   StyleSheet,
   Text,
@@ -245,7 +245,7 @@ export default function AdminDogModeration({ onChanged }) {
                 </View>
 
                 {dog.photo_url ? (
-                  <Image source={{ uri: dog.photo_url }} style={styles.photo} />
+                  <USGZoomImage source={{ uri: dog.photo_url }} style={styles.photo} />
                 ) : null}
 
                 <Text style={styles.description}>

@@ -1,8 +1,8 @@
+import USGZoomImage from '../components/USGZoomImage';
 import USGDialog from '../components/USGDialog';
 import { useState as useUSGDialogState } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Image,
   Linking,
   Pressable,
   Keyboard,
@@ -547,7 +547,7 @@ export default function AdminContentDetailsScreen({ route, navigation }) {
                 return (
                   <View key={asset.id} style={styles.assetCard}>
                     {isImage && asset.signed_url ? (
-                      <Image
+                      <USGZoomImage
                         source={{ uri: asset.signed_url }}
                         style={styles.assetImage}
                       />

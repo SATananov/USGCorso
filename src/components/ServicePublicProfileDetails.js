@@ -1,3 +1,4 @@
+import USGZoomImage from './USGZoomImage';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -201,18 +202,11 @@ export default function ServicePublicProfileDetails({
       ) : profile ? (
         <>
           <View style={styles.identityCard}>
-            <Image
-              source={
-                profile.public_image_url
-                  ? { uri: profile.public_image_url }
-                  : require('../../assets/services-public-profile-fallback-crest.png')
-              }
-              style={[
-                styles.profileImage,
-                !profile.public_image_url && styles.profileImageFallback,
-              ]}
-              resizeMode={profile.public_image_url ? 'cover' : 'contain'}
-            />
+            {profile.public_image_url ? (
+              <USGZoomImage source={{ uri: profile.public_image_url }} style={styles.profileImage} resizeMode="cover" />
+            ) : (
+              <Image source={require('../../assets/services-public-profile-fallback-crest.png')} style={[styles.profileImage, styles.profileImageFallback]} resizeMode="contain" />
+            )}
 
             <Text style={styles.kicker}>{labels.publicProfile}</Text>
             <Text

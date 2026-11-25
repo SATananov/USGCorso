@@ -1,5 +1,6 @@
+import USGZoomImage from '../components/USGZoomImage';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../auth/AuthContext';
@@ -265,7 +266,7 @@ export default function MyCorsoChallengesScreen({ route, navigation }) {
                 <Text style={[styles.chipText, selectedId === dog.id && styles.gold]}>{dog.name}</Text>
               </Pressable>)}</View>
             <View style={styles.identity}>
-              {photoUri ? <Image source={{uri: photoUri}} style={styles.avatar} /> :
+              {photoUri ? <USGZoomImage source={{uri: photoUri}} style={styles.avatar} /> :
                 <View style={[styles.avatar, styles.placeholder]}><Text style={styles.avatarText}>USG</Text></View>}
               <View style={styles.identityText}>
                 <Text style={styles.dogName}>{selectedDog?.name}</Text>

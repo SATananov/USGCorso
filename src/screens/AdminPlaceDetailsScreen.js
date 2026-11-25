@@ -1,8 +1,8 @@
+import USGZoomImage from '../components/USGZoomImage';
 import USGDialog from '../components/USGDialog';
 import { useState as useUSGDialogState } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Image,
   Pressable,
   Keyboard,
   ScrollView,
@@ -650,7 +650,7 @@ export default function AdminPlaceDetailsScreen({ route, navigation }) {
                 <View key={photo.id} style={styles.photoCard}>
                   <View style={styles.imageWrap}>
                     {photo.signed_url ? (
-                      <Image
+                      <USGZoomImage
                         source={{ uri: photo.signed_url }}
                         style={styles.image}
                       />

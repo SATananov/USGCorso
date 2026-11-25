@@ -1,8 +1,8 @@
+import USGZoomImage from '../components/USGZoomImage';
 import USGDialog from '../components/USGDialog';
 import { useState as useUSGDialogState } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Image,
   Pressable,
   Keyboard,
   ScrollView,
@@ -510,7 +510,7 @@ export default function AdminDogDetailsScreen({ route, navigation }) {
 
           {dog.photo_url ? (
             <>
-              <Image source={{ uri: dog.photo_url }} style={styles.photo} />
+              <USGZoomImage source={{ uri: dog.photo_url }} style={styles.photo} />
               <Pressable
                 style={styles.deleteButton}
                 onPress={confirmPhotoDelete}

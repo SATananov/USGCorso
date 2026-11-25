@@ -1,9 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
-  Dimensions,
   Modal,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -11,7 +9,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useLanguage } from '../i18n/LanguageContext';
-import USGRecognitionCertificate from './USGRecognitionCertificate';
+import USGCertificateZoom from './USGCertificateZoom';
 import { recognitionSnapshotFromApprovedCorso } from '../recognition/recognitionData';
 import { radius } from '../styles/usgTheme';
 import { useTheme } from '../theme/ThemeContext';
@@ -86,7 +84,6 @@ export default function USGRecognitionInfoSection({ corsos = [] }) {
     }
     return null;
   }, [corsos]);
-  const certificateWidth = Math.max(720, Dimensions.get('window').width - 28);
 
   return (
     <View style={styles.section}>
@@ -132,16 +129,7 @@ export default function USGRecognitionInfoSection({ corsos = [] }) {
               <Text style={styles.closeText}>×</Text>
             </Pressable>
           </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator
-            style={styles.previewScroll}
-            contentContainerStyle={styles.previewContent}
-          >
-            {example ? (
-              <USGRecognitionCertificate certificate={example} width={certificateWidth} />
-            ) : null}
-          </ScrollView>
+          {showPreview && example ? <USGCertificateZoom certificate={example} /> : null}
         </SafeAreaView>
       </Modal>
     </View>

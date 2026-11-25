@@ -1,5 +1,6 @@
+import USGZoomImage from './USGZoomImage';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
 import { getAdminDogs } from '../admin/adminDogService';
@@ -98,7 +99,7 @@ export default function AdminDogsManagement() {
       {dogs.map((dog) => (
         <View key={dog.id} style={styles.card}>
           {dog.photo_url ? (
-            <Image source={{ uri: dog.photo_url }} style={styles.photo} />
+            <USGZoomImage source={{ uri: dog.photo_url }} style={styles.photo} />
           ) : null}
 
           <View style={styles.body}>

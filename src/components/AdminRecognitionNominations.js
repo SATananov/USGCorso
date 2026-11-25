@@ -1,5 +1,6 @@
+import USGZoomImage from './USGZoomImage';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { getDogPhotoUrl } from '../dogs/dogPhotoService';
 import { useLanguage } from '../i18n/LanguageContext';
 import { getRecognitionAdminNominations, decideRecognitionNomination } from '../recognition/recognitionAdminService';
@@ -117,7 +118,7 @@ export default function AdminRecognitionNominations() {
               <Text style={styles.name}>{item.dog_name}</Text>
               <Text style={styles.status}>{copy[item.nomination_status] ?? item.nomination_status}</Text>
             </View>
-            {item.imageUrl ? <Image source={{ uri: item.imageUrl }} style={styles.image} resizeMode="cover" /> : null}
+            {item.imageUrl ? <USGZoomImage source={{ uri: item.imageUrl }} style={styles.image} resizeMode="cover" /> : null}
             <Text style={styles.meta}>{copy.owner}: {item.owner_display_name || copy.unknown}</Text>
             <Text style={styles.meta}>{copy.votes}: {item.vote_count}</Text>
             {item.review_note ? <Text style={styles.meta}>{item.review_note}</Text> : null}

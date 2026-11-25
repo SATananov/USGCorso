@@ -1,7 +1,7 @@
+import USGZoomImage from './USGZoomImage';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Image,
   Pressable,
   StyleSheet,
   Text,
@@ -322,7 +322,7 @@ export default function AdminServiceVisibility({ refreshToken = 0 }) {
               </View>
 
               {profile.profile_image_url ? (
-                <Image
+                <USGZoomImage
                   source={{ uri: profile.profile_image_url }}
                   style={styles.image}
                   resizeMode="cover"

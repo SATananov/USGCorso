@@ -1,8 +1,8 @@
+import USGZoomImage from './USGZoomImage';
 import USGDialog from './USGDialog';
 import { useState as useUSGDialogState } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -322,7 +322,7 @@ export default function AdminPlaceMediaModeration({ onChanged }) {
           <View key={item.id} style={styles.card}>
             <View style={styles.imageWrap}>
               {item.signed_url ? (
-                <Image source={{ uri: item.signed_url }} style={styles.image} />
+                <USGZoomImage source={{ uri: item.signed_url }} style={styles.image} />
               ) : (
                 <View style={styles.image} />
               )}

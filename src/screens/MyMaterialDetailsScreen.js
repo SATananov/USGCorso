@@ -1,3 +1,4 @@
+import USGZoomImage from '../components/USGZoomImage';
 import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -13,6 +14,7 @@ Pressable,
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
+  getMyContentAssets,
   deleteMyContentItemWithAssets,
   updateMyContentItem,
 } from '../governance/contentGovernanceService';
@@ -139,6 +141,17 @@ export default function MyMaterialDetailsScreen({ route, navigation }) {
   const [saving, setSaving] = useState(false);
   const [title, setTitle] = useState(item?.title ?? '');
   const [body, setBody] = useState(item?.body ?? '');
+  const [assetState, setAssetState] = useState(null);
+  const assetLabels = ({ bg: { title: 'Снимки', failed: 'Снимките не могат да се заредят.' }, en: { title: 'Images', failed: 'Images could not be loaded.' }, it: { title: 'Immagini', failed: 'Impossibile caricare le immagini.' } })[language] ?? { title: 'Images', failed: 'Images could not be loaded.' };
+  useBackToTopEffect(() => {
+    let active = true;
+    setAssetState(null);
+    if (item?.id) getMyContentAssets(item.id).then(({ data, error }) => {
+      if (active) setAssetState({ id: item.id, error: Boolean(error), images: (data ?? []).filter((asset) => asset.signed_url && (asset.mime_type?.startsWith('image/') || asset.asset_type === 'image' || asset.asset_type === 'photo')) });
+    }).catch(() => { if (active) setAssetState({ id: item.id, error: true, images: [] }); });
+    return () => { active = false; };
+  }, [item?.id]);
+
 
   function startEdit() {
     setTitle(item?.title ?? '');
@@ -320,6 +333,15 @@ export default function MyMaterialDetailsScreen({ route, navigation }) {
             </Text>
           </View>
         )}
+
+        {assetState?.id === item.id && (assetState.error || assetState.images.length > 0) ? (
+          <View style={styles.card}>
+            <Text style={styles.label}>{assetLabels.title}</Text>
+            {assetState.error ? <Text style={styles.body}>{assetLabels.failed}</Text> : assetState.images.map((asset) => (
+              <USGZoomImage key={asset.id} source={{ uri: asset.signed_url }} style={{ width: '100%', aspectRatio: 4 / 3, borderRadius: 12, marginTop: 12 }} resizeMode="contain" />
+            ))}
+          </View>
+        ) : null}
 
         {item.moderation_note ? (
           <View style={styles.noteCard}>

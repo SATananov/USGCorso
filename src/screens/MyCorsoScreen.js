@@ -1,3 +1,4 @@
+import USGZoomImage from '../components/USGZoomImage';
 import USGDialog from '../components/USGDialog';
 import USGBackToTop from '../components/USGBackToTop';
 import { useState as useUSGDialogState } from 'react';
@@ -1036,7 +1037,7 @@ function DogForm({
         <View style={styles.photoPanel}>
           <View style={styles.photoFrame}>
             {draftPhoto?.uri ? (
-              <Image
+              <USGZoomImage
                 source={{ uri: draftPhoto.uri }}
                 style={styles.dogPhoto}
                 resizeMode="contain"

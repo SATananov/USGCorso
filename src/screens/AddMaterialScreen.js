@@ -1,7 +1,7 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+﻿import USGZoomImage from '../components/USGZoomImage';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Image,
   Modal,
   Pressable,
   ScrollView,
@@ -861,7 +861,7 @@ function PhotoPreview({
 }) {
   return (
     <View style={styles.photoCard}>
-      <Image
+      <USGZoomImage
         source={{ uri: asset.uri }}
         style={styles.photoPreview}
         resizeMode="cover"

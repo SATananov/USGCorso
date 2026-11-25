@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useState, useRef } from 'react';
 import {
-  useWindowDimensions,
   AppState,
   Image,
   Modal,
@@ -22,7 +21,9 @@ import USGInteractiveHeroImage from '../components/USGInteractiveHeroImage';
 import { useLanguage } from '../i18n/LanguageContext';
 import USGBackToTop from '../components/USGBackToTop';
 import { getAvatarPreset } from '../profile/avatarPresets';
-import USGRecognitionCertificate from '../components/USGRecognitionCertificate';
+import USGCertificateZoom from '../components/USGCertificateZoom';
+import USGZoomSurface from '../components/USGZoomSurface';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { recognitionSnapshotFromApprovedCorso } from '../recognition/recognitionData';
 import { radius, spacing } from '../styles/usgTheme';
 import { useTheme } from '../theme/ThemeContext';
@@ -200,8 +201,6 @@ export default function CommunityScreen({ navigation }) {
 function CommunityCorsoCard({ corso, copy, language, styles, onVote, voting }) {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [certificatePreviewOpen, setCertificatePreviewOpen] = useState(false);
-  const [certificatePreviewExpanded, setCertificatePreviewExpanded] = useState(false);
-  const { width: windowWidth } = useWindowDimensions();
   const [voteError, setVoteError] = useState(false);
   const voteAvailable = corso.vote_count !== null && corso.vote_count !== undefined;
   const voteAllowed = voteAvailable && corso.viewer_can_vote;
@@ -214,8 +213,6 @@ function CommunityCorsoCard({ corso, copy, language, styles, onVote, voting }) {
   const previewLabel = { bg: 'Преглед на сертификат', en: 'Certificate preview', it: 'Anteprima certificato' }[language] ?? 'Certificate preview';
   const closeLabel = { bg: 'Затвори', en: 'Close', it: 'Chiudi' }[language] ?? 'Close';
   const previewInfo = { bg: 'Само визуален преглед. Сертификат не е издаден.', en: 'Design preview only. No certificate has been issued.', it: 'Solo anteprima grafica. Nessun certificato è stato rilasciato.' }[language] ?? 'Design preview only.';
-  const certificateWidth = certificatePreviewExpanded ? Math.max(720, windowWidth - 28) : Math.max(1, windowWidth - 28);
-  const zoomLabel = ({ bg: certificatePreviewExpanded ? 'Побери на екрана' : 'Увеличи за четене', en: certificatePreviewExpanded ? 'Fit to screen' : 'Zoom to read', it: certificatePreviewExpanded ? 'Adatta allo schermo' : 'Ingrandisci per leggere' }[language]);
   const avatar = getAvatarPreset(corso.owner_avatar_preset);
   const ownerName =
     corso.owner_display_name ||
@@ -323,23 +320,12 @@ function CommunityCorsoCard({ corso, copy, language, styles, onVote, voting }) {
         animationType="fade"
         onRequestClose={() => setPreviewOpen(false)}
       >
-        <Pressable
-          style={styles.photoPreviewBackdrop}
-          onPress={() => setPreviewOpen(false)}
-        >
-          <Pressable
-            style={styles.photoPreviewClose}
-            onPress={() => setPreviewOpen(false)}
-          >
-            <Text style={styles.photoPreviewCloseText}>×</Text>
-          </Pressable>
-
-          <Image
-            source={{ uri: corso.photo_url }}
-            style={styles.photoPreviewImage}
-            resizeMode="contain"
-          />
-
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <SafeAreaView style={styles.photoPreviewBackdrop}>
+            <Pressable accessibilityRole="button" accessibilityLabel={closeLabel} style={[styles.photoPreviewClose, { position: 'relative', top: 0, right: 0, alignSelf: 'flex-end' }]} onPress={() => setPreviewOpen(false)}>
+              <Text style={styles.photoPreviewCloseText}>×</Text>
+            </Pressable>
+            {previewOpen && corso.photo_url ? <USGZoomSurface source={{ uri: corso.photo_url }} /> : null}
           <Pressable style={styles.photoVotePanel} onPress={(event) => event.stopPropagation()}>
             <Text style={styles.photoVoteName}>{corso.name}</Text>
             <Text style={styles.photoVoteCount}>👍 {voteAvailable ? corso.vote_count : '—'} · {copy.communityVotes}</Text>
@@ -365,7 +351,8 @@ function CommunityCorsoCard({ corso, copy, language, styles, onVote, voting }) {
             )}
             {voteError ? <Text style={styles.photoVoteError}>{copy.voteError}</Text> : null}
           </Pressable>
-        </Pressable>
+          </SafeAreaView>
+        </GestureHandlerRootView>
       </Modal>
 
       <View style={styles.ownerCard}>
@@ -384,7 +371,7 @@ function CommunityCorsoCard({ corso, copy, language, styles, onVote, voting }) {
           accessibilityRole="button"
           accessibilityLabel={previewLabel}
           style={styles.certificatePreviewButton}
-          onPress={() => { setCertificatePreviewExpanded(false); setCertificatePreviewOpen(true); }}
+          onPress={() => setCertificatePreviewOpen(true)}
         >
           <Text style={styles.certificatePreviewButtonText}>{previewLabel}</Text>
         </Pressable>
@@ -408,28 +395,7 @@ function CommunityCorsoCard({ corso, copy, language, styles, onVote, voting }) {
               <Text style={styles.certificatePreviewCloseText}>×</Text>
             </Pressable>
           </View>
-          <ScrollView
-            key={certificatePreviewExpanded ? 'expanded' : 'fitted'}
-            horizontal={certificatePreviewExpanded}
-            style={styles.certificatePreviewScroll}
-            contentContainerStyle={styles.certificatePreviewScrollContent}
-          >
-            {certificatePreview ? (
-              <USGRecognitionCertificate
-                certificate={certificatePreview}
-                width={certificateWidth}
-                fitToScreen={!certificatePreviewExpanded}
-              />
-            ) : null}
-          </ScrollView>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={zoomLabel}
-            style={styles.certificatePreviewZoomButton}
-            onPress={() => setCertificatePreviewExpanded((current) => !current)}
-          >
-            <Text style={styles.certificatePreviewZoomButtonText}>{zoomLabel}</Text>
-          </Pressable>
+          {certificatePreviewOpen && certificatePreview ? <USGCertificateZoom certificate={certificatePreview} /> : null}
           <View style={styles.recognitionExportActionsDisabled}>
             <View style={styles.recognitionExportRow}>
               <Pressable disabled accessibilityRole="button" accessibilityState={{ disabled: true }} style={styles.recognitionExportButton}>

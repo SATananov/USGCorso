@@ -1,7 +1,7 @@
+import USGZoomImage from '../components/USGZoomImage';
 import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -272,7 +272,7 @@ export default function PlacePhotoSection({ place, role }) {
 
       {cover ? (
         <View style={styles.coverFrame}>
-          <Image source={{ uri: cover.signed_url }} style={styles.coverImage} />
+          <USGZoomImage source={{ uri: cover.signed_url }} style={styles.coverImage} />
           <View style={styles.coverBadge}>
             <Text style={styles.coverBadgeText}>{copy.cover}</Text>
           </View>
@@ -297,7 +297,7 @@ export default function PlacePhotoSection({ place, role }) {
             return (
               <View key={item.id} style={styles.card}>
                 {item.signed_url ? (
-                  <Image source={{ uri: item.signed_url }} style={styles.photo} />
+                  <USGZoomImage source={{ uri: item.signed_url }} style={styles.photo} />
                 ) : (
                   <View style={styles.photo} />
                 )}
@@ -389,7 +389,7 @@ export default function PlacePhotoSection({ place, role }) {
 
       {selectedAsset ? (
         <View style={styles.uploadPanel}>
-          <Image source={{ uri: selectedAsset.uri }} style={styles.preview} />
+          <USGZoomImage source={{ uri: selectedAsset.uri }} style={styles.preview} />
           <TextInput
             value={caption}
             onChangeText={setCaption}

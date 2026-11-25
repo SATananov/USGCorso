@@ -1,7 +1,7 @@
+import USGZoomImage from '../components/USGZoomImage';
 import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -217,7 +217,7 @@ export default function OcrTestLabScreen() {
         {imageUri ? (
           <View style={[styles.card, { borderColor: colors.border, backgroundColor: colors.surface }]}>
             <Text style={[styles.label, { color: colors.text }]}>{labels.source}</Text>
-            <Image source={{ uri: imageUri }} resizeMode="contain" style={styles.preview} />
+            <USGZoomImage source={{ uri: imageUri }} resizeMode="contain" style={styles.preview} />
           </View>
         ) : null}
 

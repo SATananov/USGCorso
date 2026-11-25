@@ -1,3 +1,4 @@
+import USGZoomImage from '../components/USGZoomImage';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, AppState, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import MapView, { Circle, Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
@@ -473,7 +474,7 @@ export default function MyCorsoWalkTrackerScreen({ navigation, route }) {
         {expeditionComplete ? <Animated.View style={[styles.expeditionCard, { opacity: expeditionOpacity, transform: [{ scale: expeditionScale }] }]}>
           <Text style={styles.expeditionKicker}>USG · TERRITORY REWARDS</Text>
           <View style={styles.expeditionPortraitRow}>
-            {photoUri ? <Image source={{ uri: photoUri }} style={styles.expeditionPortrait} /> : <View style={[styles.expeditionPortrait, styles.expeditionPortraitFallback]}><Text style={styles.expeditionMedal}>★</Text></View>}
+            {photoUri ? <USGZoomImage source={{ uri: photoUri }} style={styles.expeditionPortrait} /> : <View style={[styles.expeditionPortrait, styles.expeditionPortraitFallback]}><Text style={styles.expeditionMedal}>★</Text></View>}
             <View style={styles.expeditionIdentity}><Text numberOfLines={1} style={styles.expeditionDog}>{dog.name || 'Cane Corso'}</Text><Text numberOfLines={1} style={styles.expeditionOwner}>{ownerName}</Text></View>
             <Text style={styles.expeditionMedal}>✦</Text>
           </View>
