@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, Text, useWindowDimensions, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import {
   GestureDetector,
   GestureHandlerRootView,
@@ -34,6 +34,7 @@ export default function DogPhotoViewer({
   const [imageSize, setImageSize] = useState(null);
   const scale = useSharedValue(1);
   const zoomed = useSharedValue(false);
+  const panEnabled = useSharedValue(false);
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
   const startX = useSharedValue(0);
@@ -44,10 +45,11 @@ export default function DogPhotoViewer({
       setImageSize(null);
       scale.value = 1;
       zoomed.value = false;
+      panEnabled.value = false;
       translateX.value = 0;
       translateY.value = 0;
     }
-  }, [resetKey, visible, scale, zoomed, translateX, translateY]);
+  }, [resetKey, visible, scale, zoomed, panEnabled, translateX, translateY]);
 
   const viewport = { width: Math.max(1, width - 36), height: Math.max(1, height - 36) };
   const fittedSize = useMemo(() => {
@@ -82,6 +84,7 @@ export default function DogPhotoViewer({
       zoomed.value = nextScale > 1;
     },
     onDeactivate: () => {
+      panEnabled.value = scale.value > 1;
       if (scale.value <= 1) {
         scale.value = 1;
         zoomed.value = false;
@@ -92,7 +95,7 @@ export default function DogPhotoViewer({
   });
 
   const pan = usePanGesture({
-    enabled: zoomed,
+    enabled: panEnabled,
     maxPointers: 1,
     onActivate: () => {
       startX.value = translateX.value;
@@ -111,6 +114,7 @@ export default function DogPhotoViewer({
       if (scale.value > 1) {
         scale.value = withTiming(1, { duration: DOUBLE_TAP_DURATION });
         zoomed.value = false;
+        panEnabled.value = false;
         translateX.value = withTiming(0, { duration: DOUBLE_TAP_DURATION });
         translateY.value = withTiming(0, { duration: DOUBLE_TAP_DURATION });
       } else {
@@ -119,6 +123,7 @@ export default function DogPhotoViewer({
         const offsetY = event.y - viewport.height / 2;
         scale.value = withTiming(targetScale, { duration: DOUBLE_TAP_DURATION });
         zoomed.value = true;
+        panEnabled.value = true;
         translateX.value = withTiming(clampX((1 - targetScale) * offsetX, targetScale), {
           duration: DOUBLE_TAP_DURATION,
         });
@@ -141,6 +146,7 @@ export default function DogPhotoViewer({
   function closeViewer() {
     scale.value = 1;
     zoomed.value = false;
+    panEnabled.value = false;
     translateX.value = 0;
     translateY.value = 0;
     onClose();
@@ -153,24 +159,10 @@ export default function DogPhotoViewer({
       animationType="fade"
       onRequestClose={closeViewer}
     >
-      <GestureHandlerRootView style={{ flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.96)' }}>
-        <Pressable style={styles.photoPreviewBackdrop} onPress={closeViewer}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Close photo preview"
-            style={styles.photoPreviewClose}
-            onPress={(event) => {
-              event.stopPropagation();
-              closeViewer();
-            }}
-            hitSlop={12}
-          >
-            <Animated.Text style={styles.photoPreviewCloseText}>×</Animated.Text>
-          </Pressable>
-          <Pressable
-            style={{ width: viewport.width, height: viewport.height, alignItems: 'center', justifyContent: 'center' }}
-            onPress={(event) => event.stopPropagation()}
-          >
+      <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#000000' }}>
+        <View style={styles.photoPreviewBackdrop}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={closeViewer} />
+          <View style={{ width: viewport.width, height: viewport.height, alignItems: 'center', justifyContent: 'center' }}>
             <GestureDetector gesture={gesture}>
               <View style={{ width: viewport.width, height: viewport.height, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                 <Animated.View style={[{ width: fittedSize.width, height: fittedSize.height }, imageStyle]}>
@@ -206,8 +198,17 @@ export default function DogPhotoViewer({
                 </View>
               </View>
             ) : null}
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Close photo preview"
+            style={styles.photoPreviewClose}
+            onPress={closeViewer}
+            hitSlop={12}
+          >
+            <Animated.Text style={styles.photoPreviewCloseText}>×</Animated.Text>
           </Pressable>
-        </Pressable>
+        </View>
       </GestureHandlerRootView>
     </Modal>
   );
