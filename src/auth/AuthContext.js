@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 
 import { supabase } from '../lib/supabase';
 
@@ -28,18 +28,30 @@ function getRecoveryParams(url) {
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
+  const authStateEventReceivedRef = useRef(false);
 
   useEffect(() => {
     let active = true;
 
-    supabase.auth.getSession().then(({ data }) => {
-      if (active) {
-        setSession(data.session);
-        setLoading(false);
-      }
-    });
+    supabase.auth.getSession()
+      .then(({ data }) => {
+        if (active && !authStateEventReceivedRef.current) {
+          setSession(data.session ?? null);
+        }
+      })
+      .catch(() => {
+        if (active && !authStateEventReceivedRef.current) {
+          setSession(null);
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+        }
+      });
 
     const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      authStateEventReceivedRef.current = true;
       setSession(nextSession);
       setLoading(false);
     });

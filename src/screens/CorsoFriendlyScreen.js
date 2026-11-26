@@ -51,6 +51,8 @@ import {
 } from '../places/placeService';
 import { reverseGeocodePlace, searchPlaceAddress } from '../places/geocodingService';
 import { useTheme } from '../theme/ThemeContext';
+import { submitPlaceRequest } from '../places/placeSubmission';
+import { runPlaceLoadRequest } from '../places/placeLoading';
 
 const GPS_TIMEOUT_MS = 15000;
 const GPS_WATCH_TIMEOUT_MS = 12000;
@@ -810,37 +812,22 @@ function AddPlaceForm({ copy, colors, language, user, profile, profileLoaded, on
       return;
     }
 
-    const generatedName =
-      values.name.trim() ||
-      `${copy.categories[values.category]}${
-        values.city.trim() ? ` — ${values.city.trim()}` : ''
-      }`;
-
-    const payload = {
-      ...values,
-      name: generatedName,
-    };
-
     setSaving(true);
-    let error = null;
+    let result;
     try {
-      ({ error } = await createPlace(user.id, payload));
-    } catch (requestError) {
-      error = requestError;
+      result = await submitPlaceRequest({
+        userId: user.id,
+        values,
+        categories: copy.categories,
+        formCopy: copy.form,
+        createPlaceFn: createPlace,
+      });
     } finally {
       setSaving(false);
     }
 
-    if (error) {
-      const status = error.status ?? error.statusCode;
-      const code = String(error.code ?? '');
-      if (status === 401 || status === 403 || code === '42501') {
-        setMessage(copy.form.permissionDenied);
-      } else if (error instanceof TypeError || /network|fetch/i.test(String(error.message ?? ''))) {
-        setMessage(copy.form.networkError);
-      } else {
-        setMessage(copy.form.failed);
-      }
+    if (!result.ok) {
+      setMessage(result.message);
       return;
     }
 
@@ -1706,6 +1693,7 @@ navigation }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [errorText, setErrorText] = useState('');
+  const placesLoadRequestRef = useRef(0);
   const [userLocation, setUserLocation] = useState(null);
   const userLocationRef = useRef(userLocation);
   userLocationRef.current = userLocation;
@@ -2056,6 +2044,7 @@ navigation }) {
   }, [category, favoritePlaceIds, mode, places]);
 
   const loadPlaces = useCallback(async (refresh = false) => {
+    const requestId = ++placesLoadRequestRef.current;
     if (refresh) {
       setRefreshing(true);
     } else {
@@ -2063,14 +2052,26 @@ navigation }) {
     }
 
     setErrorText('');
-    const [{ data, error }, favoriteResult, reviewSummaryResult] =
-      await Promise.all([
+    const loadResult = await runPlaceLoadRequest(
+      () => Promise.all([
         getApprovedPlaces(),
         user?.id
           ? getFavoritePlaceIds(user.id)
           : Promise.resolve({ data: [], error: null }),
         getPlaceReviewSummaryRows(),
-      ]);
+      ]),
+      {
+        isCurrent: () => requestId === placesLoadRequestRef.current,
+        onError: () => setErrorText(copy.loadError),
+        onFinish: () => {
+          setLoading(false);
+          setRefreshing(false);
+        },
+      }
+    );
+
+    if (!loadResult.ok || requestId !== placesLoadRequestRef.current) return;
+    const [{ data, error }, favoriteResult, reviewSummaryResult] = loadResult.value;
 
     if (error) {
       setErrorText(copy.loadError);
@@ -2131,9 +2132,6 @@ navigation }) {
       }
 
     }
-
-    setLoading(false);
-    setRefreshing(false);
   }, [copy.loadError, user?.id]);
 
   useFocusEffect(
@@ -2222,6 +2220,7 @@ navigation }) {
 
       return () => {
         active = false;
+        placesLoadRequestRef.current += 1;
       };
     }, [loadPlaces, user?.id])
   );

@@ -54,4 +54,27 @@ describe('AuthProvider session state', () => {
     expect(result.current.session).toBeNull();
     expect(result.current.user).toBeNull();
   });
+
+  test('finishes initialization safely when getSession rejects', async () => {
+    supabase.auth.getSession.mockRejectedValue(new Error('storage unavailable'));
+    const wrapper = ({ children }) => <AuthProvider>{children}</AuthProvider>;
+    const { result } = await renderHook(() => useAuth(), { wrapper });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.session).toBeNull();
+    expect(result.current.user).toBeNull();
+  });
+
+  test('does not overwrite a session event with an older getSession result', async () => {
+    let resolveSession;
+    supabase.auth.getSession.mockReturnValue(new Promise((resolve) => { resolveSession = resolve; }));
+    const wrapper = ({ children }) => <AuthProvider>{children}</AuthProvider>;
+    const { result } = await renderHook(() => useAuth(), { wrapper });
+    const eventSession = { user: { id: 'event-user' }, access_token: 'event-token' };
+
+    await act(async () => emitAuthEvent('SIGNED_IN', eventSession));
+    await act(async () => resolveSession({ data: { session: null } }));
+    expect(result.current.session).toEqual(eventSession);
+    expect(result.current.loading).toBe(false);
+  });
 });

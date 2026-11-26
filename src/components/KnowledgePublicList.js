@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -87,25 +87,41 @@ export default function KnowledgePublicList({ categoryKey = null }) {
   const labels = copy[language] ?? copy.en;
   const [items, setItems] = useState([]);
   const [state, setState] = useState('loading');
+  const loadRequestRef = useRef(0);
 
   const load = useCallback(async () => {
+    const requestId = ++loadRequestRef.current;
     setState('loading');
+    try {
+      const result = await getPublicKnowledgeItems(categoryKey, language);
 
-    const result = await getPublicKnowledgeItems(categoryKey, language);
+      if (requestId !== loadRequestRef.current) return;
+      if (result.error) {
+        setItems([]);
+        setState('error');
+        return;
+      }
 
-    if (result.error) {
-      setItems([]);
-      setState('error');
-      return;
+      setItems(Array.isArray(result.data) ? result.data : []);
+      setState('ready');
+    } catch {
+      if (requestId === loadRequestRef.current) {
+        setItems([]);
+        setState('error');
+      }
+    } finally {
+      if (requestId === loadRequestRef.current) {
+        setState((current) => current === 'loading' ? 'error' : current);
+      }
     }
-
-    setItems(Array.isArray(result.data) ? result.data : []);
-    setState('ready');
   }, [categoryKey, language]);
 
   useFocusEffect(
     useCallback(() => {
       load();
+      return () => {
+        loadRequestRef.current += 1;
+      };
     }, [load])
   );
 
