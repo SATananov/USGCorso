@@ -2,6 +2,7 @@ import { Image } from 'react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Animated,
   Keyboard,
   KeyboardAvoidingView,
   Modal,
@@ -1681,6 +1682,21 @@ navigation }) {
   const copy = placeCopy[language] ?? placeCopy.en;
   const styles = useMemo(() => createStyles(colors), [colors]);
   const mapRef = useRef(null);
+  const userLocationAddressPanelOffsetRef = useRef(null);
+  if (!userLocationAddressPanelOffsetRef.current) {
+    userLocationAddressPanelOffsetRef.current = new Animated.ValueXY({ x: 16, y: 112 });
+  }
+  const userLocationAddressPanelOffset = userLocationAddressPanelOffsetRef.current;
+  const mapLayoutRef = useRef({ width: 0, height: 0 });
+  const userLocationAddressPanelLayoutRef = useRef({ width: 0, height: 0 });
+  const userLocationAddressProjectionFrameRef = useRef(null);
+  const userLocationAddressProjectionInFlightRef = useRef(false);
+  const userLocationAddressProjectionPendingRef = useRef(false);
+  const userLocationAddressProjectionRequestRef = useRef(0);
+  const userLocationAddressProjectionMountedRef = useRef(true);
+  const userLocationAddressProjectionRetryAttemptedRef = useRef(false);
+  const userLocationAddressPanelFallbackSideRef = useRef(null);
+  const [userLocationAddressPanelPositionReady, setUserLocationAddressPanelPositionReady] = useState(false);
   const [mode, setMode] = useState('map');
   const [category, setCategory] = useState('all');
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -1691,8 +1707,12 @@ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [errorText, setErrorText] = useState('');
   const [userLocation, setUserLocation] = useState(null);
+  const userLocationRef = useRef(userLocation);
+  userLocationRef.current = userLocation;
   const [userLocationAccuracy, setUserLocationAccuracy] = useState(null);
   const [userLocationAddressVisible, setUserLocationAddressVisible] = useState(false);
+  const userLocationAddressVisibleRef = useRef(false);
+  userLocationAddressVisibleRef.current = userLocationAddressVisible;
   const [userLocationAddressLoading, setUserLocationAddressLoading] = useState(false);
   const [userLocationAddress, setUserLocationAddress] = useState(null);
   const [userLocationAddressError, setUserLocationAddressError] = useState(false);
@@ -1717,6 +1737,145 @@ navigation }) {
   const currentUserLocationKeyRef = useRef('');
   const currentUserLocationLanguageRef = useRef(language);
   currentUserLocationLanguageRef.current = language;
+
+  async function updateUserLocationAddressPanelPosition() {
+    const location = userLocationRef.current;
+    if (!userLocationAddressProjectionMountedRef.current || !userLocationAddressVisibleRef.current || !location) return;
+    if (userLocationAddressProjectionInFlightRef.current) {
+      userLocationAddressProjectionPendingRef.current = true;
+      return;
+    }
+
+    const map = mapRef.current;
+    const mapSize = mapLayoutRef.current;
+    const panelSize = userLocationAddressPanelLayoutRef.current;
+    if (
+      !map || !mapSize.width || !mapSize.height ||
+      !panelSize.width || !panelSize.height
+    ) return;
+
+    const locationKey = getCoordinateCacheKey(location);
+    const requestId = ++userLocationAddressProjectionRequestRef.current;
+    userLocationAddressProjectionInFlightRef.current = true;
+
+    try {
+      const point = await map.pointForCoordinate(location);
+      if (!Number.isFinite(point?.x) || !Number.isFinite(point?.y)) {
+        throw new Error('Map coordinate projection was unavailable.');
+      }
+      if (
+        requestId !== userLocationAddressProjectionRequestRef.current ||
+        !userLocationAddressVisibleRef.current ||
+        currentUserLocationKeyRef.current !== locationKey
+      ) return;
+
+      const sideMargin = 10;
+      const minLeft = sideMargin;
+      const maxLeft = Math.max(minLeft, mapSize.width - panelSize.width - sideMargin);
+      const left = Math.max(minLeft, Math.min(point.x - panelSize.width / 2, maxLeft));
+      const markerHeight = 70;
+      const markerAnchorY = 0.72;
+      const markerGap = 10;
+      const markerTop = point.y - markerHeight * markerAnchorY;
+      const markerBottom = point.y + markerHeight * (1 - markerAnchorY);
+      const safeTop = 76;
+      const safeBottom = Math.max(safeTop, mapSize.height - 112);
+      const safeSpaceAvailable = panelSize.height <= safeBottom - safeTop;
+      const safeMaxTop = safeSpaceAvailable ? safeBottom - panelSize.height : safeTop;
+      const mapMaxTop = Math.max(0, mapSize.height - panelSize.height);
+      const aboveTop = markerTop - panelSize.height - markerGap;
+      const belowTop = markerBottom + markerGap;
+      const aboveFits = safeSpaceAvailable
+        ? aboveTop >= safeTop && aboveTop <= safeMaxTop
+        : aboveTop >= 0 && aboveTop <= mapMaxTop;
+      const belowFits = safeSpaceAvailable
+        ? belowTop >= safeTop && belowTop <= safeMaxTop
+        : belowTop >= 0 && belowTop <= mapMaxTop;
+      let top;
+
+      if (aboveFits) {
+        userLocationAddressPanelFallbackSideRef.current = null;
+        top = aboveTop;
+      } else if (belowFits) {
+        userLocationAddressPanelFallbackSideRef.current = null;
+        top = belowTop;
+      } else {
+        const fallbackTop = safeSpaceAvailable ? safeTop : 0;
+        const fallbackBottom = safeSpaceAvailable ? safeMaxTop : mapMaxTop;
+        if (userLocationAddressPanelFallbackSideRef.current === null) {
+          const availableAbove = markerTop - fallbackTop;
+          const availableBelow = (safeSpaceAvailable ? safeBottom : mapSize.height) - markerBottom;
+          userLocationAddressPanelFallbackSideRef.current = availableAbove >= availableBelow ? 'above' : 'below';
+        }
+        top = userLocationAddressPanelFallbackSideRef.current === 'above'
+          ? fallbackTop
+          : fallbackBottom;
+      }
+
+      userLocationAddressPanelOffset.setValue({ x: left, y: top });
+      userLocationAddressProjectionRetryAttemptedRef.current = false;
+      setUserLocationAddressPanelPositionReady(true);
+    } catch {
+      if (requestId === userLocationAddressProjectionRequestRef.current) {
+        setUserLocationAddressPanelPositionReady(false);
+        if (!userLocationAddressProjectionRetryAttemptedRef.current) {
+          userLocationAddressProjectionRetryAttemptedRef.current = true;
+          userLocationAddressProjectionPendingRef.current = true;
+        }
+      }
+    } finally {
+      userLocationAddressProjectionInFlightRef.current = false;
+      if (userLocationAddressProjectionPendingRef.current) {
+        userLocationAddressProjectionPendingRef.current = false;
+        scheduleUserLocationAddressPanelPosition();
+      }
+    }
+  }
+
+  function scheduleUserLocationAddressPanelPosition() {
+    if (!userLocationAddressProjectionMountedRef.current || !userLocationAddressVisibleRef.current) return;
+    if (userLocationAddressProjectionInFlightRef.current) {
+      userLocationAddressProjectionRequestRef.current += 1;
+      userLocationAddressProjectionPendingRef.current = true;
+      return;
+    }
+    if (userLocationAddressProjectionFrameRef.current !== null) return;
+
+    userLocationAddressProjectionFrameRef.current = requestAnimationFrame(() => {
+      userLocationAddressProjectionFrameRef.current = null;
+      updateUserLocationAddressPanelPosition();
+    });
+  }
+
+  useEffect(() => {
+    if (!userLocationAddressVisible || !userLocation) {
+      userLocationAddressPanelFallbackSideRef.current = null;
+      userLocationAddressProjectionRequestRef.current += 1;
+      userLocationAddressProjectionPendingRef.current = false;
+      if (userLocationAddressProjectionFrameRef.current !== null) {
+        cancelAnimationFrame(userLocationAddressProjectionFrameRef.current);
+        userLocationAddressProjectionFrameRef.current = null;
+      }
+      setUserLocationAddressPanelPositionReady(false);
+      return;
+    }
+
+    userLocationAddressProjectionRetryAttemptedRef.current = false;
+    setUserLocationAddressPanelPositionReady(false);
+    scheduleUserLocationAddressPanelPosition();
+  }, [userLocation, userLocationAddressVisible]);
+
+  useEffect(() => {
+    userLocationAddressProjectionMountedRef.current = true;
+    return () => {
+      userLocationAddressProjectionMountedRef.current = false;
+      userLocationAddressProjectionRequestRef.current += 1;
+      userLocationAddressProjectionPendingRef.current = false;
+      if (userLocationAddressProjectionFrameRef.current !== null) {
+        cancelAnimationFrame(userLocationAddressProjectionFrameRef.current);
+      }
+    };
+  }, []);
 
   function updateUserLocation(location, accuracy = null) {
     const nextLocation = location
@@ -2351,7 +2510,20 @@ navigation }) {
       ) : null}
 
       {mode === 'map' ? (
-        <View style={styles.mapWrap}>
+        <View
+          style={styles.mapWrap}
+          onLayout={(event) => {
+            const { width, height } = event.nativeEvent.layout;
+            const previousSize = mapLayoutRef.current;
+            if (Math.abs(previousSize.width - width) > 1 || Math.abs(previousSize.height - height) > 1) {
+              mapLayoutRef.current = { width, height };
+              userLocationAddressProjectionRequestRef.current += 1;
+              userLocationAddressProjectionRetryAttemptedRef.current = false;
+              setUserLocationAddressPanelPositionReady(false);
+              scheduleUserLocationAddressPanelPosition();
+            }
+          }}
+        >
           <View style={styles.presenceControlWrap}>
             <Pressable
               style={[
@@ -2381,6 +2553,8 @@ navigation }) {
 
           <MapView
             ref={mapRef}
+            onMapReady={scheduleUserLocationAddressPanelPosition}
+            onRegionChange={scheduleUserLocationAddressPanelPosition}
             provider={PROVIDER_GOOGLE}
             customMapStyle={USG_MAP_STYLE}
             style={styles.map}
@@ -2534,7 +2708,27 @@ navigation }) {
           </MapView>
 
           {userLocation && userLocationAddressVisible ? (
-            <View style={styles.userLocationAddressPanel}>
+            <Animated.View
+              pointerEvents={userLocationAddressPanelPositionReady ? 'auto' : 'none'}
+              style={[
+                styles.userLocationAddressPanel,
+                {
+                  opacity: userLocationAddressPanelPositionReady ? 1 : 0,
+                  transform: userLocationAddressPanelOffset.getTranslateTransform(),
+                },
+              ]}
+              onLayout={(event) => {
+                const { width, height } = event.nativeEvent.layout;
+                const previousSize = userLocationAddressPanelLayoutRef.current;
+                if (Math.abs(previousSize.width - width) > 1 || Math.abs(previousSize.height - height) > 1) {
+                  userLocationAddressPanelLayoutRef.current = { width, height };
+                  userLocationAddressProjectionRequestRef.current += 1;
+                  userLocationAddressProjectionRetryAttemptedRef.current = false;
+                  setUserLocationAddressPanelPositionReady(false);
+                  scheduleUserLocationAddressPanelPosition();
+                }
+              }}
+            >
               <View style={styles.userLocationAddressHeader}>
                 <Text style={styles.userLocationAddressTitle}>
                   {copy.mapPresence.myLocationTitle}
@@ -2604,7 +2798,7 @@ navigation }) {
                   ) : null}
                 </>
               )}
-            </View>
+            </Animated.View>
           ) : null}
 
           {selectedMember ? (
@@ -2931,9 +3125,10 @@ function createStyles(colors) {
     },
     userLocationAddressPanel: {
       position: 'absolute',
-      top: 112,
-      left: 16,
-      right: 16,
+      top: 0,
+      left: 0,
+      width: '92%',
+      maxWidth: 380,
       zIndex: 40,
       borderRadius: 18,
       borderWidth: 1.5,
@@ -2941,27 +3136,29 @@ function createStyles(colors) {
       backgroundColor: 'rgba(6, 7, 8, 0.97)',
       paddingHorizontal: 16,
       paddingVertical: 14,
-      paddingRight: 48,
       shadowColor: '#000',
       shadowOpacity: 0.5,
       shadowRadius: 12,
       elevation: 14,
     },
     userLocationAddressHeader: {
-      minHeight: 28,
+      minHeight: 36,
       justifyContent: 'center',
-      marginBottom: 5,
+      marginBottom: 10,
+      paddingRight: 46,
     },
     userLocationAddressTitle: {
       color: '#d4af37',
-      fontSize: 11,
+      fontSize: 12,
+      lineHeight: 17,
       fontWeight: '900',
       letterSpacing: 0.5,
+      flexShrink: 1,
     },
     userLocationAddressClose: {
       position: 'absolute',
-      top: -5,
-      right: 8,
+      top: 1,
+      right: 0,
       width: 34,
       height: 34,
       borderRadius: 17,
@@ -2984,14 +3181,14 @@ function createStyles(colors) {
       color: '#aaa69d',
       fontSize: 11,
       lineHeight: 16,
-      marginTop: 3,
+      marginTop: 5,
     },
     userLocationAddressApproximate: {
       color: '#f1cf64',
       fontSize: 10,
       lineHeight: 15,
       fontWeight: '800',
-      marginBottom: 4,
+      marginBottom: 7,
     },
     userLocationAddressError: {
       color: '#e6a6a6',
