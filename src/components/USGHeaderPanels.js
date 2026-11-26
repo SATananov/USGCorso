@@ -353,6 +353,15 @@ function confirmReset() {
       />
 
       <RouteAccordion
+        title={t('settings.ocrTestLab')}
+        description={t('settings.ocrTestLabHint')}
+        open={openKey === 'ocrTestLab'}
+        onToggle={() => toggle('ocrTestLab')}
+        onOpen={() => openRoute('OcrTestLab')}
+        openLabel={labels.open}
+      />
+
+      <RouteAccordion
         title={labels.privacy}
         description={t('settings.privacyHint')}
         open={openKey === 'privacy'}

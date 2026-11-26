@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -14,17 +15,23 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import OcrOptions from './OcrOptions';
 import { useLanguage } from '../i18n/LanguageContext';
 import { recognizeTextFromImage } from '../ocr/ocrService';
 import { scanQrFromImage } from '../qr/qrService';
 
 const sourceCopy = {
   bg: {
+    retry: "Повтори OCR (замени черновата)",
+    original: "Оригинална снимка",
+    confidence: "Оценка OCR",
     lowConfidence: 'Ниска надеждност на OCR. Провери текста спрямо снимката.',
     title: 'Избери източник',
     text: 'Снимай текста сега или избери изображение от телефона.',
     camera: 'КАМЕРА',
+    cameraCrop: 'КАМЕРА — ИЗБЕРИ И ИЗРЕЖИ',
     library: 'ОТ ТЕЛЕФОНА',
+    libraryCrop: 'ГАЛЕРИЯ — ИЗБЕРИ И ИЗРЕЖИ',
     cancel: 'ОТКАЗ',
     permissionTitle: 'Нужен е достъп',
     cameraPermission:
@@ -41,11 +48,16 @@ const sourceCopy = {
     qrFound: 'Открит QR код',
   },
   en: {
+    retry: "Retry OCR (replace draft)",
+    original: "Original image",
+    confidence: "OCR confidence",
     lowConfidence: 'Low OCR confidence. Check the text against the image.',
     title: 'Choose source',
     text: 'Take a photo now or choose an image from your phone.',
     camera: 'CAMERA',
+    cameraCrop: 'CAMERA — SELECT AND CROP',
     library: 'FROM PHONE',
+    libraryCrop: 'GALLERY — SELECT AND CROP',
     cancel: 'CANCEL',
     permissionTitle: 'Access required',
     cameraPermission:
@@ -62,11 +74,16 @@ const sourceCopy = {
     qrFound: 'QR code detected',
   },
   it: {
+    retry: "Ripeti OCR (sostituisci bozza)",
+    original: "Immagine originale",
+    confidence: "Affidabilità OCR",
     lowConfidence: 'Bassa affidabilità OCR. Controlla il testo rispetto alla foto.',
     title: 'Scegli la fonte',
     text: 'Scatta una foto ora oppure scegli un’immagine dal telefono.',
     camera: 'FOTOCAMERA',
+    cameraCrop: 'FOTOCAMERA — SCEGLI E RITAGLIA',
     library: 'DAL TELEFONO',
+    libraryCrop: 'GALLERIA — SCEGLI E RITAGLIA',
     cancel: 'ANNULLA',
     permissionTitle: 'Accesso necessario',
     cameraPermission:
@@ -93,6 +110,10 @@ export default function ScanTextButton({
 }) {
   const { language } = useLanguage();
   const copy = sourceCopy[language] || sourceCopy.en;
+  const [options, setOptions] = useState({ language: 'all', layout: 'auto', processing: 'original' });
+  const [imageUri, setImageUri] = useState(null);
+  const [confidence, setConfidence] = useState(null);
+  const [retryMessage, setRetryMessage] = useState('');
   const [scanning, setScanning] = useState(false);
   const [sourceVisible, setSourceVisible] = useState(false);
   const [resultText, setResultText] = useState('');
@@ -106,6 +127,9 @@ export default function ScanTextButton({
     setResultText('');
     setLowConfidence(false);
     setQrCodes([]);
+    setImageUri(null);
+    setConfidence(null);
+    setRetryMessage('');
   }
 
   function appendResult() {
@@ -128,11 +152,12 @@ export default function ScanTextButton({
     }
 
     setScanning(true);
+    setRetryMessage('');
 
     try {
       const [ocrResult, qrResult] = await Promise.allSettled([
-        recognizeTextFromImage(asset.uri, language),
-        scanQrFromImage(asset.uri),
+        recognizeTextFromImage(asset.uri, options.language, options.layout, options.processing),
+        resultVisible ? Promise.resolve({ codes: qrCodes }) : scanQrFromImage(asset.uri),
       ]);
 
       const recognizedText =
@@ -141,6 +166,10 @@ export default function ScanTextButton({
         qrResult.status === 'fulfilled' ? qrResult.value?.codes ?? [] : [];
 
       if (!recognizedText && !detectedQrCodes.length) {
+        if (resultVisible) {
+          setRetryMessage(ocrResult.status === 'rejected' ? copy.failedText : copy.noTextText);
+          return;
+        }
         setInfo({
           title:
             ocrResult.status === 'rejected'
@@ -154,6 +183,12 @@ export default function ScanTextButton({
         return;
       }
 
+      if (resultVisible && !recognizedText) {
+        setRetryMessage(ocrResult.status === 'rejected' ? copy.failedText : copy.noTextText);
+        return;
+      }
+      setImageUri(asset.uri);
+      setConfidence(ocrResult.status === 'fulfilled' && recognizedText ? ocrResult.value?.confidence ?? null : null);
       setQrCodes(detectedQrCodes);
       setLowConfidence(Boolean(recognizedText && ocrResult.status === 'fulfilled' && ocrResult.value?.confidence != null && ocrResult.value.confidence < 55));
 
@@ -197,7 +232,7 @@ export default function ScanTextButton({
     }
   }
 
-  async function scanFromLibrary() {
+  async function scanFromLibrary(crop = false) {
     setSourceVisible(false);
 
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -212,7 +247,7 @@ export default function ScanTextButton({
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
-      allowsEditing: false,
+      allowsEditing: crop,
       quality: 1,
     });
 
@@ -223,7 +258,7 @@ export default function ScanTextButton({
     await recognizeAsset(result.assets[0]);
   }
 
-  async function scanFromCamera() {
+  async function scanFromCamera(crop = false) {
     setSourceVisible(false);
 
     const permission = await ImagePicker.requestCameraPermissionsAsync();
@@ -238,7 +273,7 @@ export default function ScanTextButton({
 
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ['images'],
-      allowsEditing: false,
+      allowsEditing: crop,
       quality: 1,
     });
 
@@ -277,6 +312,7 @@ export default function ScanTextButton({
         onRequestClose={() => setSourceVisible(false)}
       >
         <View style={styles.overlayCenter}>
+          <ScrollView style={{ width: '100%', maxWidth: 520 }} contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }} keyboardShouldPersistTaps="handled">
           <View
             style={[
               styles.choiceCard,
@@ -293,8 +329,10 @@ export default function ScanTextButton({
               {copy.text}
             </Text>
 
+            <OcrOptions colors={colors} language={language} value={options} onChange={setOptions} disabled={scanning} />
+
             <Pressable
-              onPress={scanFromCamera}
+              onPress={() => scanFromCamera(false)}
               style={({ pressed }) => [
                 styles.primaryAction,
                 { backgroundColor: colors.gold },
@@ -305,7 +343,7 @@ export default function ScanTextButton({
             </Pressable>
 
             <Pressable
-              onPress={scanFromLibrary}
+              onPress={() => scanFromLibrary(false)}
               style={({ pressed }) => [
                 styles.secondaryAction,
                 { borderColor: colors.gold },
@@ -315,6 +353,20 @@ export default function ScanTextButton({
               <Text style={[styles.secondaryActionText, { color: colors.gold }]}>
                 {copy.library}
               </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => scanFromCamera(true)}
+              style={({ pressed }) => [styles.secondaryAction, { borderColor: colors.gold }, pressed && styles.pressed]}
+            >
+              <Text style={[styles.secondaryActionText, { color: colors.gold }]}>{copy.cameraCrop}</Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => scanFromLibrary(true)}
+              style={({ pressed }) => [styles.secondaryAction, { borderColor: colors.gold }, pressed && styles.pressed]}
+            >
+              <Text style={[styles.secondaryActionText, { color: colors.gold }]}>{copy.libraryCrop}</Text>
             </Pressable>
 
             <Pressable
@@ -329,6 +381,7 @@ export default function ScanTextButton({
               </Text>
             </Pressable>
           </View>
+          </ScrollView>
         </View>
       </Modal>
 
@@ -374,7 +427,7 @@ export default function ScanTextButton({
         visible={resultVisible}
         statusBarTranslucent
         navigationBarTranslucent
-        onRequestClose={closeResult}
+        onRequestClose={() => { if (!scanning) closeResult(); }}
       >
         <SafeAreaView style={styles.overlayBottom} edges={['top', 'bottom']}>
         <KeyboardAvoidingView
@@ -401,6 +454,7 @@ export default function ScanTextButton({
               </View>
 
               <Pressable
+                disabled={scanning}
                 onPress={closeResult}
                 style={({ pressed }) => [
                   styles.closeButton,
@@ -419,6 +473,18 @@ export default function ScanTextButton({
               contentContainerStyle={styles.editorScrollContent}
               keyboardShouldPersistTaps="handled"
             >
+              {imageUri ? (
+                <View style={{ gap: 8, marginBottom: 12 }}>
+                  <Text style={[styles.modalText, { color: colors.textSoft }]}>{copy.original}</Text>
+                  <Image source={{ uri: imageUri }} resizeMode="contain" style={{ width: '100%', height: 140 }} />
+                  <OcrOptions colors={colors} language={language} value={options} onChange={setOptions} disabled={scanning} />
+                  <Pressable disabled={scanning} onPress={() => recognizeAsset({ uri: imageUri })} style={[styles.secondaryAction, { borderColor: colors.gold }, scanning && styles.disabled]}>
+                    {scanning ? <ActivityIndicator color={colors.gold} /> : <Text style={[styles.secondaryActionText, { color: colors.gold, textAlign: 'center' }]}>{copy.retry}</Text>}
+                  </Pressable>
+                  {confidence != null ? <Text style={[styles.modalText, { color: colors.textSoft }]}>{copy.confidence}: {confidence}/100</Text> : null}
+                  {retryMessage ? <Text style={[styles.modalText, { color: colors.gold }]}>{retryMessage}</Text> : null}
+                </View>
+              ) : null}
             {qrCodes.length ? (
               <View
                 style={[
@@ -454,7 +520,8 @@ export default function ScanTextButton({
                 multiline
                 scrollEnabled
                 textAlignVertical="top"
-                autoCorrect
+                editable={!scanning}
+                autoCorrect={false}
                 style={[
                   styles.editor,
                   {
@@ -468,6 +535,7 @@ export default function ScanTextButton({
 
             <View style={styles.actions}>
               <Pressable
+                disabled={scanning}
                 onPress={appendResult}
                 style={({ pressed }) => [
                   styles.primaryAction,
@@ -479,6 +547,7 @@ export default function ScanTextButton({
               </Pressable>
 
               <Pressable
+                disabled={scanning}
                 onPress={replaceResult}
                 style={({ pressed }) => [
                   styles.secondaryAction,
@@ -492,6 +561,7 @@ export default function ScanTextButton({
               </Pressable>
 
               <Pressable
+                disabled={scanning}
                 onPress={closeResult}
                 style={({ pressed }) => [
                   styles.cancelAction,

@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
+import android.graphics.Color
 import android.media.ExifInterface
 import android.net.Uri
 import com.googlecode.tesseract.android.TessBaseAPI
@@ -17,17 +18,21 @@ class USGOcrModule : Module() {
   override fun definition() = ModuleDefinition {
     Name("USGOcr")
 
-    AsyncFunction("recognizeText") { uri: String, languages: String ->
+    AsyncFunction("recognizeText") { uri: String, languages: String, layout: String, processing: String ->
       val context = appContext.reactContext
         ?: throw IllegalStateException("Android context is unavailable")
-      val dataRoot = File(context.filesDir, "usg-tesseract")
+      val dataRoot = File(context.filesDir, "usg-tesseract-v2")
       val tessdataDir = File(dataRoot, "tessdata")
 
+      require(languages.split("+").all { it in setOf("bul", "eng", "ita") })
       prepareLanguageData(context, languages, tessdataDir)
 
-      val bitmap = decodeScaledBitmap(context, uri, 3000)
+      val decoded = decodeScaledBitmap(context, uri, 3000)
         ?: throw IllegalArgumentException("Unable to decode image")
 
+      val bitmap = if (processing == "contrast") {
+        try { contrastBitmap(decoded) } finally { decoded.recycle() }
+      } else decoded
       val tess = TessBaseAPI()
 
       try {
@@ -35,7 +40,11 @@ class USGOcrModule : Module() {
           throw IllegalStateException("Unable to initialize Tesseract")
         }
 
-        tess.setPageSegMode(TessBaseAPI.PageSegMode.PSM_AUTO)
+        tess.setPageSegMode(when (layout) {
+          "block" -> TessBaseAPI.PageSegMode.PSM_SINGLE_BLOCK
+          "sparse" -> TessBaseAPI.PageSegMode.PSM_SPARSE_TEXT
+          else -> TessBaseAPI.PageSegMode.PSM_AUTO
+        })
         tess.setVariable("preserve_interword_spaces", "1")
         tess.setImage(bitmap)
 
@@ -45,7 +54,9 @@ class USGOcrModule : Module() {
         mapOf(
           "text" to text,
           "confidence" to confidence,
-          "languages" to languages
+          "languages" to languages,
+          "layout" to layout,
+          "processing" to processing
         )
       } finally {
         tess.recycle()
@@ -54,6 +65,36 @@ class USGOcrModule : Module() {
     }
   }
 
+  private fun contrastBitmap(source: Bitmap): Bitmap {
+    val width = source.width
+    val height = source.height
+    val pixels = IntArray(width * height)
+    source.getPixels(pixels, 0, width, 0, 0, width, height)
+    val histogram = IntArray(256)
+    for (i in pixels.indices) {
+      val p = pixels[i]
+      val gray = (Color.red(p) * 299 + Color.green(p) * 587 + Color.blue(p) * 114) / 1000
+      pixels[i] = gray
+      histogram[gray]++
+    }
+    val cutoff = pixels.size / 100
+    var low = 0
+    var high = 255
+    var count = 0
+    while (low < 255 && count + histogram[low] <= cutoff) { count += histogram[low]; low++ }
+    count = 0
+    while (high > 0 && count + histogram[high] <= cutoff) { count += histogram[high]; high-- }
+    val range = high - low
+    val invert = histogram.take(128).sum() > pixels.size / 2
+    for (i in pixels.indices) {
+      val gray = if (range >= 32) ((pixels[i] - low) * 255 / range).coerceIn(0, 255) else pixels[i]
+      val value = if (invert) 255 - gray else gray
+      pixels[i] = Color.rgb(value, value, value)
+    }
+    return Bitmap.createBitmap(pixels, width, height, Bitmap.Config.ARGB_8888)
+  }
+
+  @Synchronized
   private fun prepareLanguageData(
     context: Context,
     languages: String,
@@ -73,8 +114,11 @@ class USGOcrModule : Module() {
 
         if (!target.exists() || target.length() == 0L) {
           context.assets.open("tessdata/$language.traineddata").use { input ->
-            FileOutputStream(target).use { output ->
-              input.copyTo(output)
+            val temporary = File(tessdataDir, "$language.traineddata.tmp")
+            FileOutputStream(temporary).use { output -> input.copyTo(output) }
+            if (!temporary.renameTo(target)) {
+              temporary.delete()
+              throw IllegalStateException("Unable to install OCR language data")
             }
           }
         }

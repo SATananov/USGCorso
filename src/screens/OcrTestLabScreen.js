@@ -1,3 +1,4 @@
+import OcrOptions from '../components/OcrOptions';
 import USGZoomImage from '../components/USGZoomImage';
 import { useRef, useState } from 'react';
 import {
@@ -14,10 +15,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useLanguage } from '../i18n/LanguageContext';
 import { recognizeWithTesseract } from '../ocr/providers/tesseractProvider';
+import { OCR_MODELS } from '../ocr/ocrService';
 import { useTheme } from '../theme/ThemeContext';
 
-const LANGUAGE_MODELS = { bg: 'bul', en: 'eng', it: 'ita', all: 'bul+eng+ita' };
-const LANGUAGES = ['bg', 'en', 'it', 'all'];
+
 const TIMEOUT_MS = 45000;
 
 const copy = {
@@ -26,7 +27,9 @@ const copy = {
     subtitle: 'Само локален тест. Нищо не се публикува.',
     selectLanguage: 'Език за разпознаване',
     camera: 'КАМЕРА',
+    cameraCrop: 'КАМЕРА — ИЗБЕРИ И ИЗРЕЖИ',
     library: 'ОТ ГАЛЕРИЯТА',
+    libraryCrop: 'ГАЛЕРИЯ — ИЗБЕРИ И ИЗРЕЖИ',
     result: 'Разпознат текст',
     placeholder: 'След сканиране текстът ще се появи тук.',
     copy: 'ИЗБЕРИ ТЕКСТА',
@@ -47,7 +50,9 @@ const copy = {
     subtitle: 'Local testing only. Nothing is published.',
     selectLanguage: 'Recognition language',
     camera: 'CAMERA',
+    cameraCrop: 'CAMERA — SELECT AND CROP',
     library: 'FROM GALLERY',
+    libraryCrop: 'GALLERY — SELECT AND CROP',
     result: 'Recognized text',
     placeholder: 'The recognized text will appear here.',
     copy: 'SELECT TEXT',
@@ -68,7 +73,9 @@ const copy = {
     subtitle: 'Solo test locale. Nessuna pubblicazione.',
     selectLanguage: 'Lingua di riconoscimento',
     camera: 'FOTOCAMERA',
+    cameraCrop: 'FOTOCAMERA — SCEGLI E RITAGLIA',
     library: 'DALLA GALLERIA',
+    libraryCrop: 'GALLERIA — SCEGLI E RITAGLIA',
     result: 'Testo riconosciuto',
     placeholder: 'Il testo riconosciuto apparirà qui.',
     copy: 'SELEZIONA TESTO',
@@ -86,11 +93,11 @@ const copy = {
   },
 };
 
-async function recognizeWithDeadline(uri, model) {
+async function recognizeWithDeadline(uri, model, layout, processing) {
   let timer;
   try {
     return await Promise.race([
-      recognizeWithTesseract(uri, model),
+      recognizeWithTesseract(uri, model, layout, processing),
       new Promise((_, reject) => {
         timer = setTimeout(() => reject(new Error('OCR_TEST_TIMEOUT')), TIMEOUT_MS);
       }),
@@ -105,7 +112,8 @@ export default function OcrTestLabScreen() {
   const { language } = useLanguage();
   const { colors } = useTheme();
   const labels = copy[language] || copy.en;
-  const [modelLanguage, setModelLanguage] = useState('all');
+  const [options, setOptions] = useState({ language: 'all', layout: 'auto', processing: 'original' });
+  const [lastSettings, setLastSettings] = useState(null);
   const [imageUri, setImageUri] = useState(null);
   const [resultText, setResultText] = useState('');
   const [confidence, setConfidence] = useState(null);
@@ -113,7 +121,7 @@ export default function OcrTestLabScreen() {
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
 
-  async function scan(source) {
+  async function scan(source, crop = false) {
     if (busy) return;
     setMessage('');
     const permission = source === 'camera'
@@ -127,8 +135,8 @@ export default function OcrTestLabScreen() {
     let selected;
     try {
       selected = source === 'camera'
-        ? await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 1 })
-        : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1 });
+        ? await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], allowsEditing: crop, quality: 1 })
+        : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: crop, quality: 1 });
     } catch (error) {
       console.warn('[USG_OCR_LAB] picker failed', error?.message || 'unknown');
       setMessage(labels.error);
@@ -136,17 +144,23 @@ export default function OcrTestLabScreen() {
     }
     if (selected.canceled || !selected.assets?.[0]?.uri) return;
 
-    const uri = selected.assets[0].uri;
+    await run(selected.assets[0].uri);
+  }
+
+  async function run(uri) {
+    if (busy || !uri) return;
+    setMessage('');
     setImageUri(uri);
     setResultText('');
     setDurationMs(null);
     setConfidence(null);
     setBusy(true);
     const started = Date.now();
-    const model = LANGUAGE_MODELS[modelLanguage];
+    const model = OCR_MODELS[options.language];
+    setLastSettings(`${model} · ${options.layout} · ${options.processing}`);
     console.log('[USG_OCR_LAB] start', model);
     try {
-      const result = await recognizeWithDeadline(uri, model);
+      const result = await recognizeWithDeadline(uri, model, options.layout, options.processing);
       const text = result?.text || '';
       const elapsed = Date.now() - started;
       setDurationMs(elapsed);
@@ -175,6 +189,7 @@ export default function OcrTestLabScreen() {
   function clearResult() {
     if (busy) return;
     setImageUri(null);
+    setLastSettings(null);
     setResultText('');
     setDurationMs(null);
     setConfidence(null);
@@ -188,22 +203,7 @@ export default function OcrTestLabScreen() {
         <Text style={[styles.title, { color: colors.text }]}>{labels.title}</Text>
         <Text style={[styles.subtitle, { color: colors.textSoft }]}>{labels.subtitle}</Text>
 
-        <Text style={[styles.label, { color: colors.text }]}>{labels.selectLanguage}</Text>
-        <View style={styles.languageRow}>
-          {LANGUAGES.map((item) => {
-            const active = item === modelLanguage;
-            return (
-              <Pressable
-                key={item}
-                disabled={busy}
-                onPress={() => { setModelLanguage(item); clearResult(); }}
-                style={[styles.languageButton, { borderColor: colors.gold, backgroundColor: active ? colors.gold : colors.surface }]}
-              >
-                <Text style={[styles.languageText, { color: active ? '#090909' : colors.text }]}>{item.toUpperCase()}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
+        <OcrOptions colors={colors} language={language} value={options} onChange={setOptions} disabled={busy} />
 
         <View style={styles.actions}>
           <Pressable disabled={busy} onPress={() => scan('camera')} style={[styles.primaryButton, { backgroundColor: colors.gold }, busy && styles.disabled]}>
@@ -213,11 +213,22 @@ export default function OcrTestLabScreen() {
             <Text style={[styles.outlineText, { color: colors.gold }]}>{labels.library}</Text>
           </Pressable>
         </View>
+        <View style={styles.actions}>
+          <Pressable disabled={busy} onPress={() => scan('camera', true)} style={[styles.outlineButton, { borderColor: colors.gold }, busy && styles.disabled]}>
+            <Text style={[styles.outlineText, { color: colors.gold }]}>{labels.cameraCrop}</Text>
+          </Pressable>
+          <Pressable disabled={busy} onPress={() => scan('library', true)} style={[styles.outlineButton, { borderColor: colors.gold }, busy && styles.disabled]}>
+            <Text style={[styles.outlineText, { color: colors.gold }]}>{labels.libraryCrop}</Text>
+          </Pressable>
+        </View>
 
         {imageUri ? (
           <View style={[styles.card, { borderColor: colors.border, backgroundColor: colors.surface }]}>
             <Text style={[styles.label, { color: colors.text }]}>{labels.source}</Text>
             <USGZoomImage source={{ uri: imageUri }} resizeMode="contain" style={styles.preview} />
+            <Pressable disabled={busy} onPress={() => run(imageUri)} style={[styles.outlineButton, { borderColor: colors.gold }, busy && styles.disabled]}>
+              <Text style={[styles.outlineText, { color: colors.gold }]}>{language === 'bg' ? 'ПОВТОРИ OCR' : language === 'it' ? 'RIPETI OCR' : 'RETRY OCR'}</Text>
+            </Pressable>
           </View>
         ) : null}
 
@@ -235,7 +246,7 @@ export default function OcrTestLabScreen() {
             style={[styles.editor, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
           />
           <Text style={[styles.metrics, { color: colors.textSoft }]}>
-            {labels.provider}: Tesseract · {LANGUAGE_MODELS[modelLanguage]} · {labels.chars}: {resultText.length}
+            {labels.provider}: Tesseract · {lastSettings ?? '—'} · {labels.chars}: {resultText.length}
             {confidence == null ? '' : ` · OCR: ${confidence}/100`}
             {durationMs == null ? '' : ` · ${labels.duration}: ${(durationMs / 1000).toFixed(1)} s`}
           </Text>

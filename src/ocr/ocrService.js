@@ -2,11 +2,7 @@ import { recognizeWithTesseract } from './providers/tesseractProvider';
 
 const OCR_TIMEOUT_MS = 45000;
 
-function languageForApp(language) {
-  if (language === 'bg') return 'bul+eng+ita';
-  if (language === 'it') return 'ita+eng+bul';
-  return 'eng+bul+ita';
-}
+export const OCR_MODELS = { bg: 'bul', en: 'eng', it: 'ita', all: 'bul+eng+ita' };
 
 function withTimeout(task, ms) {
   let timer;
@@ -16,10 +12,10 @@ function withTimeout(task, ms) {
   return Promise.race([task, deadline]).finally(() => clearTimeout(timer));
 }
 
-export async function recognizeTextFromImage(uri, language = 'en') {
+export async function recognizeTextFromImage(uri, language = 'all', layout = 'auto', processing = 'original') {
   if (!uri) throw new Error('Missing image URI');
   return withTimeout(
-    recognizeWithTesseract(uri, languageForApp(language)),
+    recognizeWithTesseract(uri, OCR_MODELS[language] ?? OCR_MODELS.all, layout, processing),
     OCR_TIMEOUT_MS
   );
 }
