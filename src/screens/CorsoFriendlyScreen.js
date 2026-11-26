@@ -55,6 +55,7 @@ const GPS_TIMEOUT_MS = 15000;
 const GPS_WATCH_TIMEOUT_MS = 12000;
 const GPS_MAX_AGE_MS = 60000;
 const GPS_FUTURE_SKEW_MS = 10000;
+const USER_LOCATION_PRECISE_ACCURACY_METERS = 50;
 
 const gpsStatusCopy = {
   bg: {
@@ -210,6 +211,10 @@ const DEFAULT_REGION = {
   latitudeDelta: 4.8,
   longitudeDelta: 4.8,
 };
+
+function getCoordinateCacheKey(location) {
+  return `${Number(location.latitude).toFixed(5)},${Number(location.longitude).toFixed(5)}`;
+}
 
 function PlaceCard({
   place,
@@ -1686,6 +1691,11 @@ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [errorText, setErrorText] = useState('');
   const [userLocation, setUserLocation] = useState(null);
+  const [userLocationAccuracy, setUserLocationAccuracy] = useState(null);
+  const [userLocationAddressVisible, setUserLocationAddressVisible] = useState(false);
+  const [userLocationAddressLoading, setUserLocationAddressLoading] = useState(false);
+  const [userLocationAddress, setUserLocationAddress] = useState(null);
+  const [userLocationAddressError, setUserLocationAddressError] = useState(false);
   const [profile, setProfile] = useState(null);
   const [mapSharingEnabled, setMapSharingEnabled] = useState(false);
   const [presenceHintVisible, setPresenceHintVisible] = useState(true);
@@ -1694,6 +1704,173 @@ navigation }) {
   const [nearMeLoading, setNearMeLoading] = useState(false);
   const [selectedPlaceId, setSelectedPlaceId] = useState(null);
   const [selectedMember, setSelectedMember] = useState(null);
+  const userLocationAddressIsApproximate = Boolean(
+    userLocationAddress && (
+      userLocationAddress.geocodePrecise !== true ||
+      (Number.isFinite(userLocationAccuracy) &&
+        userLocationAccuracy > USER_LOCATION_PRECISE_ACCURACY_METERS)
+    )
+  );
+  const userLocationAddressCacheRef = useRef(new Map());
+  const userLocationAddressRequestsRef = useRef(new Map());
+  const userLocationAddressRequestRef = useRef(0);
+  const currentUserLocationKeyRef = useRef('');
+  const currentUserLocationLanguageRef = useRef(language);
+  currentUserLocationLanguageRef.current = language;
+
+  function updateUserLocation(location, accuracy = null) {
+    const nextLocation = location
+      ? { latitude: location.latitude, longitude: location.longitude }
+      : null;
+    const nextKey = nextLocation ? getCoordinateCacheKey(nextLocation) : '';
+
+    if (nextKey !== currentUserLocationKeyRef.current) {
+      currentUserLocationKeyRef.current = nextKey;
+      userLocationAddressRequestRef.current += 1;
+      userLocationAddressCacheRef.current.clear();
+      setUserLocationAddressVisible(false);
+      setUserLocationAddressLoading(false);
+      setUserLocationAddress(null);
+      setUserLocationAddressError(false);
+    }
+
+    setUserLocation(nextLocation);
+    setUserLocationAccuracy(Number.isFinite(accuracy) && accuracy >= 0 ? accuracy : null);
+  }
+
+  async function showCurrentLocationAddress() {
+    if (!userLocation) return;
+
+    const location = { ...userLocation };
+    const locationKey = getCoordinateCacheKey(location);
+    const languageAtRequest = language;
+    const requestKey = `${locationKey}:${languageAtRequest}`;
+    setUserLocationAddressVisible(true);
+    setUserLocationAddressError(false);
+    setSelectedMember(null);
+
+    const cachedAddress = userLocationAddressCacheRef.current.get(requestKey);
+    if (cachedAddress) {
+      setUserLocationAddress(cachedAddress);
+      setUserLocationAddressLoading(false);
+      return;
+    }
+
+    let existingRequest = userLocationAddressRequestsRef.current.get(requestKey);
+    if (existingRequest && existingRequest.requestId !== userLocationAddressRequestRef.current) {
+      userLocationAddressRequestsRef.current.delete(requestKey);
+      existingRequest = null;
+    }
+    if (existingRequest) {
+      setUserLocationAddressLoading(true);
+      const addressResult = await existingRequest.promise;
+      if (
+        existingRequest.requestId === userLocationAddressRequestRef.current &&
+        currentUserLocationKeyRef.current === locationKey &&
+        currentUserLocationLanguageRef.current === languageAtRequest
+      ) {
+        setUserLocationAddress(addressResult);
+        setUserLocationAddressError(Boolean(addressResult.error));
+        setUserLocationAddressLoading(false);
+      }
+      return;
+    }
+
+    const requestId = ++userLocationAddressRequestRef.current;
+    setUserLocationAddressLoading(true);
+
+    const request = (async () => {
+      let reverseGeocodeResult = null;
+      let remoteFailed = false;
+      try {
+        const response = await reverseGeocodePlace({
+          latitude: location.latitude,
+          longitude: location.longitude,
+          language: languageAtRequest,
+        });
+        reverseGeocodeResult = response?.result ?? null;
+      } catch {
+        remoteFailed = true;
+      }
+
+      let fallbackLocation = null;
+      if (
+        !reverseGeocodeResult ||
+        !(reverseGeocodeResult.address || reverseGeocodeResult.formattedAddress ||
+          reverseGeocodeResult.city || reverseGeocodeResult.country)
+      ) {
+        try {
+          const results = await Location.reverseGeocodeAsync(location);
+          fallbackLocation = results[0] ?? null;
+        } catch {
+        }
+      }
+
+      const fallbackAddress = [
+        fallbackLocation?.name,
+        fallbackLocation?.street,
+        fallbackLocation?.streetNumber,
+        fallbackLocation?.district,
+      ].filter(Boolean).filter((part, index, parts) => parts.indexOf(part) === index).join(', ');
+      const address = reverseGeocodeResult?.nearestStreet ||
+        reverseGeocodeResult?.postalAddress ||
+        reverseGeocodeResult?.address ||
+        reverseGeocodeResult?.formattedAddress ||
+        fallbackAddress;
+      const city = reverseGeocodeResult?.city || fallbackLocation?.city ||
+        fallbackLocation?.subregion || fallbackLocation?.district ||
+        fallbackLocation?.region || '';
+      const country = reverseGeocodeResult?.country || fallbackLocation?.country || '';
+      const area = city || country;
+      const hasFallbackData = Boolean(address || area);
+
+      return {
+        address,
+        city: address ? city : '',
+        area,
+        geocodePrecise: reverseGeocodeResult?.precise === true,
+        error: remoteFailed && !hasFallbackData,
+      };
+    })().catch(() => ({
+      address: '',
+      city: '',
+      area: '',
+      geocodePrecise: false,
+      error: true,
+    }));
+
+    userLocationAddressRequestsRef.current.set(requestKey, { requestId, promise: request });
+    const addressResult = await request;
+    if (userLocationAddressRequestsRef.current.get(requestKey)?.promise === request) {
+      userLocationAddressRequestsRef.current.delete(requestKey);
+    }
+
+    if (
+      requestId !== userLocationAddressRequestRef.current ||
+      currentUserLocationKeyRef.current !== locationKey ||
+      currentUserLocationLanguageRef.current !== languageAtRequest
+    ) return;
+
+    if (!addressResult.error) {
+      userLocationAddressCacheRef.current.set(requestKey, addressResult);
+      if (userLocationAddressCacheRef.current.size > 8) {
+        const oldestKey = userLocationAddressCacheRef.current.keys().next().value;
+        userLocationAddressCacheRef.current.delete(oldestKey);
+      }
+    }
+
+    setUserLocationAddress(addressResult);
+    setUserLocationAddressError(Boolean(addressResult.error));
+    setUserLocationAddressLoading(false);
+  }
+
+  useEffect(() => {
+    userLocationAddressRequestRef.current += 1;
+    setUserLocationAddressVisible(false);
+    setUserLocationAddressLoading(false);
+    setUserLocationAddress(null);
+    setUserLocationAddressError(false);
+  }, [language]);
 
   useEffect(() => {
     const show = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
@@ -1705,6 +1882,7 @@ navigation }) {
     setProfile(null);
     setProfileLoaded(false);
     setPresenceHintVisible(true);
+    updateUserLocation(null);
   }, [user?.id]);
 
   const filteredPlaces = useMemo(() => {
@@ -1846,7 +2024,7 @@ navigation }) {
                   longitude: position.coords.longitude,
                 };
 
-                setUserLocation(currentLocation);
+                updateUserLocation(currentLocation, position.coords.accuracy);
                 await setMyMapPresence(
                   user.id,
                   currentLocation.latitude,
@@ -1913,7 +2091,7 @@ navigation }) {
         longitude: position.coords.longitude,
       };
 
-      setUserLocation(currentLocation);
+      updateUserLocation(currentLocation, position.coords.accuracy);
       mapRef.current?.animateToRegion({
         ...currentLocation,
         latitudeDelta: 0.08,
@@ -1957,7 +2135,7 @@ navigation }) {
         } else {
           setMapSharingEnabled(false);
           setPresenceHintVisible(false);
-          setUserLocation(null);
+          updateUserLocation(null);
           setVisibleMapUsers((current) =>
             current.filter((item) => item.user_id !== user.id)
           );
@@ -1995,7 +2173,7 @@ navigation }) {
       if (result.error) {
         setErrorText(copy.mapPresence.error);
       } else {
-        setUserLocation(currentLocation);
+        updateUserLocation(currentLocation, position.coords.accuracy);
         setMapSharingEnabled(true);
         setPresenceHintVisible(false);
         requestAnimationFrame(() => {
@@ -2218,6 +2396,7 @@ navigation }) {
                 coordinate={userLocation}
                 anchor={{ x: 0.5, y: 0.72 }}
                 zIndex={1200}
+                onPress={showCurrentLocationAddress}
               >
                 <View style={styles.memberMarkerWrap}>
                   <View style={styles.memberMarkerAvatarRing}>
@@ -2353,6 +2532,80 @@ navigation }) {
               </Marker>
             ))}
           </MapView>
+
+          {userLocation && userLocationAddressVisible ? (
+            <View style={styles.userLocationAddressPanel}>
+              <View style={styles.userLocationAddressHeader}>
+                <Text style={styles.userLocationAddressTitle}>
+                  {copy.mapPresence.myLocationTitle}
+                </Text>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={copy.mapPresence.close}
+                  onPress={() => setUserLocationAddressVisible(false)}
+                  style={styles.userLocationAddressClose}
+                >
+                  <Text style={styles.memberOverlayCloseText}>×</Text>
+                </Pressable>
+              </View>
+              {userLocationAddressLoading ? (
+                <View style={styles.userLocationAddressLoading}>
+                  <ActivityIndicator color="#d4af37" size="small" />
+                  <Text style={styles.userLocationAddressText}>
+                    {copy.mapPresence.addressLoading}
+                  </Text>
+                </View>
+              ) : (
+                <>
+                  {userLocationAddressIsApproximate ? (
+                    <Text style={styles.userLocationAddressApproximate}>
+                      {copy.mapPresence.approximateLocation}
+                    </Text>
+                  ) : null}
+                  {userLocationAddressError ? (
+                    <Text style={styles.userLocationAddressError}>
+                      {copy.mapPresence.addressError}
+                    </Text>
+                  ) : userLocationAddress?.address ? (
+                    <>
+                      <Text style={styles.userLocationAddressText}>
+                        {userLocationAddress.address}
+                      </Text>
+                      {userLocationAddress.city ? (
+                        <Text style={styles.userLocationAddressArea}>
+                          {userLocationAddress.city}
+                        </Text>
+                      ) : null}
+                    </>
+                  ) : userLocationAddress?.area ? (
+                    <Text style={styles.userLocationAddressText}>
+                      {copy.mapPresence.nearbyArea.replace('{area}', userLocationAddress.area)}
+                    </Text>
+                  ) : (
+                    <Text style={styles.userLocationAddressText}>
+                      {copy.mapPresence.noAddress}
+                    </Text>
+                  )}
+                  {!userLocationAddress?.address && userLocation ? (
+                    <Text style={styles.userLocationAddressArea}>
+                      {copy.mapPresence.coordinates.replace(
+                        '{coordinates}',
+                        `${userLocation.latitude.toFixed(5)}, ${userLocation.longitude.toFixed(5)}`
+                      )}
+                    </Text>
+                  ) : null}
+                  {userLocationAddressIsApproximate && Number.isFinite(userLocationAccuracy) ? (
+                    <Text style={styles.userLocationAddressArea}>
+                      {copy.mapPresence.gpsAccuracy.replace(
+                        '{meters}',
+                        String(Math.round(userLocationAccuracy))
+                      )}
+                    </Text>
+                  ) : null}
+                </>
+              )}
+            </View>
+          ) : null}
 
           {selectedMember ? (
             <View style={styles.memberOverlayCard}>
@@ -2675,6 +2928,76 @@ function createStyles(colors) {
       width: 54,
       height: 54,
       opacity: 0.18,
+    },
+    userLocationAddressPanel: {
+      position: 'absolute',
+      top: 112,
+      left: 16,
+      right: 16,
+      zIndex: 40,
+      borderRadius: 18,
+      borderWidth: 1.5,
+      borderColor: '#d4af37',
+      backgroundColor: 'rgba(6, 7, 8, 0.97)',
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      paddingRight: 48,
+      shadowColor: '#000',
+      shadowOpacity: 0.5,
+      shadowRadius: 12,
+      elevation: 14,
+    },
+    userLocationAddressHeader: {
+      minHeight: 28,
+      justifyContent: 'center',
+      marginBottom: 5,
+    },
+    userLocationAddressTitle: {
+      color: '#d4af37',
+      fontSize: 11,
+      fontWeight: '900',
+      letterSpacing: 0.5,
+    },
+    userLocationAddressClose: {
+      position: 'absolute',
+      top: -5,
+      right: 8,
+      width: 34,
+      height: 34,
+      borderRadius: 17,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    userLocationAddressLoading: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 9,
+      minHeight: 28,
+    },
+    userLocationAddressText: {
+      color: '#f7f3e9',
+      fontSize: 13,
+      lineHeight: 18,
+      fontWeight: '700',
+    },
+    userLocationAddressArea: {
+      color: '#aaa69d',
+      fontSize: 11,
+      lineHeight: 16,
+      marginTop: 3,
+    },
+    userLocationAddressApproximate: {
+      color: '#f1cf64',
+      fontSize: 10,
+      lineHeight: 15,
+      fontWeight: '800',
+      marginBottom: 4,
+    },
+    userLocationAddressError: {
+      color: '#e6a6a6',
+      fontSize: 12,
+      lineHeight: 17,
+      fontWeight: '700',
     },
     presenceControlWrap: {
       position: 'absolute',
