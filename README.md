@@ -297,7 +297,7 @@ Guest browsing is intentional, but it does not meet the specification's literal 
 
 ## Automated Tests
 
-The repository contains **11 Jest test files with 38 test cases** across the app's authentication, navigation, data/form and mobile demonstration paths. The test runner is configured in `jest.config.js` and `package.json`.
+The repository contains **11 Jest test suites with 52 passing tests** across the app's authentication, navigation, data/form and mobile demonstration paths. The test runner is configured in `jest.config.js` and `package.json`.
 
 | Test area | What the source tests exercise |
 | --- | --- |
@@ -318,7 +318,9 @@ npx tsc --noEmit
 
 `npm test` uses **Jest / jest-expo** with in-band execution. The full suite description is in [`tests/README.md`](tests/README.md). Separate Python checks under `tests/arena/` are **not** part of the Jest command.
 
-**Test scope:** the Jest cases mock Supabase calls, authentication events and relevant native operations. They verify application logic and UI handling, not a live Supabase environment, physical Android permissions, actual OCR accuracy or a full APK acceptance test. These are tests **present in source**; this section does not claim they were executed successfully as part of this documentation update. For device evidence, see [Verified on device](#development-status).
+**Latest local test results (27 November 2026):** the Windows PowerShell run of `npm test` reported **11/11 suites passed** and **52/52 tests passed** (13.397 seconds). `npx tsc --noEmit` completed without displaying errors. Parameterized `test.each` checks account for the difference between test declarations and executed test cases. These results were reported from the local project; they are not a GitHub CI run.
+
+**Test scope:** the Jest cases mock Supabase calls, authentication events and relevant native operations. They verify application logic and UI handling, not a live Supabase environment, physical Android permissions, actual OCR accuracy or a full APK acceptance test. For device evidence, see [Verified on device](#development-status).
 
 [↑ Back to top](#jump-to)
 
