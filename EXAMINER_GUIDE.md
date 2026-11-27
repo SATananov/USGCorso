@@ -2,7 +2,7 @@
 
 USGCorso is an **Android (Expo / React Native)** application. The `.apk` does **not** execute natively on a Windows laptop. Use a physical Android phone or an Android Virtual Device (AVD) on a Windows laptop. No Windows `.exe` is provided. A demonstration video, if supplied separately, supplements the APK and does not replace it.
 
-> **Release status:** The v1.0.1 APK build is prepared. GitHub Release `softuni-v1.0.1` has **not** been published. The planned asset URL below is not active or verified; check it after publication. The checks listed here are the confirmed scope, not a claim that every feature passed final acceptance.
+> **Release status:** GitHub Release [`softuni-v1.0.1`](https://github.com/SATananov/USGCorso/releases/tag/softuni-v1.0.1) is published. Its page and direct APK URL returned HTTP 200. The release is neither a draft nor a prerelease and has exactly one APK asset. The APK was downloaded back from GitHub and its SHA-256 matches the original. The checks listed here are the confirmed scope, not a claim that every feature passed final acceptance.
 
 ## Download the exam APK
 
@@ -17,16 +17,12 @@ USGCorso is an **Android (Expo / React Native)** application. The `.apk` does **
 - APK SHA-256: `21A060AA918CBB14242505817C6D57133C1355E9C927ED1A616BD82F67FAC667`
 - OTA channel / runtime: `ota-preview` / `1.0.1`
 
-Planned GitHub Release asset URL (not yet published or verified):
+- Release page: [https://github.com/SATananov/USGCorso/releases/tag/softuni-v1.0.1](https://github.com/SATananov/USGCorso/releases/tag/softuni-v1.0.1)
+- Direct APK: [Download USGCorso_1.0.1_SoftUni.apk](https://github.com/SATananov/USGCorso/releases/download/softuni-v1.0.1/USGCorso_1.0.1_SoftUni.apk)
 
-```text
-https://github.com/SATananov/USGCorso/releases/download/softuni-v1.0.1/USGCorso_1.0.1_SoftUni.apk
-```
-
-After publication, check that the release and asset are available before sharing this URL.
-
-1. Obtain `USGCorso_1.0.1_SoftUni.apk` from the verified release asset after publication.
-2. Install it on a test Android phone or emulator using the steps below.
+1. Open the published release page or use the direct APK link above.
+2. Download the single APK asset, `USGCorso_1.0.1_SoftUni.apk`.
+3. Install it on a test Android phone or emulator using the steps below.
 
 ## Confirmed v1.0.1 checks
 
