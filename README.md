@@ -151,31 +151,36 @@ On 27 November 2026, a Samsung Galaxy A13 running the exam APK detected a test u
 
 ## Project Architecture
 
+### Navigation and access
+
 ```mermaid
-flowchart TD
-    INTRO["3D Intro"] --> WELCOME["Welcome screen"]
-    WELCOME --> DEMO["SoftUni Demo 01–06"]
+flowchart TB
+    INTRO["3D intro"] --> WELCOME["Welcome / authentication"]
     WELCOME --> GUEST["Guest access"]
     WELCOME --> LOGIN["Sign in or register"]
-    DEMO --> LOGIN
-    DEMO --> GUEST
+    WELCOME -.-> DEMO["SoftUni Demo 01–06"]
     GUEST --> MAIN["Main navigation"]
-    LOGIN --> MAIN
+    LOGIN --> SESSION["Valid session"]
+    SESSION --> MAIN
+    MAIN --> TABS["9 bottom tabs"]
+    MAIN --> STACK["Stack screens"]
+    TABS --> AREAS["Home · My Corso · Corso Friendly<br/>Knowledge · Community · Services<br/>Events · Corso Match · About"]
+    STACK --> SCREENS["Details · Materials · Care · Settings<br/>Admin screens: role required"]
+```
 
-    MAIN --> TABS["Nine bottom tabs"]
-    TABS --> GROUP1["Home · My Corso · Corso Friendly"]
-    TABS --> GROUP2["Knowledge · Community · Services"]
-    TABS --> GROUP3["Events · Corso Match · About"]
+The SoftUni Demo opens real app routes for evaluation; it does not bypass sign-in or administrator permissions.
 
-    MAIN --> STACK["Details · Materials · Care · Settings"]
-    MAIN --> ADMIN["Admin screens · role required"]
-    GROUP2 --> PUBLIC["Public Knowledge · Community questions"]
-    MAIN --> PERSONAL["Personal actions · sign-in required"]
-    PERSONAL --> SUPA["Supabase Auth · Database · Storage · Edge Functions"]
-    ADMIN --> SUPA
-    GROUP1 --> MAP["Google Maps · device location"]
-    STACK --> DEVICE["Camera · Tesseract OCR · ML Kit"]
-    MAIN -.-> OTA["Expo Updates · ota-preview · 1.0.1"]
+### Android services and updates
+
+```mermaid
+flowchart TB
+    SOURCE["React Native / Expo"] --> EAS["EAS Build · examOta"]
+    EAS --> APK["Android APK · v1.0.1"]
+    APK --> INSTALLED["Installed USG Corso"]
+    SOURCE -.-> OTA["Expo Updates<br/>ota-preview · runtime 1.0.1"]
+    OTA -. "compatible JS and assets" .-> INSTALLED
+    INSTALLED --> BACKEND["Supabase<br/>Auth · Database · Storage · Edge Functions"]
+    INSTALLED --> NATIVE["Android tools<br/>Google Maps · Location · Camera<br/>Tesseract OCR · ML Kit"]
 ```
 
 The app opens with the 3D intro, then the welcome/auth gateway. Guests can browse Knowledge and see limited previews; personal features require a signed-in session. Admin stack screens additionally check the user's role. These client-side route checks do not replace backend authorization. Expo Updates deliver compatible JavaScript and assets; native changes require a new build.
