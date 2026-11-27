@@ -38,6 +38,7 @@ import { getAvatarPreset } from '../profile/avatarPresets';
 import { getMyProfile } from '../profile/profileService';
 import { placeCategories, placeCopy, placeNameTemplates } from '../places/placeCopy';
 import USGMapMarker from '../places/USGMapMarker';
+import ActiveMapUsersModal, { getActiveMapUsersCopy } from '../places/ActiveMapUsersModal';
 import {
   getMyMapPresence,
   getVisibleMapUsers,
@@ -1667,6 +1668,7 @@ navigation }) {
   const { colors } = useTheme();
   const { user } = useAuth();
   const copy = placeCopy[language] ?? placeCopy.en;
+  const activeMapUsersCopy = getActiveMapUsersCopy(language);
   const styles = useMemo(() => createStyles(colors), [colors]);
   const mapRef = useRef(null);
   const userLocationAddressPanelOffsetRef = useRef(null);
@@ -1712,6 +1714,10 @@ navigation }) {
   const [nearMeLoading, setNearMeLoading] = useState(false);
   const [selectedPlaceId, setSelectedPlaceId] = useState(null);
   const [selectedMember, setSelectedMember] = useState(null);
+  const [activeMapUsersOpen, setActiveMapUsersOpen] = useState(false);
+  const [activeMapUsersLoading, setActiveMapUsersLoading] = useState(false);
+  const [activeMapUsersError, setActiveMapUsersError] = useState(false);
+  const activeMapUsersRequestRef = useRef(0);
   const userLocationAddressIsApproximate = Boolean(
     userLocationAddress && (
       userLocationAddress.geocodePrecise !== true ||
@@ -2355,6 +2361,52 @@ navigation }) {
     }
   }
 
+  async function refreshActiveMapUsers() {
+    const requestId = ++activeMapUsersRequestRef.current;
+    setActiveMapUsersLoading(true);
+    setActiveMapUsersError(false);
+    try {
+      const result = await getVisibleMapUsers();
+      if (requestId !== activeMapUsersRequestRef.current) return;
+      if (result.error) {
+        setVisibleMapUsers([]);
+        setActiveMapUsersError(true);
+      } else {
+        setVisibleMapUsers(result.data ?? []);
+      }
+    } catch {
+      if (requestId === activeMapUsersRequestRef.current) {
+        setVisibleMapUsers([]);
+        setActiveMapUsersError(true);
+      }
+    } finally {
+      if (requestId === activeMapUsersRequestRef.current) {
+        setActiveMapUsersLoading(false);
+      }
+    }
+  }
+
+  function openActiveMapUsers() {
+    setActiveMapUsersOpen(true);
+    refreshActiveMapUsers();
+  }
+
+  function selectActiveMapUser(member) {
+    const latitude = Number(member.latitude);
+    const longitude = Number(member.longitude);
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
+    setActiveMapUsersOpen(false);
+    setUserLocationAddressVisible(false);
+    setSelectedPlaceId(null);
+    setSelectedMember(member);
+    mapRef.current?.animateToRegion({
+      latitude,
+      longitude,
+      latitudeDelta: 0.018,
+      longitudeDelta: 0.018,
+    }, 650);
+  }
+
   if (!user) {
     return null;
   }
@@ -2524,6 +2576,16 @@ navigation }) {
           }}
         >
           <View style={styles.presenceControlWrap}>
+            <Pressable
+              style={[styles.presenceControl, styles.activeMapUsersButton]}
+              onPress={openActiveMapUsers}
+              accessibilityRole="button"
+              accessibilityLabel={activeMapUsersCopy.title}
+            >
+              <Text style={styles.presenceControlText}>
+                {activeMapUsersCopy.button} · {visibleMapUsers.length}
+              </Text>
+            </Pressable>
             <Pressable
               style={[
                 styles.presenceControl,
@@ -2934,6 +2996,16 @@ navigation }) {
       ) : null}
           </ScrollView>
       </KeyboardAvoidingView>
+      <ActiveMapUsersModal
+        visible={activeMapUsersOpen}
+        users={visibleMapUsers}
+        loading={activeMapUsersLoading}
+        error={activeMapUsersError}
+        language={language}
+        onClose={() => setActiveMapUsersOpen(false)}
+        onRefresh={refreshActiveMapUsers}
+        onSelect={selectActiveMapUser}
+      />
       {mode === 'add' ? (
         <USGBackToTop
           visible={showBackToTop && !keyboardVisible}
@@ -3212,6 +3284,9 @@ function createStyles(colors) {
       paddingHorizontal: 14,
       alignItems: 'center',
       justifyContent: 'center',
+    },
+    activeMapUsersButton: {
+      marginBottom: 8,
     },
     presenceControlActive: {
       backgroundColor: '#d4af37',
