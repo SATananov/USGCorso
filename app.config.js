@@ -43,9 +43,13 @@ module.exports = () => {
 
   return {
     ...base,
-    android: { ...base.android, package: requestedAndroidPackage || base.android.package },
+    android: {
+      ...base.android,
+      package: requestedAndroidPackage || base.android.package,
+      versionCode: profile === 'examOta' ? 6 : base.android.versionCode,
+    },
     updates: { ...(base.updates ?? {}), enabled: profile !== 'softuniDev' && profile !== 'exam' },
-    runtimeVersion: requestedRuntime === previewRuntimeVersion
+    runtimeVersion: profile !== 'examOta' && requestedRuntime === previewRuntimeVersion
       ? previewRuntimeVersion
       : { policy: 'appVersion' },
     plugins,

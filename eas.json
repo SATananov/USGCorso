@@ -12,6 +12,15 @@
       },
       "channel": "production"
     },
+    "examOta": {
+      "developmentClient": false,
+      "distribution": "internal",
+      "environment": "production",
+      "android": {
+        "buildType": "apk"
+      },
+      "channel": "ota-preview"
+    },
     "development": {
       "developmentClient": true,
       "distribution": "internal",
