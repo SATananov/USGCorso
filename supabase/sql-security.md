@@ -29,7 +29,7 @@ Use the target database's reviewed migration workflow. Do not run this list agai
 
 ## Targeted LAB verification
 
-No SQL was run for this implementation. The current Security LAB and `USGCorso_DB_Backup` are excluded as test targets. After explicit approval and separate provisioning of a disposable Supabase stack, run `VerifyUSGCorsoSQL.ps1` with that stack's unique project ID, database volume, and internal Docker network. It requires a local Windows Docker endpoint, an internal network, one running matching database container, and no other project containers on that network. It rejects the known Security LAB and backup volume names. It executes catalog/privilege SELECTs only; it does not start services or modify rows.
+No SQL was run for this implementation. The current Security LAB and `USGCorso_DB_Backup` are excluded as test targets. After explicit approval and separate provisioning of a disposable Supabase stack, run `verify-sql-security.ps1` with that stack's unique project ID, database volume, and internal Docker network. It requires a local Windows Docker endpoint, an internal network, one running matching database container, and no other project containers on that network. It rejects the known Security LAB and backup volume names. It executes catalog/privilege SELECTs only; it does not start services or modify rows.
 
 Then, in the isolated LAB only:
 

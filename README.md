@@ -1,813 +1,235 @@
-# USG Corso
+# USGCorso
 
-**[React Native](https://reactnative.dev/) Regular Exam Project at [SoftUni](https://softuni.bg/)**
+USGCorso is an Android application for Cane Corso owners and enthusiasts, developed with React Native and Expo for the SoftUni exam. It combines personal dog records, community features, breed education and practical mobile tools, backed by Supabase.
 
-**Author:** Stefan Tananov  
-**SoftUni Username:** `tanashi`
+The app is part of the wider [USG Cane Corso Platform](https://usg-cane-corso-platform.com/), a cultural and educational project.
 
-USG Corso is a mobile application for Cane Corso owners, enthusiasts and people who want useful information about the breed in one place.
+**Author:** Stefan Tananov · **SoftUni username:** `tanashi`
 
-The app combines personal dog profiles, community content, useful places, educational materials and mobile tools.
+## Examiner Quick Start
 
-The project is developed for the [React Native](https://reactnative.dev/) Regular Exam at [SoftUni](https://softuni.bg/). After the exam, it is planned to become part of the wider **USG Cane Corso Platform**.
+1. Download [USGCorso_1.0.1_SoftUni.apk](https://github.com/SATananov/USGCorso/releases/download/softuni-v1.0.1/USGCorso_1.0.1_SoftUni.apk) from the [official GitHub release](https://github.com/SATananov/USGCorso/releases/tag/softuni-v1.0.1).
+2. Install it on an Android phone or emulator and open **USG Corso**. The release APK runs without Metro.
+3. Complete the 3D intro and tap **Continue**. On the welcome screen, choose **SoftUni Demo** to open the 01–06 examiner menu. Signed-in demo users can reopen it with the floating **SOFTUNI** button.
+4. Choose a section to follow its walkthrough. Demo account details are below in [SoftUni Demonstration](#softuni-demonstration).
 
-**USG Cane Corso Platform:**  
-https://usg-cane-corso-platform.com/
-
----
+Supabase features require an internet connection. For full emulator setup, see [Android Studio Setup and Run](#android-studio-setup-and-run) and the [Examiner Guide](EXAMINER_GUIDE.md).
 
 ## Jump to
 
-- [SoftUni Demo](#softuni-demo)
-
-- [APK](#apk--install-usgcorso)
-- [OTA Updates — Android Preview](#ota-updates--android-preview)
-- [Exam Status](#exam-status)
-- [Visual Project Scheme](#visual-project-scheme)
+- [Examiner Quick Start](#examiner-quick-start)
+- [Download Android APK](#download-android-apk)
+- [SoftUni Demonstration](#softuni-demonstration)
+- [Android Studio Setup and Run](#android-studio-setup-and-run)
+- [OTA Updates](#ota-updates)
+- [Project Architecture](#project-architecture)
 - [Functional Guide](#functional-guide)
-- [OCR & On-Device Translation](#ocr--on-device-translation)
+- [Main Features](#main-features)
+- [OCR and Translation](#ocr-and-translation)
 - [Technology](#technology)
-- [Run Instructions](#run-instructions)
 - [Development Status](#development-status)
+- [Examiner Guide](EXAMINER_GUIDE.md)
 
----
+## Download Android APK
 
-## SoftUni Demo
+The exam release is **USG Corso 1.0.1** (`com.usgcorso.mobile`, Android `versionCode` 6, EAS profile `examOta`).
 
-The application includes a **SoftUni exam demonstration menu (01-06)** with direct navigation to implemented features. After launching the Android app, tap **SOFTUNI 01-06** at the bottom of the screen.
+- [Download USGCorso_1.0.1_SoftUni.apk](https://github.com/SATananov/USGCorso/releases/download/softuni-v1.0.1/USGCorso_1.0.1_SoftUni.apk)
+- [GitHub release page](https://github.com/SATananov/USGCorso/releases/tag/softuni-v1.0.1)
+- SHA-256: `21A060AA918CBB14242505817C6D57133C1355E9C927ED1A616BD82F67FAC667`
 
-**SoftUni demo accounts (exam only):**
+The release URLs returned HTTP 200, and the APK downloaded from GitHub matched the original SHA-256. The APK was built from an earlier source revision than the current documentation; its release details identify that build. It uses the original EAS signing certificate. Android APKs require a phone or emulator; they do not run directly on Windows.
 
-These temporary accounts contain experimental data and are provided for independent exam evaluation.
+**Build details:** The APK was built from source commit `9abdad6ba8a7a90cd4da46195dd03d62929a1ec0`. This is separate from later documentation changes on `main`. The release build used version `1.0.1` and version code `6`; the current source `app.json` says version code `5`, which the `examOta` profile overrides to `6`. `package.json` currently reports `1.0.0`.
 
-| Role | Email | Password | Use |
-| --- | --- | --- | --- |
-| Regular user | `SoftUniUser@demo.com` | `SoftUniUser123!@#` | Login, session persistence, forms, and CRUD |
-| Administrator | `SoftUniAdmin@demo.com` | `SoftUniAdmin123!@#` | Admin panel and content moderation |
+## SoftUni Demonstration
 
-**How to sign in:** Install the Android APK from the [APK section](#apk--install-usgcorso), open USG Corso, tap **Continue**, choose **SoftUni Demonstration**, and select **Test real sign in**. Enter the credentials above. Sign out before switching accounts.
+The demo menu groups the exam walkthrough into six sections. It uses the normal application sign-in flow and does not bypass authentication.
 
-**Temporary exam access:** These credentials are public in the README and provide access to the connected demo backend. Use only experimental data. After the exam, disable both accounts, remove the credentials from the README, and retire the SoftUni demonstration flow. Rotating passwords afterward is recommended because Git history retains previous versions.
-
-**Exam walkthrough:**
-
-1. **01 - Navigation:** main screens and navigation.
-2. **02 - Authentication:** login, registration, protected access and persistent sessions.
-3. **03 - CRUD:** create, read, update and delete real application content.
-4. **04 - Forms:** validation and user input flows.
-5. **05 - Mobile Features:** camera, image selection, OCR and location/map features.
-6. **06 - Build & Presentation:** project repository and build information (extra demonstration section).
-
-The administrator account is for admin moderation features; the regular user account is for user-level actions. These must be dedicated demo accounts without real personal data or reused passwords. The demo menu supplements the real application functionality.
-
----
-## Examiner setup and demo
-
-For Windows laptop / Android Emulator installation and step-by-step grading, see **[Examiner Guide](EXAMINER_GUIDE.md)**.
-
-[↑ Back to top](#jump-to)
-
----
-
-## APK — Install USGCorso
-
-**Android APK: USG Corso v1.0.1 (SoftUni exam version)**
-
-- **Release title:** USG Corso v1.0.1
-- **APK filename:** `USGCorso_1.0.1_SoftUni.apk`
-- **Android package:** `com.usgcorso.mobile`
-- **Version code:** `6`
-- **EAS build profile:** `examOta`
-- **Build ID:** `161d2bbe-1596-440b-ae99-04ec1fb3003b`
-- **Source commit:** `9abdad6ba8a7a90cd4da46195dd03d62929a1ec0`
-- **Signing:** original EAS signing certificate
-- **APK SHA-256:** `21A060AA918CBB14242505817C6D57133C1355E9C927ED1A616BD82F67FAC667`
-
-GitHub Release [`softuni-v1.0.1`](https://github.com/SATananov/USGCorso/releases/tag/softuni-v1.0.1) is published. The release page and direct APK URL both returned HTTP 200. The release is neither a draft nor a prerelease and contains exactly one APK asset. The APK was downloaded from GitHub and its SHA-256 matched the original.
-
-**[Download USG Corso v1.0.1 for Android](https://github.com/SATananov/USGCorso/releases/download/softuni-v1.0.1/USGCorso_1.0.1_SoftUni.apk)**
-
-1. Download `USGCorso_1.0.1_SoftUni.apk` to an Android phone, or download it on your computer for Android Emulator.
-2. On a phone, open the APK and follow Android's installation prompts. On a computer, drag it into a running Android Emulator.
-3. Open **USG Corso**, tap **Continue**, then select **SoftUni Demonstration** to explore the project.
-
-For full installation steps and examiner instructions, see the **[Examiner Guide](EXAMINER_GUIDE.md)**.
-
-The exam APK is an **Android app**, not a Windows `.exe` file. The file name above is the only public APK name for v1.0.1.
-
-### v1.0.1 verification
-
-The APK signature, app version, JavaScript bundle and OCR models were checked. On a Samsung Galaxy A13, the app launched independently without Metro; navigation, sign-in, Google Maps and Knowledge were checked. These checks do not represent a full acceptance pass for every feature. The README and examiner guide record the confirmed scope separately from features that have not received final acceptance testing.
-
-[↑ Back to top](#jump-to)
-
----
-
-## OTA Updates — Android Preview
-
-The v1.0.1 `examOta` APK is configured for Expo Updates with Android channel `ota-preview` and runtime version `1.0.1`. Compatible OTA updates can be received by installations of this OTA-enabled build. The earlier v1.0.0 exam APK did not include this OTA configuration and does not receive these updates.
-
-### Verified on-device OTA checks - 27 November 2026
-
-On a Samsung Galaxy A13, a temporary Home label was delivered and displayed through OTA without installing a new APK. A second OTA update restored the clean Home screen, also confirmed on the device. No update IDs are listed here because they were not part of the confirmed release record.
-
-These device checks verify OTA delivery and restoration of the clean Home screen on the tested installation. They do not establish that every app feature was acceptance-tested. The published release and APK links were verified separately.
-
-**Historical context:** The v1.0.0 checkpoint used a separate OTA-preview candidate with runtime `1.0.0-usg-ota-preview`; its November 22 test markers and observations describe that earlier setup only. They are not current v1.0.1 test results. OTA updates cannot add native modules or change Android permissions; those changes require a new native build.
-
-[↑ Back to top](#jump-to)
-
----
-
-## Exam Status
-
-Current status:
-
-- Navigation: implemented
-- Authentication: implemented
-- Session persistence: implemented
-- Supabase backend: implemented
-- CRUD operations: implemented
-- Pull-to-refresh: implemented
-- Forms and validation: implemented
-- Native mobile features: implemented
-- Functional Guide: included below
-- Final exam APK: v1.0.1 published and verified; see [APK](#apk--install-usgcorso).
-- Android on-device Knowledge translation: implemented (manual action, BG/EN/IT)
-- Tesseract OCR and OCR Test Lab: implemented and tested; document accuracy varies
-
-[↑ Back to top](#jump-to)
-
----
-
-# Visual Project Scheme
-
-```mermaid
-flowchart TD
-    APP[USG Corso Android App] --> NAV[React Navigation]
-    NAV --> TABS[Bottom Tab Navigator]
-    NAV --> STACK[Native Stack Navigator]
-
-    TABS --> HOME[Home]
-    TABS --> KNOW[Knowledge - public]
-    TABS --> GUEST[Guest previews]
-    TABS --> USER[Signed-in sections]
-
-    KNOW --> DETAILS[Knowledge details]
-    GUEST --> LIMIT[Limited public preview of other areas]
-    USER --> PERSONAL[My Corso and Community]
-    USER --> PLACES[Corso Friendly and services]
-    USER --> MORE[Events, Corso Match and About]
-
-    STACK --> EXTRA[Details, Materials and Settings]
-    STACK --> ADMIN[Admin moderation]
-    STACK --> OCR[OCR Test Lab]
-
-    PERSONAL --> SUPA[Supabase]
-    PLACES --> SUPA
-    EXTRA --> SUPA
-    ADMIN --> SUPA
-    SUPA --> AUTH[Authentication]
-    SUPA --> DB[Database and Storage]
-    SUPA --> EDGE[Edge Functions]
-
-    PLACES --> MAP[Google Maps and Location]
-    EXTRA --> MEDIA[Camera, Image Picker and Tesseract OCR]
-    DETAILS --> ML[ML Kit on-device translation]
-```
-
-The application uses a Bottom Tab Navigator for the main areas and a Stack Navigator for details, settings, materials and admin screens.
-
-Knowledge is public educational content. Other public tabs can show limited guest previews, while personal actions and user-owned data require authentication.
-
-Supabase provides authentication, database data, storage and Edge Functions. Native mobile features include Google Maps, device location, camera, image selection, Tesseract OCR, QR support and Android ML Kit translation.
-
-[↑ Back to top](#jump-to)
-
----
-
-# Functional Guide
-
-## 1. Project Overview
-
-**Application Name:** USG Corso
-
-**Category:** Cane Corso / Community / Education / Mobile Utility
-
-USG Corso gives Cane Corso owners and enthusiasts one mobile place for useful information and everyday breed-related tools.
-
-The app includes dog profiles, useful places, educational content, community features and user materials.
-
-The project uses a real backend and native mobile features.
-
----
-
-## 2. User Access & Permissions
-
-### Guest
-
-USG Corso is designed with a production-oriented access model.
-
-A guest can access limited public content without creating an account.
-
-The main public area is **Knowledge**, because educational information about the breed should remain easy to access. Public Community Questions and limited guest previews are also available. Posting questions requires sign-in.
-
-Personal data and account-based actions stay protected.
-
-A guest cannot manage personal dog profiles, private user data, submissions or moderation tools.
-
-### Authenticated User
-
-A logged-in user can use the personal and community features of the application.
-
-Depending on the section, the user can:
-
-- create, view, edit and delete Cane Corso profiles
-- upload and manage dog photos
-- submit materials
-- propose Cane Corso Friendly places
-- open list and details screens
-- use location, map, camera and image tools
-
-Admin users have additional moderation screens for supported public content. In the current source, personal stack screens check the session and access token before rendering; administrative stack screens also check the user role through Supabase. These client-side guards complement, but do not replace, backend authorization. The intentional guest access differs from the literal exam requirement to show only authentication screens when signed out.
-
----
-
-## 3. Authentication & Session Handling
-
-USG Corso uses **Supabase Auth**.
-
-The authentication flow includes:
-
-- registration
-- login
-- logout
-- email confirmation
-- forgotten password recovery
-- setting a new password
-
-Supabase manages the authenticated session using AsyncStorage with session persistence and automatic token refresh enabled.
-
-1. On startup the app restores the saved session with `getSession` and listens for authentication changes.
-2. After the intro, a user with a valid session enters the main app without entering credentials again; otherwise the authentication gateway is shown unless Guest mode is selected.
-3. Successful login establishes a session. Registration may require email confirmation before sign-in is available.
-4. Logout calls Supabase sign-out and removes access to authenticated content.
-
-Cold-start and logout behavior must be verified on the final APK.
-
-Protected personal actions require authentication.
-
----
-
-## 4. Navigation Structure
-
-The application uses two main React Navigation navigator types:
-
-- Bottom Tab Navigator
-- Native Stack Navigator
-
-The root app chooses between the intro, authentication gateway, and main navigation according to its startup, session and guest state. The native stack contains the `Main` route, which hosts nine bottom tabs: Home, My Corso, Corso Friendly, Knowledge, Community, Services, Events, Corso Match and About.
-
-The Stack Navigator is used for details screens, settings, materials, administration and other screens opened from the main areas.
-
-The project contains more than five screens.
-
-It also contains several dynamic details screens.
-
----
-
-## 5. List → Details Flow
-
-USG Corso has several list-to-details flows.
-
-Examples:
-
-- places list → place details
-- materials list → material details
-- Knowledge list → Knowledge details
-- admin moderation list → moderation details
-
-Details screens receive an ID or object through route parameters. Three concrete examples are:
-
-| List | Details route | Parameter |
-| --- | --- | --- |
-| Knowledge | `KnowledgePublicDetails` | `item` |
-| Corso Friendly | `PlaceDetails` | `placeId` |
-| My Materials | `MyMaterialDetails` | `item` |
-
-Tap a list entry to open the corresponding details screen.
-
----
-
-## 6. Data Source & Backend
-
-USG Corso uses **Supabase** as a real backend.
-
-Supabase is used for:
-
-- authentication
-- database records
-- file storage
-- moderation data
-- application counters
-- Edge Functions
-
-Main application data is fetched from the backend.
-
-The project does not use hardcoded JSON as the main source of application data.
-
----
-
-## 7. Data Operations
-
-The application contains real CRUD operations.
-
-### Read
-
-Data is fetched from Supabase and displayed in lists and details screens.
-
-### Create
-
-Authenticated users can create supported content such as:
-
-- Cane Corso profiles
-- place proposals
-- user materials
-
-### Update
-
-Users can edit supported content that belongs to them.
-
-Admin users can update supported moderation data.
-
-### Delete
-
-Users can delete supported content that belongs to them where the application flow allows it.
-
-Admin users can also delete supported moderated content.
-
-In My Corso, successful create, update and delete operations reload the dog list from Supabase through `loadDogs()`. This demonstrates server-backed mutations and refreshed UI rather than a local-only change.
-
-### Pull-to-Refresh
-
-Server-backed list screens use pull-to-refresh where appropriate.
-
-This allows the user to load fresh data from the backend.
-
----
-
-## 8. Forms & Validation
-
-The project includes forms for:
-
-- registration
-- login
-- password recovery
-- user profile
-- My Corso
-- place proposals
-- user materials
-
-The forms validate different types of fields.
-
-Registration validates three distinct fields in `authValidation.js`:
-
-| Field | Rules |
+| Section | What to inspect |
 | --- | --- |
-| Email | Required, valid email format |
-| Password | Required, at least six characters, uppercase, lowercase, number and special character |
-| Confirm password | Required, must match password |
-
-The application also uses controls beyond normal text inputs, including:
-
-- switches
-- selectors
-- image selection
-- date-related input
-- map-based coordinate selection
-
-Forms are designed for mobile use.
-
-They use safe-area and keyboard-aware layouts where needed.
-
----
-
-## 9. Validation Rules and Input Verification
-
-Try an invalid email, a weak password and a mismatched confirmation before entering valid registration data. In My Corso, test a switch and the image picker; in Corso Friendly, test map coordinate selection. Check that the keyboard does not hide the focused input.
-
-## 10. Native Device Features
-
-USG Corso uses several mobile-specific features:
-
-- Camera
-- Image Picker
-- Device Location
-- Google Maps
-- OCR from images
-- QR detection
-
-Camera and Image Picker are used for photos and materials.
-
-Location and Google Maps are used in the Corso Friendly place workflow.
-
-OCR uses a custom native Tesseract integration to extract text from captured or selected images.
-
-The recognition workflow explicitly supports Bulgarian (`bul`), English (`eng`) and Italian (`ita`) and has a 25-second application timeout. The OCR Test Lab provides a separate local testing screen for camera/gallery input and recognition results; it does not publish the scanned text. OCR accuracy depends on the source image and may require manual correction.
-
-Knowledge details can request Google ML Kit **on-device** translation when the content language differs from the selected BG/EN/IT app language and no stored translation is available. The Android native module downloads language models when needed, with Wi-Fi required for the model download by the current implementation. Translations are machine-generated and displayed as such; they are not presented as reviewed editorial translations.
-
----
-
-## 11. Typical User Flow
-
-A normal user journey can be:
-
-1. Open the application.
-2. Browse public Knowledge content or log in.
-3. Open a main section.
-4. Load existing data or create new content.
-5. Open a details screen.
-6. Edit, delete or submit content where the current flow allows it.
-
----
-
-## 12. Error & Edge Case Handling
-
-The application handles common states such as:
-
-- authentication errors
-- network and backend errors
-- loading states
-- empty lists
-- missing data
-- invalid form values
-- confirmations
-- success messages
-
-Normal application feedback uses the USG visual style.
-
----
-
-## Additional: APK / Build
-
-The project is tested with an Android Development Build during development, including the native Tesseract and Google ML Kit integrations.
-
-A standalone Android preview build profile is also configured.
-
-The signed exam APK is available through the [APK download section](#apk). The Google Play edition is planned for later development.
-
-[↑ Back to top](#jump-to)
-
----
-
-# Current Implementation
-
-The following features were documented in earlier Android-tested checkpoints and evolved across later commits. A signed Release APK has been built and its welcome screen and SoftUni Demonstration checked on an Android emulator; full feature-by-feature runtime verification remains separate:
-
-- 3D USG intro
-- dark and light themes
-- Bulgarian, English and Italian UI
-- saved language preference
-- saved theme preference
-- Home screen with main USG sections
-- Bottom Tab navigation
-- Stack navigation
-- Settings
-- Help
-- Legal information
-- Supabase Auth
-- persisted sessions
-- email confirmation
-- password recovery
-- user profile data
-- My Corso CRUD
-- dog photo upload with Supabase Storage
-- Community Corso sharing and moderation
-- user materials
-- material editing and deletion
-- admin content moderation
-- camera and image selection
-- native Tesseract OCR-assisted text capture (BG/EN/IT)
-- local OCR Test Lab for image recognition testing
-- Google ML Kit on-device Knowledge translation (BG/EN/IT)
-- original language selector when submitting text materials
-- QR detection
-- native Android Google Map
-- current device location
-- approved place markers
-- category filtering
-- place proposal workflow
-- reverse geocoding through Supabase Edge Function
-- admin place moderation
-- account deletion flow
-- Supabase-backed Home counters
-- branded USG dialogs
-- Android Development Build support
-- standalone Android preview build support
-
-Some areas are still being expanded.
-
-They are not presented as finished backend directories when the backend functionality is not complete.
-
----
-
-# Main Application Areas
-
-## My Corso
-
-My Corso is the personal Cane Corso area.
-
-Users can create, view, edit and delete dog profiles.
-
-Dog photos are stored with Supabase Storage.
-
-Tapping a saved dog photo opens a full-screen viewer with pinch zoom, panning while zoomed, and double-tap zoom/reset. Close it with X or Android Back.
-
-Users can also choose whether a dog can be shared with the community.
-
----
-
-## Corso Friendly
-
-Corso Friendly is the place discovery area.
-
-It includes:
-
-- Google Maps
-- current device location
-- approved place markers
-- place categories
-- place details
-- place proposals
-- reverse geocoding
-- admin moderation
-
----
-
-## Knowledge
-
-Knowledge is the public educational area.
-
-It contains Cane Corso information and uses a list-to-details flow.
-
-This section is intentionally accessible without login because it contains public educational content.
-
-Knowledge loads public content through the `list_public_knowledge_items_v4` Supabase RPC. Materials can retain their `source_language`, separate from the interface language. Knowledge details prefer an available stored translation; otherwise, when the original language differs from the selected interface language, a user can request an on-device machine translation on Android. The original text remains available if translation is not requested or fails.
-
----
-
-## Community
-
-Community contains approved public Cane Corso profiles shared by owners.
-
-Public content follows moderation rules before it is shown.
-
----
-
-## Professionals & Services
-
-This area is prepared for useful Cane Corso services.
-
-Current categories include:
-
-- Breeders
-- Trainers
-- Veterinary
-- Handlers
-- Transport
-- Pet Shops
-
-A full backend directory is planned for later development.
-
----
-
-## Events
-
-This area is prepared for:
-
-- Dog Shows
-- Seminars
-- Lectures
-- Training Events
-- Breed Meetings
-
-A full live events backend is planned for later development.
-
----
-
-## Corso Match
-
-Corso Match is planned as an educational feature.
-
-Its purpose is to help a person understand whether the Cane Corso is suitable for their lifestyle.
-
-It is not a breeding or mating feature.
-
----
-
-## About USG
-
-This area explains the idea and philosophy behind USG.
-
----
-
-# OCR & On-Device Translation
-
-## Tesseract OCR
-
-- The native Tesseract bridge is implemented under `modules/usg-ocr/`, with the application service in `src/ocr/ocrService.js`.
-- Recognizer language selection is mapped to `bul`, `eng` and `ita` from BG/EN/IT.
-- The OCR service and the independent OCR Test Lab enforce a 25-second timeout at the JavaScript level.
-- The test screen is `src/screens/OcrTestLabScreen.js` and is registered as `OcrTestLab` in the stack navigator. It is a development/diagnostic facility, not a production accuracy guarantee.
-- OCR text should be reviewed and corrected before publication. A recognized character count is not proof of correct transcription.
-
-## Google ML Kit Translation
-
-- `modules/usg-translate/` contains the native Android `USGTranslate` module using Google ML Kit Translate.
-- `src/translation/mlkitTranslationService.js` exposes the JavaScript bridge and validates `bg`, `en` and `it`.
-- `KnowledgePublicDetailsScreen.js` provides an explicit **Translate on this device** action, with status, fallback and machine-translation notices in BG/EN/IT.
-- Language models are downloaded as needed on Wi-Fi by the current native implementation; translation happens on the Android device after the models are available.
-- The manual ML Kit path is distinct from the earlier experimental Supabase translation job queue. The repository retains `supabase/migrations/translation_03c_fix_fail_rpc.sql` as database migration history, not evidence of a deployed cloud translator.
-- A new native Android build is required when changing native translation or OCR modules. Metro alone cannot add native modules to an already installed binary.
-
-[↑ Back to top](#jump-to)
-
----
-
-# Technology
-
-The project currently uses (verified against `package.json` and native module sources):
-
-- [React Native](https://reactnative.dev/)
-- Expo
-- React
-- JavaScript
-- React Navigation
-- Supabase
-- Supabase Auth
-- Supabase Database
-- Supabase Storage
-- Supabase Edge Functions
-- AsyncStorage
-- Expo Location
-- React Native Maps
-- Google Maps
-- Expo Image Picker
-- Expo Camera
-- Expo File System
-- Native Tesseract OCR (custom Expo module)
-- Google ML Kit Translate (custom Android Expo module)
-- TypeScript tooling and Expo base configuration (application code remains primarily JavaScript)
-- Expo Linking
-- Expo Dev Client
-- EAS Build
-- Expo GL
-- Three.js
-- Safe Area Context
-
-[↑ Back to top](#jump-to)
-
----
-
-# Environment Configuration
-
-The repository contains `.env.example` with empty placeholder values.
-
-Create a local `.env` file with:
-
-```text
-EXPO_PUBLIC_SUPABASE_URL=
-EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
-GOOGLE_MAPS_ANDROID_API_KEY=
+| 01 — Navigation | Main tabs, public Knowledge list and item details |
+| 02 — Authentication | Sign-in, registration, session persistence and protected routes |
+| 03 — Data operations | My Corso and My Materials records, including supported create, edit, delete and refresh flows |
+| 04 — Forms | Registration, material forms and validation feedback |
+| 05 — Mobile features | Camera and image selection, OCR, location and map features (permissions/device dependent) |
+| 06 — Build & presentation | Repository, README and APK distribution; this is an extra presentation section |
+
+The dedicated exam accounts are temporary and intended for evaluation only. They use experimental data; do not enter personal information. Sign out before switching accounts.
+
+| Role | Email | Password |
+| --- | --- | --- |
+| Regular user | `SoftUniUser@demo.com` | `SoftUniUser123!@#` |
+| Administrator | `SoftUniAdmin@demo.com` | `SoftUniAdmin123!@#` |
+
+To sign in, choose **SoftUni Demo** on the welcome screen, then **Test real sign in**, and enter an account above. After the exam, disable these accounts and remove their credentials from public documentation; password rotation is also recommended because Git history retains earlier versions.
+
+## Android Studio Setup and Run
+
+### Run the Published APK — Recommended for Examiners
+
+1. Install Android Studio with Android SDK, Platform Tools (`adb`) and Android Emulator.
+2. In **Device Manager**, create and start a phone AVD with a compatible x86_64 system image. Complete device setup and wait for boot.
+3. Download the official APK linked above.
+4. In PowerShell, confirm the emulator serial and boot state:
+
+```powershell
+adb devices -l
+$serial = 'emulator-XXXX' # Replace with the serial listed above
+adb -s $serial shell getprop sys.boot_completed
 ```
 
-The real `.env` file must remain local.
+The boot property should return `1`. Install by dragging the APK onto the running emulator, or use:
 
-It must not be committed to GitHub.
+```powershell
+$apk = Join-Path $HOME 'Downloads\USGCorso_1.0.1_SoftUni.apk'
+adb -s $serial install $apk
+adb -s $serial shell am start -n com.usgcorso.mobile/.MainActivity
+```
 
----
+The release APK is standalone and needs no Metro server. Open **Continue**, then **SoftUni Demo**. Internet is required for Supabase-backed content. Use a test device or emulator: a development build may use a different signing certificate but the same package name, which can prevent an in-place update. Check before replacing an installation; uninstalling can erase local data.
 
-# Run Instructions
+### Run From Source — Development
 
-Clone the repository:
+Requirements: Git, Node.js/npm, VS Code, Android Studio with SDK and Platform Tools, and a running Android emulator. From PowerShell:
 
-```bash
+```powershell
 git clone https://github.com/SATananov/USGCorso.git
-```
-
-Open the project:
-
-```bash
 cd USGCorso
+code .
+npm ci
+Copy-Item .env.example .env
 ```
 
-Install dependencies:
+Add the required local Supabase URL, publishable key and Android Maps API key to `.env`; do not commit real credentials. Start the emulator, then create and launch a native Development Build:
 
-```bash
-npm install
-```
-
-Create the local `.env` file from `.env.example`.
-
-Start Expo for an installed Android development build:
-
-```bash
-npx expo start --dev-client
-```
-
-For a clean Metro start:
-
-```bash
-npx expo start --dev-client -c
-```
-
-Create or refresh the native Android development build after native module or dependency changes:
-
-```bash
+```powershell
 npx expo run:android
 ```
 
-Native Android functionality should be tested with the configured Android Development Build or preview build.
+Start the Metro development server in a separate terminal:
 
-Expo Go is not the main verification environment for the native project features.
+```powershell
+npx expo start --dev-client
+```
 
-[↑ Back to top](#jump-to)
+For a clean Metro cache, use `npx expo start --dev-client -c`. Open the Development Build on the emulator and connect it to Metro. Native module or dependency changes require a new Development Build. Expo Go does not include all native modules used by this project.
 
----
+**Troubleshooting:** Confirm `adb devices -l` lists a fully booted device. If install reports `INSTALL_FAILED_UPDATE_INCOMPATIBLE`, the installed app was signed differently; check for local data before considering removal. Maps builds require `GOOGLE_MAPS_ANDROID_API_KEY`. Supabase features need a valid `.env` and internet access.
 
-# Development Status
+## OTA Updates
 
-The **SoftUni exam edition (v1.0.1)** has a published and verified Android APK in GitHub Release [`softuni-v1.0.1`](https://github.com/SATananov/USGCorso/releases/tag/softuni-v1.0.1). USGCorso remains an active project; development will continue toward a public **Google Play** release. Planned features below describe future product work, not missing exam deliverables. Google Play publication has not yet occurred.
+Over-the-air (OTA) updates can deliver compatible JavaScript and asset changes to an installed app without installing a new APK. Changes to native code, modules or Android permissions need a new native build. The v1.0.1 exam APK uses the `ota-preview` channel and runtime version `1.0.1`; this preview channel is not a public Google Play release.
 
-## Working Now
+On 27 November 2026, a Samsung Galaxy A13 running the exam APK detected a test update, accepted it through **Update now**, and displayed the temporary Home label. A second OTA update restored the clean Home screen. Both updates were applied without installing a new APK.
 
-The project currently has working:
+## Project Architecture
 
-- navigation
-- authentication
-- persisted sessions
-- Supabase data
-- CRUD flows
-- validation
-- pull-to-refresh
-- image tools
-- location
-- maps
-- moderation
-- Android Development Build support
-- standalone preview build support
-- Tesseract OCR (BG/EN/IT) and local OCR Test Lab
-- user-selected original language for text materials
-- Google ML Kit on-device translation in public Knowledge details
+```mermaid
+flowchart TD
+    INTRO["3D Intro"] --> WELCOME["Welcome screen"]
+    WELCOME --> DEMO["SoftUni Demo 01–06"]
+    WELCOME --> GUEST["Guest access"]
+    WELCOME --> LOGIN["Sign in or register"]
+    DEMO --> LOGIN
+    DEMO --> GUEST
+    GUEST --> MAIN["Main navigation"]
+    LOGIN --> MAIN
 
-## Still in Development
+    MAIN --> TABS["Nine bottom tabs"]
+    TABS --> GROUP1["Home · My Corso · Corso Friendly"]
+    TABS --> GROUP2["Knowledge · Community · Services"]
+    TABS --> GROUP3["Events · Corso Match · About"]
 
-Planned or incomplete areas include:
+    MAIN --> STACK["Details · Materials · Care · Settings"]
+    MAIN --> ADMIN["Admin screens · role required"]
+    GROUP2 --> PUBLIC["Public Knowledge · Community questions"]
+    MAIN --> PERSONAL["Personal actions · sign-in required"]
+    PERSONAL --> SUPA["Supabase Auth · Database · Storage · Edge Functions"]
+    ADMIN --> SUPA
+    GROUP1 --> MAP["Google Maps · device location"]
+    STACK --> DEVICE["Camera · Tesseract OCR · ML Kit"]
+    MAIN -.-> OTA["Expo Updates · ota-preview · 1.0.1"]
+```
 
-- real push notifications
-- deeper backend privacy controls
-- place favorites and reviews
-- wider public services directory
-- wider events directory
-- full Corso Match logic
-- wider community interaction
-- improving OCR recognition quality on complex documents
-- production access policy for the OCR diagnostic screen
-- broader editorial review and translation coverage for historical Knowledge content
-- integration with the wider USG Cane Corso Platform
+The app opens with the 3D intro, then the welcome/auth gateway. Guests can browse Knowledge and see limited previews; personal features require a signed-in session. Admin stack screens additionally check the user's role. These client-side route checks do not replace backend authorization. Expo Updates deliver compatible JavaScript and assets; native changes require a new build.
 
-[↑ Back to top](#jump-to)
+## Functional Guide
 
----
+### Navigation and access
 
-# About USG
+The root flow restores authentication state, displays the intro and welcome/auth gateway, then opens the main app. The nine bottom tabs are Home, My Corso, Corso Friendly, Knowledge, Community, Services, Events, Corso Match and About. Stack routes provide item details, materials, care tools, settings, help, legal information and administration.
 
-**USG — Unico Suo Genere™**
+Knowledge is public, and Community questions can be browsed publicly. Guests see limited previews of other areas. Personal records and actions require sign-in; administrative screens also check the Supabase role. Guest access is intentional product behavior and differs from a specification that requires only authentication screens while signed out.
 
-USG is a cultural and educational Cane Corso project.
+### Authentication, backend and data
 
-The idea is based on knowledge, history, responsibility and respect for the breed.
+Supabase Auth supports registration, sign-in/out, email confirmation and password recovery. Sessions persist through AsyncStorage with token refresh. Registration may require email confirmation before sign-in. A cold start restores a saved session; verify this behavior on the installed exam APK as part of evaluation.
 
-It is not designed as a dog-selling marketplace.
+Supabase provides authentication, database records, file storage and Edge Functions. For example, My Corso mutations save dog profiles and photos and reload the list from the backend. My Materials supports authenticated create, read, edit, delete and refresh flows. Users can submit Community questions and replies; public content may be subject to moderation. Admin tools handle supported content and professional access approvals. Available mutations depend on the section and backend policies.
 
-**FUNZIONE CREA IL TIPO**
+List-to-detail examples include Knowledge → `KnowledgePublicDetails` (`item`), Corso Friendly → `PlaceDetails` (`placeId`), and My Materials → `MyMaterialDetails` (`item`). Server-backed lists provide refresh where implemented.
 
----
+### Forms and errors
 
-# Repository
+Forms cover account access, dog profiles, material submissions, professional applications and place proposals. Registration checks a valid email, password length and character groups, and matching confirmation. Other screens validate their own required fields. The app provides loading, empty, error and success feedback for common backend and form states. Try invalid registration values and a material submission to inspect validation; keyboard and permission behavior can vary by device.
 
-https://github.com/SATananov/USGCorso
+### Mobile tools
 
----
+Corso Friendly uses Google Maps, device location, categories, place proposals, favorites and place reviews. Camera, image selection and QR detection use device features. Care History combines Supabase-backed records with local extension data; health records and some quantity entries are local. Care Calendar entries and reminders are stored locally. Reminders use Android local notifications and require notification permission; they are not server push notifications.
 
-# Author
+Tesseract OCR can extract Bulgarian, English and Italian text from selected or captured images. Its local OCR Test Lab is a diagnostic screen; recognition quality varies and text should be reviewed. Knowledge details can offer explicit Google ML Kit on-device translation among Bulgarian, English and Italian. Models download when needed; the current Android implementation requires Wi-Fi for that download. Machine translations are labeled and the original text remains available.
 
-**Stefan Tananov**
+## Main Features
 
----
+| Feature | What it does |
+| --- | --- |
+| My Corso | Manage dog profiles and photos; open a zoomable photo viewer and use supported care, diary, growth, behavior, challenge and walk screens. |
+| Corso Friendly | Browse categorized places on a map or list, use device location, view details, save favorites, submit place proposals, and rate or review places. |
+| Knowledge | Browse public educational materials, open details and request on-device translation when available. |
+| Community | View shared Cane Corso profiles and public questions, read replies, and submit questions or replies when signed in. Moderation applies to supported content. |
+| My Materials | Create, read, edit, delete and refresh the signed-in user's materials. |
+| Professionals & Services | Browse public professional profiles, manage an eligible user's profile and submit an access application for admin review. Public profile fields are visibility controlled. |
+| Care History & Calendar | Care History combines Supabase-backed records with local extensions; health and some quantity entries are local. Calendar entries and reminders are local, with Android local notifications when permitted. |
+| Admin | Review supported applications, places and community content; administrator routes check the user's role. |
+| Settings & languages | Manage app preferences, account, privacy, notifications, help and legal information; the interface supports Bulgarian, English and Italian. |
+| Events | Informational section screen; a live events directory is not implemented. |
+| Corso Match | Informational section screen; the planned lifestyle suitability feature is not implemented. |
 
-# Rights
+## OCR and Translation
 
-**USG — Unico Suo Genere™**  
-All rights reserved.
+- The custom native Tesseract module is in `modules/usg-ocr/`; `src/ocr/ocrService.js` exposes OCR to the app. The service and OCR Test Lab apply a 25-second JavaScript timeout.
+- OCR supports Bulgarian (`bul`), English (`eng`) and Italian (`ita`). Results are local and require review; the Test Lab is diagnostic, not an accuracy guarantee.
+- The Android module in `modules/usg-translate/` uses Google ML Kit Translate. Knowledge details offer a manual on-device translation action for Bulgarian, English and Italian. Language models download when required; the current implementation requires Wi-Fi for downloads.
+- Translation is distinct from the older experimental Supabase translation queue in migration history. That migration is not evidence of a deployed cloud translator.
+
+## Technology
+
+- **App:** React Native, Expo SDK 58, JavaScript, React Navigation, TypeScript tooling (the app is primarily JavaScript).
+- **Backend:** Supabase Auth, Database, Storage and Edge Functions; AsyncStorage for session persistence.
+- **Android and device APIs:** Expo Camera, Image Picker, Location, Notifications and Updates; React Native Maps with Google Maps; custom Expo modules for Tesseract OCR and ML Kit Translate.
+- **Build and graphics:** EAS Build, Expo Dev Client, Expo GL and Three.js.
+
+## Development Status
+
+### Implemented
+
+Authentication and session persistence, the nine-tab app, Supabase-backed personal and community flows, place favorites and reviews, professional profiles and access applications, admin moderation, dog care records with local notifications, OCR and on-device translation are implemented in the source. Events and Corso Match currently show informational content only.
+
+### Verified on device
+
+The signed v1.0.1 APK signature, version, JavaScript bundle and OCR models were checked. On a Samsung Galaxy A13, standalone launch without Metro, navigation, sign-in, Google Maps and Knowledge were checked. OTA delivery and restoration of the clean Home screen were also confirmed on that device on 27 November 2026. These checks do not cover every feature or a full acceptance pass. The published release and APK checksums are documented above.
+
+### Still in development
+
+Planned or incomplete work includes a live Events directory, full Corso Match logic, broader community interaction and services coverage, deeper backend privacy controls, broader editorial review and translation coverage, and integration with the wider USG platform. OCR accuracy can vary on complex documents. Local care notifications are not a remote push notification system. Google Play publication has not occurred.
+
+## About USG
+
+**USG — Unico Suo Genere™** is a cultural and educational Cane Corso project built around knowledge, history, responsibility and respect for the breed. USGCorso is not a dog-selling marketplace.
+
+## Links
+
+- [Repository](https://github.com/SATananov/USGCorso)
+- [USG Cane Corso Platform](https://usg-cane-corso-platform.com/)
+- [Examiner Guide](EXAMINER_GUIDE.md)
