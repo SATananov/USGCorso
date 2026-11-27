@@ -18,6 +18,7 @@ import { getAvatarPreset } from '../profile/avatarPresets';
 const labelsByLanguage = {
   bg: {
     button: 'АКТИВНИ НА КАРТАТА',
+    compactButton: 'АКТИВНИ',
     title: 'Активни на картата',
     description: 'Показват се само хора, разрешили споделяне на локация, с обновена позиция през последните 15 минути. Това не означава, че са онлайн.',
     search: 'Търси по име, град или държава',
@@ -31,6 +32,7 @@ const labelsByLanguage = {
   },
   en: {
     button: 'ACTIVE ON MAP',
+    compactButton: 'ACTIVE',
     title: 'Active on the map',
     description: 'Only members who opted in to location sharing and updated their position in the last 15 minutes appear here. This does not mean they are online.',
     search: 'Search name, city or country',
@@ -44,6 +46,7 @@ const labelsByLanguage = {
   },
   it: {
     button: 'ATTIVI SULLA MAPPA',
+    compactButton: 'ATTIVI',
     title: 'Attivi sulla mappa',
     description: 'Sono visibili solo i membri che hanno autorizzato la condivisione della posizione e l’hanno aggiornata negli ultimi 15 minuti. Non significa che siano online.',
     search: 'Cerca nome, città o paese',

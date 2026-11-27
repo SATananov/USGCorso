@@ -2582,8 +2582,11 @@ navigation }) {
               accessibilityRole="button"
               accessibilityLabel={activeMapUsersCopy.title}
             >
-              <Text style={styles.presenceControlText}>
-                {activeMapUsersCopy.button} · {visibleMapUsers.length}
+              <Text
+                style={[styles.presenceControlText, styles.activeMapUsersText]}
+                numberOfLines={1}
+              >
+                {activeMapUsersCopy.compactButton} · {visibleMapUsers.length}
               </Text>
             </Pressable>
             <Pressable
@@ -2607,9 +2610,7 @@ navigation }) {
                   : copy.mapPresence.enable}
               </Text>
             </Pressable>
-            {presenceHintVisible ? (
-              <Text style={styles.presencePrivacyHint}>{copy.mapPresence.privacyHint}</Text>
-            ) : null}
+
           </View>
 
           <MapView
@@ -2956,6 +2957,12 @@ navigation }) {
         </View>
       ) : null}
 
+      {mode === 'map' && presenceHintVisible ? (
+        <View style={styles.mapPrivacyNote}>
+          <Text style={styles.presencePrivacyHint}>{copy.mapPresence.privacyHint}</Text>
+        </View>
+      ) : null}
+
       {mode === 'list' || mode === 'favorites' ? (
         <View style={[styles.listContent, { minHeight: viewportHeight }]}>
           {loading ? (
@@ -3287,6 +3294,10 @@ function createStyles(colors) {
     },
     activeMapUsersButton: {
       marginBottom: 8,
+      maxWidth: 230,
+    },
+    activeMapUsersText: {
+      textAlign: 'center',
     },
     presenceControlActive: {
       backgroundColor: '#d4af37',
@@ -3300,17 +3311,22 @@ function createStyles(colors) {
     presenceControlTextActive: {
       color: '#070708',
     },
+    mapPrivacyNote: {
+      marginHorizontal: 12,
+      marginTop: 10,
+      marginBottom: 10,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      paddingHorizontal: 13,
+      paddingVertical: 10,
+    },
     presencePrivacyHint: {
-      marginTop: 6,
-      maxWidth: 220,
-      paddingHorizontal: 9,
-      paddingVertical: 6,
-      borderRadius: 8,
-      color: '#d7d7d9',
-      backgroundColor: 'rgba(7, 7, 8, 0.88)',
-      fontSize: 10,
-      lineHeight: 14,
-      textAlign: 'right',
+      color: colors.textSoft,
+      fontSize: 12,
+      lineHeight: 18,
+      textAlign: 'left',
     },
     memberMarkerWrap: {
       width: 58,
@@ -3550,9 +3566,10 @@ function createStyles(colors) {
     },
     errorBanner: {
       position: 'absolute',
+      top: 82,
       left: 12,
       right: 12,
-      bottom: 64,
+      zIndex: 19,
       borderWidth: 1,
       borderColor: colors.border,
       borderRadius: 12,
