@@ -71,25 +71,37 @@ For Windows laptop / Android Emulator installation and step-by-step grading, see
 
 ## APK — Install USGCorso
 
-**Android APK v1.0.0 (SoftUni exam version)**
+**Android APK: USG Corso v1.0.1 (SoftUni exam version)**
 
-**[Download USGCorso for Android](https://github.com/SATananov/USGCorso/releases/download/softuni-v1.0.0/USGCorso_1.0.0_SOFTUNI.apk)**
+- **Release title:** USG Corso v1.0.1
+- **APK filename:** `USGCorso_1.0.1_SoftUni.apk`
+- **Android package:** `com.usgcorso.mobile`
+- **Version code:** `6`
+- **EAS build profile:** `examOta`
+- **Build ID:** `161d2bbe-1596-440b-ae99-04ec1fb3003b`
+- **Source commit:** `9abdad6ba8a7a90cd4da46195dd03d62929a1ec0`
+- **Signing:** original EAS signing certificate
+- **APK SHA-256:** `21A060AA918CBB14242505817C6D57133C1355E9C927ED1A616BD82F67FAC667`
 
-**Share the Android download link:** Copy the address below and send it to any Android phone via messaging, SMS or email.
+The GitHub Release `softuni-v1.0.1` is planned but **has not been published**. The following is the planned asset URL; it is not active or verified yet:
 
 ```text
-https://github.com/SATananov/USGCorso/releases/download/softuni-v1.0.0/USGCorso_1.0.0_SOFTUNI.apk
+https://github.com/SATananov/USGCorso/releases/download/softuni-v1.0.1/USGCorso_1.0.1_SoftUni.apk
 ```
 
-1. Download the APK on an Android phone, or download it on your computer to use with Android Emulator.
-2. On a phone, open the downloaded APK and follow the installation prompts. On a computer, use Android Studio's emulator and drag the APK into it.
+After the release is published, verify the release page and asset URL before sharing the download link.
+
+1. Download `USGCorso_1.0.1_SoftUni.apk` to an Android phone, or download it on your computer for Android Emulator.
+2. On a phone, open the APK and follow Android's installation prompts. On a computer, drag it into a running Android Emulator.
 3. Open **USG Corso**, tap **Continue**, then select **SoftUni Demonstration** to explore the project.
 
-For full installation steps and the examiner walkthrough, see the **[Examiner Guide](EXAMINER_GUIDE.md)**.
+For full installation steps and examiner instructions, see the **[Examiner Guide](EXAMINER_GUIDE.md)**.
 
-The exam APK is published on GitHub Releases. It is an **Android app**, not a Windows `.exe` file.
+The exam APK is an **Android app**, not a Windows `.exe` file. The file name above is the only public APK name for v1.0.1.
 
-The currently linked release is `softuni-v1.0.0`, built from source checkpoint `68bf1886aec978b4a0ce8be5cf777f046567fdcc`. Later source changes, including the new My Corso photo viewer and route guards, are not verified in that binary. A new standalone release and acceptance tests are required before claiming those changes are available in the exam APK.
+### v1.0.1 verification
+
+The APK signature, app version, JavaScript bundle and OCR models were checked. On a Samsung Galaxy A13, the app launched independently without Metro; navigation, sign-in, Google Maps and Knowledge were checked. These checks do not represent a full acceptance pass for every feature. The README and examiner guide record the confirmed scope separately from features that have not received final acceptance testing.
 
 [↑ Back to top](#jump-to)
 
@@ -97,35 +109,20 @@ The currently linked release is `softuni-v1.0.0`, built from source checkpoint `
 
 ## OTA Updates — Android Preview
 
-USGCorso has a **tested Android OTA-preview update path** using Expo Updates / EAS Update. This is a post-exam development and verification workflow; it **does not replace or modify** the original SoftUni exam APK linked above. The Google Play release is not yet published.
+The v1.0.1 `examOta` APK is configured for Expo Updates with Android channel `ota-preview` and runtime version `1.0.1`. Compatible OTA updates can be received by installations of this OTA-enabled build. The earlier v1.0.0 exam APK did not include this OTA configuration and does not receive these updates.
 
-### Android build and update compatibility
+### Verified on-device OTA checks - 27 November 2026
 
-- Original SoftUni exam APK: `USGCorso_1.0.0_SOFTUNI.apk`, Android package `com.usgcorso.mobile`, `versionCode=1`.
-- An **independently built, original-key-signed Android OTA-preview candidate** with `versionCode=2` was installed successfully over the exam APK on a Samsung Galaxy A13, preserving the app installation. It was a separate validation build, not a replacement for the exam download.
-- The update-capable candidate uses Expo project ID `6487907d-d936-4b56-95e4-dc349d0a8c47`, Android update channel / EAS branch `ota-preview`, and runtime version `1.0.0-usg-ota-preview`.
-- Successful over-install required the same Android signing certificate as the original APK. Signing credentials and keystore files are **not** stored in this repository and must never be added to Git.
-- Existing exam APK users do **not** receive OTA updates from an APK that was built without this OTA configuration. OTA availability depends on the installed build, its channel and its runtime compatibility.
+On a Samsung Galaxy A13, a temporary Home label was delivered and displayed through OTA without installing a new APK. A second OTA update restored the clean Home screen, also confirmed on the device. No update IDs are listed here because they were not part of the confirmed release record.
 
-### Verified EAS Update tests — 22 November 2026
+These device checks verify OTA delivery and restoration of the clean Home screen on the tested installation. They do not establish that every app feature was acceptance-tested or that the unpublished GitHub release link works.
 
-| Test | Android update ID | Device-observed result |
-| --- | --- | --- |
-| OTA TEST 01 | `01a202e3-9510-77e3-996a-25be44d56df4` | Update delivered without APK reinstall; `OTA TEST 01` appeared on Home. The first reload returned to the intro/login gateway even though the session remained available. |
-| OTA TEST 02 | `01a20304-fe0e-7714-a64d-f4674f8ad009` | OTA restart-navigation patch delivered; `OTA TEST 02` appeared on Home. |
-| OTA TEST 03 | `01a20316-c736-7eb3-ab80-08ec7022e8c6` | After tapping Update, the application stayed on Home and the marker changed to `OTA TEST 03`, without reinstall or returning to the login gateway. |
-
-**Device tested:** Samsung Galaxy A13 (SM-A137F), Android. These are on-device results for this OTA-preview setup, not a claim that all Android devices or every feature were retested.
-
-The OTA restart-navigation implementation lives in `App.js` and `src/ota/otaReloadIntent.js`. A time-limited, update-ID-matched, single-use reload intent allows an authenticated session to return directly to Home after an OTA-triggered JS reload; normal cold-start and authentication flows remain separate.
-
-**OTA limitations:** Compatible JavaScript and bundled asset changes may be distributed through EAS Update. Changes to native Expo modules, Android permissions, native dependencies, signing, or incompatible runtime configuration require a new native Android build and suitable runtime/version planning. A successful OTA publication alone is not proof of successful installation; device verification is required.
-
-**Verification status:** The three test updates above were published to `ota-preview`. As of this documentation checkpoint, `OTA TEST 03` is still the visible temporary Home marker on the tested device; its cleanup is a separate future OTA update, not yet claimed as published. The local `main` navigation patch was applied on 22 November 2026; Git commit/push and any future OTA publication are separate, explicit actions.
+**Historical context:** The v1.0.0 checkpoint used a separate OTA-preview candidate with runtime `1.0.0-usg-ota-preview`; its November 22 test markers and observations describe that earlier setup only. They are not current v1.0.1 test results. OTA updates cannot add native modules or change Android permissions; those changes require a new native build.
 
 [↑ Back to top](#jump-to)
 
 ---
+
 ## Exam Status
 
 Current status:
@@ -139,7 +136,7 @@ Current status:
 - Forms and validation: implemented
 - Native mobile features: implemented
 - Functional Guide: included below
-- Final exam APK/download link: published and verified; see [APK](#apk)
+- Final exam APK: v1.0.1 build is prepared; the planned GitHub Release is not yet published or verified. See [APK](#apk--install-usgcorso).
 - Android on-device Knowledge translation: implemented (manual action, BG/EN/IT)
 - Tesseract OCR and OCR Test Lab: implemented and tested; document accuracy varies
 
@@ -745,7 +742,7 @@ Expo Go is not the main verification environment for the native project features
 
 # Development Status
 
-The **SoftUni exam edition (v1.0.0)** has a published Android APK. USGCorso remains an active project: after the exam, development will continue toward a public **Google Play** release. The planned features below describe the future product, not missing exam deliverables. Google Play publication has not yet occurred.
+The **SoftUni exam edition (v1.0.1)** has a prepared Android APK build. The planned GitHub Release `softuni-v1.0.1` has not yet been published or verified. USGCorso remains an active project; development will continue toward a public **Google Play** release. Planned features below describe future product work, not missing exam deliverables. Google Play publication has not yet occurred.
 
 ## Working Now
 

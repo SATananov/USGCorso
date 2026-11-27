@@ -1,15 +1,41 @@
 # USGCorso — SoftUni Examiner Guide
 
-USGCorso is an **Android (Expo / React Native)** application. The `.apk` does **not** execute natively on a Windows laptop. You may use a physical Android phone or an Android Virtual Device (AVD) on a Windows laptop. No Windows `.exe` is provided. A short demonstration video, if supplied separately, is a supplement, not a replacement for the APK.
+USGCorso is an **Android (Expo / React Native)** application. The `.apk` does **not** execute natively on a Windows laptop. Use a physical Android phone or an Android Virtual Device (AVD) on a Windows laptop. No Windows `.exe` is provided. A demonstration video, if supplied separately, supplements the APK and does not replace it.
 
-> **Status:** This guide documents the exam workflow. The GitHub Release download was checked after publication. The welcome screen and SoftUni Demonstration have been observed on an Android emulator. This is **not** proof of all features working in all environments.
+> **Release status:** The v1.0.1 APK build is prepared. GitHub Release `softuni-v1.0.1` has **not** been published. The planned asset URL below is not active or verified; check it after publication. The checks listed here are the confirmed scope, not a claim that every feature passed final acceptance.
 
 ## Download the exam APK
 
-1. Open the [GitHub releases page](https://github.com/SATananov/USGCorso/releases).
-2. Select release `softuni-v1.0.0`.
-3. Download the asset named `USGCorso_1.0.0_SOFTUNI.apk`.
-4. Install the APK on a test Android phone or emulator using the steps below.
+- Release title: **USG Corso v1.0.1**
+- APK filename: `USGCorso_1.0.1_SoftUni.apk`
+- Android package: `com.usgcorso.mobile`
+- App version / versionCode: `1.0.1` / `6`
+- EAS profile: `examOta`
+- Build ID: `161d2bbe-1596-440b-ae99-04ec1fb3003b`
+- Source commit: `9abdad6ba8a7a90cd4da46195dd03d62929a1ec0`
+- Signing certificate: original EAS certificate
+- APK SHA-256: `21A060AA918CBB14242505817C6D57133C1355E9C927ED1A616BD82F67FAC667`
+- OTA channel / runtime: `ota-preview` / `1.0.1`
+
+Planned GitHub Release asset URL (not yet published or verified):
+
+```text
+https://github.com/SATananov/USGCorso/releases/download/softuni-v1.0.1/USGCorso_1.0.1_SoftUni.apk
+```
+
+After publication, check that the release and asset are available before sharing this URL.
+
+1. Obtain `USGCorso_1.0.1_SoftUni.apk` from the verified release asset after publication.
+2. Install it on a test Android phone or emulator using the steps below.
+
+## Confirmed v1.0.1 checks
+
+- APK signing, app version, JavaScript bundle and OCR models were checked.
+- On a Samsung Galaxy A13, the app launched standalone without Metro. Navigation, sign-in, Google Maps and Knowledge were checked.
+- Jest: 52/52 tests passed; TypeScript check: PASS.
+- On 27 November 2026, a temporary Home label arrived and appeared through OTA without a new APK. A second OTA update restored the clean Home screen, confirmed on the same Samsung device.
+
+These results cover only the checks named above. They are not a full feature-by-feature acceptance pass.
 
 ## Option A — install on Android phone
 
@@ -50,7 +76,7 @@ adb -s emulator-5554 shell getprop sys.boot_completed
 
 ```powershell
 $serial = 'emulator-5554'
-$apk = Join-Path $HOME 'Downloads\USGCorso_1.0.0_SOFTUNI.apk'
+$apk = Join-Path $HOME 'Downloads\USGCorso_1.0.1_SoftUni.apk'
 adb -s $serial shell getprop sys.boot_completed
 adb -s $serial shell pm path com.usgcorso.mobile
 adb -s $serial install $apk
@@ -87,9 +113,9 @@ From the welcome screen tap **CONTINUE**, then **SoftUni Demonstration**. Expand
 
 **Guest access is intentional product behavior** because USGCorso is being developed as a real application. The demonstration does not bypass authentication, but guest-visible routes may differ from the *literal* protected-route wording of the course specification. This difference is disclosed rather than represented as automatic compliance.
 
-## Final APK acceptance checklist
+## Further feature walkthrough checklist
 
-Run these checks on the candidate standalone APK before replacing the README download link. Use disposable test records and dedicated exam accounts. Record pass/fail and device/build details; a successful source check is not a runtime pass.
+Use this checklist for further feature-by-feature evaluation on the standalone APK. Use disposable test records and dedicated exam accounts. The confirmed checks above are the only checks claimed as completed; this checklist is not evidence that every item passed.
 
 | Section | Acceptance check |
 | --- | --- |
@@ -100,7 +126,7 @@ Run these checks on the candidate standalone APK before replacing the README dow
 | 05 | Test camera/gallery and location permissions and results; on a saved dog photo test pinch, pan, double-tap, X and Android Back. OCR and translation are additional checks. |
 | 06 | Verify standalone startup without Metro, package, signing certificate, version, release asset and SHA-256. |
 
-The photo gesture and route guard checks refer to the newer source candidate, not a claim about the currently published `softuni-v1.0.0` binary. Do not run SQL review scripts or change production policies as part of this walkthrough.
+The photo gesture and route guard checks are not included in the confirmed v1.0.1 device checks above. Do not run SQL review scripts or change production policies as part of this walkthrough.
 
 ## Verification boundaries
 
