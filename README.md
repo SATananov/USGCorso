@@ -36,7 +36,9 @@ Supabase features require an internet connection. For full emulator setup, see [
 - [Main Features](#main-features)
 - [OCR & Translation](#ocr-and-translation)
 - [Technology](#technology)
+- [Automated Tests](#automated-tests)
 - [Development Status](#development-status)
+- [Roadmap — future plans](ROADMAP.md)
 - [Examiner Guide](EXAMINER_GUIDE.md)
 - [Author](#author)
 
@@ -292,6 +294,35 @@ Guest browsing is intentional, but it does not meet the specification's literal 
 
 ---
 
+## Automated Tests
+
+The repository contains **11 Jest test files with 38 test cases** across the app's authentication, navigation, data/form and mobile demonstration paths. The test runner is configured in `jest.config.js` and `package.json`.
+
+| Test area | What the source tests exercise |
+| --- | --- |
+| Authentication | Login/registration validation, session initialization, sign-in/out events and authentication-state races. |
+| Navigation and access | Protected personal screens, guest sign-in gate and administrator-role restrictions. |
+| My Materials and data flows | Create/read/update/delete service calls (mocked), form limits, list/detail navigation, refresh, loading/error and retry states. |
+| Places | Request success/failure, stale-response handling and place submission outcomes. |
+| Mobile/OCR | Picker options, permission denial, crop cancellation and OCR invocation boundaries using mocks. |
+| SoftUni Demo | Six demonstration groups, accordion controls and routing to real app/authentication flows. |
+
+Run from the repository root after installing Node.js:
+
+```powershell
+npm ci
+npm test
+npx tsc --noEmit
+```
+
+`npm test` uses **Jest / jest-expo** with in-band execution. The full suite description is in [`tests/README.md`](tests/README.md). Separate Python checks under `tests/arena/` are **not** part of the Jest command.
+
+**Test scope:** the Jest cases mock Supabase calls, authentication events and relevant native operations. They verify application logic and UI handling, not a live Supabase environment, physical Android permissions, actual OCR accuracy or a full APK acceptance test. These are tests **present in source**; this section does not claim they were executed successfully as part of this documentation update. For device evidence, see [Verified on device](#development-status).
+
+[↑ Back to top](#jump-to)
+
+---
+
 ## Development Status
 
 The status below distinguishes features present in source code from what has been checked on the signed Android exam build.
@@ -306,7 +337,7 @@ The signed v1.0.1 APK signature, version, JavaScript bundle and OCR models were 
 
 ### Still in development
 
-Planned or incomplete work includes a live Events directory, full Corso Match logic, broader community interaction and services coverage, deeper backend privacy controls, broader editorial review and translation coverage, and integration with the wider USG platform. OCR accuracy can vary on complex documents. Local care notifications are not a remote push notification system. Google Play publication has not occurred.
+Planned or incomplete work includes a live Events directory, full Corso Match logic, broader community interaction and services coverage, deeper backend privacy controls, broader editorial review and translation coverage, and integration with the wider USG platform. OCR accuracy can vary on complex documents. Local care notifications are not a remote push notification system. Google Play publication has not occurred. See [ROADMAP.md](ROADMAP.md) for future directions; planned features are not part of the published exam APK.
 
 [↑ Back to top](#jump-to)
 
@@ -326,6 +357,8 @@ Planned or incomplete work includes a live Events directory, full Corso Match lo
 - [Official SoftUni exam APK](https://github.com/SATananov/USGCorso/releases/tag/softuni-v1.0.1)
 - [USG Cane Corso Platform](https://usg-cane-corso-platform.com/)
 - [Examiner Guide](EXAMINER_GUIDE.md)
+- [Project Roadmap](ROADMAP.md)
+- [Automated Test Guide](tests/README.md)
 
 [↑ Back to top](#jump-to)
 
