@@ -37,6 +37,7 @@ Supabase features require an internet connection. For full emulator setup, see [
 - [OCR & Translation](#ocr-and-translation)
 - [Technology](#technology)
 - [Automated Tests](#automated-tests)
+- [Git Branches and Releases](#git-branches-and-releases)
 - [Development Status](#development-status)
 - [Roadmap — future plans](ROADMAP.md)
 - [Examiner Guide](EXAMINER_GUIDE.md)
@@ -318,6 +319,29 @@ npx tsc --noEmit
 `npm test` uses **Jest / jest-expo** with in-band execution. The full suite description is in [`tests/README.md`](tests/README.md). Separate Python checks under `tests/arena/` are **not** part of the Jest command.
 
 **Test scope:** the Jest cases mock Supabase calls, authentication events and relevant native operations. They verify application logic and UI handling, not a live Supabase environment, physical Android permissions, actual OCR accuracy or a full APK acceptance test. These are tests **present in source**; this section does not claim they were executed successfully as part of this documentation update. For device evidence, see [Verified on device](#development-status).
+
+[↑ Back to top](#jump-to)
+
+---
+
+## Git Branches and Releases
+
+The repository uses one main development line and separate branches for OTA and exam-release preparation. Branches are source-control workstreams; they are not separate Android apps.
+
+| Branch | Purpose |
+| --- | --- |
+| [`main`](https://github.com/SATananov/USGCorso/tree/main) | Current application source and up-to-date SoftUni documentation. |
+| [`feature/eas-ota`](https://github.com/SATananov/USGCorso/tree/feature/eas-ota) | Separate work on EAS/OTA updates and Android preview verification. |
+| [`feature/exam-ota-101`](https://github.com/SATananov/USGCorso/tree/feature/exam-ota-101) | Preparation and documentation of the SoftUni v1.0.1 OTA-enabled release. |
+
+| Git tag | Release |
+| --- | --- |
+| [`softuni-v1.0.0`](https://github.com/SATananov/USGCorso/releases/tag/softuni-v1.0.0) | Earlier exam-preparation release, retained as a versioned checkpoint. |
+| [`softuni-v1.0.1`](https://github.com/SATananov/USGCorso/releases/tag/softuni-v1.0.1) | **Published exam release** with the recommended standalone Android APK, `USGCorso_1.0.1_SoftUni.apk`. |
+
+**Source and release distinction:** the v1.0.1 APK was built from application source commit [`9abdad6`](https://github.com/SATananov/USGCorso/commit/9abdad6ba8a7a90cd4da46195dd03d62929a1ec0). The `softuni-v1.0.1` Git tag points to the subsequent release-documentation commit [`805d204`](https://github.com/SATananov/USGCorso/commit/805d20454d32cace9d9e59f1d971868adf03a9c4). Later README and Roadmap commits do not change the published APK.
+
+**OTA is different from Git:** `ota-preview` is an **Expo Updates channel**, not a branch or tag. The exam APK was built with the `examOta` EAS profile and uses runtime `1.0.1` for compatible JavaScript/asset updates. Native changes still require a new Android build. See [OTA Updates](#ota-updates) and [Download Android APK](#download-android-apk).
 
 [↑ Back to top](#jump-to)
 
